@@ -6,15 +6,15 @@ from metamapper import MetaMapper
 
 def test_alu():
     inst = Inst(ALUOP.Add)
-    alu = ALU(inst)
-    res = alu(Data(4), Data(5))
+    alu = ALU()
+    res = alu(inst,Data(4), Data(5))
     assert res==Data(9)
 
 def test_mapper():
     #Create an ALU primitive
     #For now keep it in global. but really should have new namespace
     c = coreir.Context()
-    mapper = MetaMapper(c)
+    mapper = MetaMapper(c,"alu_ns")
 
     #This adds a peak primitive 
     Alu = mapper.add_peak_primitive("alu",ALU.__call__,Inst)
@@ -22,7 +22,7 @@ def test_mapper():
     add16 = c.get_namespace("coreir").generators['add'](width=16)
     
     #Adds a simple "1 to 1" rewrite rule
-    mapper.add_simple_rewrite_rule(
+    mapper.add_1to1_rewrite_rule(
         add16,
         "alu",
         ALUOP.Add,
