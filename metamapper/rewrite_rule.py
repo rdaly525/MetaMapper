@@ -6,7 +6,6 @@ class RewriteRule:
     def __call__(self,c,app):
         raise NotImplementedError
 
-
 #Only works with a single debug string
 class Peak1to1(RewriteRule):
     def __init__(self,coreir_prim : coreir.module.Module, peak_prim : coreir.module.Module, prim_instr : peak.ISABuilder, io_mapping):
@@ -42,4 +41,8 @@ class Peak1to1(RewriteRule):
 
         return mapped_instances
 
-
+class PeakIO(RewriteRule):
+    def __init__(self, io_prim : coreir.module.Module):
+        pass
+    def __call__(self,c,app):
+        pass

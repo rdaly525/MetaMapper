@@ -33,24 +33,18 @@ class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
         super(PeakMapper,self).__init__(context,namespace_name)
 
-    def add_peak_primitive(self,prim_name,gen_fn,isa : peak.ISABuilder):
+    def add_peak_primitive(self,prim_name,gen_fn):
         peak_fn = gen_fn(BitVector.get_family())
-        assert hasattr(peak_fn,"_peak_inputs_")
-        assert hasattr(peak_fn,"_peak_outputs_")
         c = self.context
         #Create the coreIR type for this module
         inputs = peak_fn._peak_inputs_
         outputs = peak_fn._peak_outputs_
+        isa = list(peak_fn._peak_isa_.items())[0][1]
         record_params = OrderedDict()
-        inst_cnt = 0
         for (io,bit_dir) in ((inputs,c.BitIn()),(outputs,c.Bit())):
             for name,bvtype in io.items():
-                if not issubclass(bvtype,BitVector):
-                    inst_cnt += 1
-                    continue
                 num_bits = bvtype(0).num_bits
                 record_params[name] = self.context.Array(num_bits,bit_dir)
-        assert inst_cnt == 1, inst_cnt
         modtype = c.Record(record_params)
         
         #Create the modargs for this module
@@ -60,6 +54,10 @@ class PeakMapper(MetaMapper):
         coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
         self.primitives[prim_name] = (coreir_prim,peak_fn,gen_fn,isa)
         return coreir_prim
+    def add_io_primitive(self, width, to_fabric_name, from_fabric_name):
+        self.width = width
+        self.output = to_fabric_name
+        self.input = from_fabric_name
 
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
     def discover_rewrite_rules(self,width):

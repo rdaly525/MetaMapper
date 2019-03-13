@@ -17,7 +17,7 @@ def test_add_rewrite():
     mapper = PeakMapper(c,"alu_ns")
 
     #This adds a peak primitive 
-    Alu = mapper.add_peak_primitive("alu",gen_alu,Inst)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     
     add16 = c.get_namespace("coreir").generators['add'](width=16)
     
@@ -39,7 +39,7 @@ def test_add_rewrite():
 def test_discover():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
-    Alu = mapper.add_peak_primitive("alu",gen_alu, Inst)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_rewrite_rules(width=16)
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
