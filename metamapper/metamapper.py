@@ -3,6 +3,7 @@ from collections import OrderedDict
 from hwtypes import BitVector
 from peak.mapper import gen_mapping
 import peak
+from .rewrite_rule import Peak1to1
 
 class MetaMapper:
 
@@ -15,8 +16,8 @@ class MetaMapper:
     def add_rewrite_rule(self,rule):
         self.rules.append(rule)
 
-    def add_backend_primitive(self, prim : coreir.module.Module):
-        self.primitives[prim.name] = (prim,None)
+    #def add_backend_primitive(self, prim : coreir.module.Module):
+    #    self.primitives[prim.name] = (prim,None)
 
     def map_app(self,app : coreir.module.Module):
         self.context.run_passes(['flatten'])
@@ -25,21 +26,18 @@ class MetaMapper:
             mapped = rule(self.context,app)
             assert isinstance(mapped,dict)
             mapped_instances = {**mapped_instances,**mapped}
+        # Verify that all the instances in the application have the same type as the primitive list.
         return mapped_instances
 
 class PeakMapper(MetaMapper):
-    peak_primitives = {}
     def __init__(self,context : coreir.context,namespace_name):
-        self.context = context
-        self.ns = context.new_namespace(namespace_name)
-        self.primitives = {}
+        super(PeakMapper,self).__init__(context,namespace_name)
 
     def add_peak_primitive(self,prim_name,gen_fn,isa : peak.ISABuilder):
         peak_fn = gen_fn(BitVector.get_family())
         assert hasattr(peak_fn,"_peak_inputs_")
         assert hasattr(peak_fn,"_peak_outputs_")
         c = self.context
-        self.peak_primitives[prim_name] = (peak_fn,gen_fn,isa)
         #Create the coreIR type for this module
         inputs = peak_fn._peak_inputs_
         outputs = peak_fn._peak_outputs_
@@ -60,6 +58,7 @@ class PeakMapper(MetaMapper):
         modparams = c.newParams({isa_name : c.String()})
 
         coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
+        self.primitives[prim_name] = (coreir_prim,peak_fn,gen_fn,isa)
         return coreir_prim
 
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
@@ -89,7 +88,7 @@ class PeakMapper(MetaMapper):
             if gen.params.keys() == {'width'}:
                 mods.append(gen(width=width))
         #for all the peak primitives
-        for pname, (_,gen_fun, pisa) in self.peak_primitives.items():
+        for pname, (peak_prim,_,gen_fun, pisa) in self.primitives.items():
             for mod in mods:
                 if mod.name in __COREIR_MODELS:
                     mappings = list(gen_mapping(
@@ -100,10 +99,12 @@ class PeakMapper(MetaMapper):
                         1,)
                     )
                     if mappings:
-                        print(f'Mappings found for {mod.name}')
-                        inst = mappings['instruction']
-                        coreir_mapping = mappings['coreir to peak']
-                        mod_rule = Rule1to1(
+                        print(f'Mappings found for {mod.name}', mappings)
+                        inst = mappings[0]['instruction']
+                        input_map = mappings[0]['input_map']
+                        output_map = mappings[0]['output_map']
+                        coreir_mapping = {**input_map,**output_map}
+                        mod_rule = Peak1to1(
                             mod,
                             peak_prim,
                             inst,

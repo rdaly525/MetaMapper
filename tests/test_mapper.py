@@ -41,6 +41,11 @@ def test_discover():
     mapper = PeakMapper(c,"alu_ns")
     Alu = mapper.add_peak_primitive("alu",gen_alu, Inst)
     mapper.discover_rewrite_rules(width=16)
+    #test the mapper on simple add4 app
+    app = c.load_from_file("tests/add4.json")
+    print(app)
+    print("instance map",mapper.map_app(app))
+    c.run_passes(['printer'])
 
 #test_add()
 #test_add_rewrite()
