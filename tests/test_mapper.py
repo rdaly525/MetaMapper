@@ -47,6 +47,29 @@ def test_discover():
     print("instance map",mapper.map_app(app))
     c.run_passes(['printer'])
 
+def test_io():
+    c = coreir.Context()
+    mapper = PeakMapper(c,"alu_ns")
+    #This adds a peak primitive 
+    io16 = mapper.add_io_primitive("io16",16,"tofab","fromfab")
+    mapper.add_rewrite_rule(PeakIO(
+        width=16,
+        is_input=True,
+        io_prim=io16
+    ))
+    mapper.add_rewrite_rule(PeakIO(
+        width=16,
+        is_input=False,
+        io_prim=io16
+    ))
+    
+    app = c.load_from_file("tests/add4.json")
+    print(app)
+    app.print_()
+    print("instance map",mapper.map_app(app))
+    app.print_()
+
 #test_add()
 #test_add_rewrite()
-test_discover()
+#test_discover()
+#test_io()

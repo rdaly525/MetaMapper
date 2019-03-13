@@ -42,7 +42,38 @@ class Peak1to1(RewriteRule):
         return mapped_instances
 
 class PeakIO(RewriteRule):
-    def __init__(self, io_prim : coreir.module.Module):
-        pass
-    def __call__(self,c,app):
-        pass
+    #Interpreting is_input as an input to the fabric which indicates the io_port_name is an output
+    def __init__(self, width, is_input, io_prim : coreir.module.Module):
+        io_prim.print_()
+        io_port_name = None
+        for port_name, port_type in io_prim.type.items():
+            if port_type.is_output() and is_input:
+                io_port_name = port_name
+            elif port_type.is_input() and not is_input:
+                io_port_name = port_name
+        assert io_port_name is not None
+
+        assert io_port_name in dict(io_prim.type.items())
+        assert io_prim.type[io_port_name].is_input() == (not is_input)
+        assert io_prim.type[io_port_name].is_output() == is_input
+        self.io_prim = io_prim
+        self.is_input = is_input
+        self.io_port_name = io_port_name
+        self.width = width
+
+    def __call__(self,c,app : coreir.module.Module):
+        mdef = app.definition
+        io = mdef.interface
+        for port_name, port_type in app.type.items():
+            if port_type.size != self.width:
+                continue
+            if port_type.is_input() != self.is_input:
+                continue
+            #This is a valid port
+            pt = mdef.add_passthrough(io.select(port_name))
+            io_inst = mdef.add_module_instance(name=f"io_{port_name}",module=self.io_prim)
+            app.print_()
+            mdef.connect(pt.select("in"),io_inst.select(self.io_port_name))
+            mdef.disconnect(pt.select("in"),io.select(port_name))
+            coreir.inline_instance(pt)
+

@@ -24,15 +24,16 @@ class MetaMapper:
         mapped_instances = {}
         for rule in self.rules:
             mapped = rule(self.context,app)
-            assert isinstance(mapped,dict)
-            mapped_instances = {**mapped_instances,**mapped}
+            if mapped is not None:
+                assert isinstance(mapped,dict)
+                mapped_instances = {**mapped_instances,**mapped}
         # Verify that all the instances in the application have the same type as the primitive list.
         return mapped_instances
 
 class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
         super(PeakMapper,self).__init__(context,namespace_name)
-
+        
     def add_peak_primitive(self,prim_name,gen_fn):
         peak_fn = gen_fn(BitVector.get_family())
         c = self.context
@@ -54,10 +55,19 @@ class PeakMapper(MetaMapper):
         coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
         self.primitives[prim_name] = (coreir_prim,peak_fn,gen_fn,isa)
         return coreir_prim
-    def add_io_primitive(self, width, to_fabric_name, from_fabric_name):
+    def add_io_primitive(self, name, width, to_fabric_name, from_fabric_name):
+        c = self.context
+        self.name = name
         self.width = width
         self.output = to_fabric_name
         self.input = from_fabric_name
+        record_params = OrderedDict()
+        record_params[self.output] = self.context.Array(width,c.Bit())
+        record_params[self.input] = self.context.Array(width,c.BitIn())
+        modtype = c.Record(record_params)
+        io_prim = self.ns.new_module(name,modtype)
+        self.primitives[name] = io_prim
+        return io_prim
 
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
     def discover_rewrite_rules(self,width):
