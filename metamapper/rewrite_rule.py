@@ -15,20 +15,18 @@ class Peak1to1(RewriteRule):
         coreir_def = coreir_prim.new_definition()
         c = coreir_prim.context
         param_name = prim_instr.__class__.__name__
-        print(param_name)
         modvalues = c.new_values({param_name : str(prim_instr)})
 
         peak_inst = coreir_def.add_module_instance(name="inst",module=peak_prim,config=modvalues)
-        peak_inst.type.print_()
         for coreir_port,peak_port in io_mapping.items():
-            print(coreir_port,peak_port)
             pio = peak_inst.select(peak_port)
             cio = coreir_def.interface.select(coreir_port)
             coreir_def.connect(pio,cio)
         self.coredef = coreir_def
 
     #returns a map from instance name to peak instr
-    def __call__(self,c,app):
+    def __call__(self,app : coreir.module.Module):
+        c = app.context
         mdef = app.definition
         assert mdef
         mapped_instances = {}
@@ -44,7 +42,6 @@ class Peak1to1(RewriteRule):
 class PeakIO(RewriteRule):
     #Interpreting is_input as an input to the fabric which indicates the io_port_name is an output
     def __init__(self, width, is_input, io_prim : coreir.module.Module):
-        io_prim.print_()
         io_port_name = None
         for port_name, port_type in io_prim.type.items():
             if port_type.is_output() and is_input:
@@ -61,7 +58,8 @@ class PeakIO(RewriteRule):
         self.io_port_name = io_port_name
         self.width = width
 
-    def __call__(self,c,app : coreir.module.Module):
+    def __call__(self,app : coreir.module.Module):
+        c = app.context
         mdef = app.definition
         io = mdef.interface
         for port_name, port_type in app.type.items():
@@ -71,8 +69,8 @@ class PeakIO(RewriteRule):
                 continue
             #This is a valid port
             pt = mdef.add_passthrough(io.select(port_name))
+            
             io_inst = mdef.add_module_instance(name=f"io_{port_name}",module=self.io_prim)
-            app.print_()
             mdef.connect(pt.select("in"),io_inst.select(self.io_port_name))
             mdef.disconnect(pt.select("in"),io.select(port_name))
             coreir.inline_instance(pt)

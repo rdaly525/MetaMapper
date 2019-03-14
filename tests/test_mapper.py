@@ -15,7 +15,6 @@ def test_add_rewrite():
     #For now keep it in global. but really should have new namespace
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
-
     #This adds a peak primitive 
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     
@@ -32,20 +31,19 @@ def test_add_rewrite():
 
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    print(app)
-    print("instance map",mapper.map_app(app))
+    imap = mapper.map_app(app)
     c.run_passes(['printer'])
 
 def test_discover():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
     Alu = mapper.add_peak_primitive("alu",gen_alu)
-    mapper.discover_rewrite_rules(width=16)
+    mapper.discover_peak_rewrite_rules(width=16)
+    
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    print(app)
-    print("instance map",mapper.map_app(app))
-    c.run_passes(['printer'])
+    imap = mapper.map_app(app)
+    #c.run_passes(['printer'])
 
 def test_io():
     c = coreir.Context()
@@ -63,11 +61,27 @@ def test_io():
         io_prim=io16
     ))
     
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    mapper.discover_peak_rewrite_rules(width=16)
+    #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    print(app)
-    app.print_()
-    print("instance map",mapper.map_app(app))
-    app.print_()
+    imap = mapper.map_app(app)
+    c.run_passes(['printer'])
+
+def test_io_simple():
+    c = coreir.Context()
+    mapper = PeakMapper(c,"alu_ns")
+    #This adds a peak primitive 
+    io16 = mapper.add_io_and_rewrite("io16",16,"tofab","fromfab")
+    
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    mapper.discover_peak_rewrite_rules(width=16)
+    
+    #test the mapper on simple add4 app
+    app = c.load_from_file("tests/add4.json")
+    imap = mapper.map_app(app)
+    c.run_passes(['printer'])
+    
 
 #test_add()
 #test_add_rewrite()
