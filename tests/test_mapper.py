@@ -3,12 +3,13 @@ import coreir
 from metamapper import *
 from hwtypes import BitVector
 
-PE = gen_alu(BitVector.get_family())
 
 def test_add():
+    alu = ALU(BitVector.get_family())
+    Data = alu.Data
     inst = Inst(ALUOP.Add)
-    assert Data(9) == PE(inst,Data(4), Data(5))
-    assert Data(1) == PE(inst,Data(0), Data(1))
+    assert Data(9) == alu(inst,Data(4), Data(5))
+    assert Data(1) == alu(inst,Data(0), Data(1))
 
 def test_add_rewrite():
     #Create an ALU primitive
@@ -16,7 +17,7 @@ def test_add_rewrite():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
     #This adds a peak primitive 
-    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    Alu = mapper.add_peak_primitive("alu",ALU)
     
     add16 = c.get_namespace("coreir").generators['add'](width=16)
     
@@ -37,7 +38,7 @@ def test_add_rewrite():
 def test_discover():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
-    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    Alu = mapper.add_peak_primitive("alu",ALU)
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app
@@ -61,7 +62,7 @@ def test_io():
         io_prim=io16
     ))
     
-    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    Alu = mapper.add_peak_primitive("alu",ALU)
     mapper.discover_peak_rewrite_rules(width=16)
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
@@ -74,7 +75,7 @@ def test_io_simple():
     #This adds a peak primitive 
     io16 = mapper.add_io_and_rewrite("io16",16,"tofab","fromfab")
     
-    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    Alu = mapper.add_peak_primitive("alu",ALU)
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app

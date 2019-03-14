@@ -7,7 +7,6 @@ from .rewrite_rule import Peak1to1, PeakIO
 
 
 class MetaMapper:
-
     def __init__(self,context : coreir.context,namespace_name):
         self.backend_modules = set()
         self.rules = []
@@ -43,13 +42,13 @@ class PeakMapper(MetaMapper):
  
         super(PeakMapper,self).__init__(context,namespace_name)
         
-    def add_peak_primitive(self,prim_name,gen_fn):
-        peak_fn = gen_fn(BitVector.get_family())
+    def add_peak_primitive(self,prim_name,peak_class : peak.Peak):
         c = self.context
+        peak_fn = peak_class.__call__
         #Create the coreIR type for this module
         inputs = peak_fn._peak_inputs_
         outputs = peak_fn._peak_outputs_
-        isa = list(peak_fn._peak_isa_.items())[0][1]
+        isa = peak_fn._peak_isa_[1]
         record_params = OrderedDict()
         for (io,bit_dir) in ((inputs,c.BitIn()),(outputs,c.Bit())):
             for name,bvtype in io.items():
@@ -64,7 +63,7 @@ class PeakMapper(MetaMapper):
         modparams = c.newParams({isa_name : c.String()})
 
         coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
-        self.peak_primitives[prim_name] = (coreir_prim,peak_fn,gen_fn,isa)
+        self.peak_primitives[prim_name] = (coreir_prim, peak_class, isa)
         self.add_backend_primitive(coreir_prim)
         return coreir_prim
 
@@ -125,11 +124,11 @@ class PeakMapper(MetaMapper):
             if gen.params.keys() == {'width'}:
                 mods.append(gen(width=width))
         #for all the peak primitives
-        for pname, (peak_prim,_,gen_fun, pisa) in self.peak_primitives.items():
+        for pname, (peak_prim,peak_class,pisa) in self.peak_primitives.items():
             for mod in mods:
                 if mod.name in __COREIR_MODELS:
                     mappings = list(gen_mapping(
-                        gen_fun,
+                        peak_class,
                         pisa,
                         mod,
                         __COREIR_MODELS[mod.name],
