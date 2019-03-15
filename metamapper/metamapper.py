@@ -1,10 +1,9 @@
 import coreir
 from collections import OrderedDict
-from hwtypes import BitVector, AbstractBit
+from hwtypes import BitVector, AbstractBit, AbstractBitVector
 from peak.mapper import gen_mapping
 import peak
 from .rewrite_rule import Peak1to1, PeakIO
-
 
 class MetaMapper:
     def __init__(self,context : coreir.context,namespace_name):
@@ -19,6 +18,14 @@ class MetaMapper:
 
     def add_backend_primitive(self, prim : coreir.module.Module):
         self.backend_modules.add(prim)
+    
+    def add_const(self,width):
+        c = self.context
+        if width==1:
+            cnst = c.get_namespace("corebit").modules["const"]
+        else:
+            cnst = c.get_namespace("coreir").generators["const"](width=width)
+        self.add_backend_primitive(cnst)
 
     def map_app(self,app : coreir.module.Module):
         self.context.run_passes(['flatten'])
@@ -52,10 +59,13 @@ class PeakMapper(MetaMapper):
         record_params = OrderedDict()
         for (io,bit_dir) in ((inputs,c.BitIn()),(outputs,c.Bit())):
             for name,bvtype in io.items():
-                num_bits = 1
-                if not issubclass(bvtype,AbstractBit):
-                    num_bits = bvtype.size
-                record_params[name] = self.context.Array(num_bits,bit_dir)
+                if issubclass(bvtype,AbstractBit):
+                    btype = bit_dir
+                elif issubclass(bvtype,AbstractBitVector):
+                    btype = self.context.Array(bvtype.size,bit_dir)
+                else:
+                    raise ValueError("Bad type")
+                record_params[name] = btype
         modtype = c.Record(record_params)
         
         #Create the modargs for this module
@@ -96,10 +106,11 @@ class PeakMapper(MetaMapper):
             io_prim=io_prim
         ))
 
-
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
     def discover_peak_rewrite_rules(self,width):
-        
+        #Add constants
+        self.add_const(width)
+        self.add_const(1)
         #TODO replace this with the actual SMT methods
         __COREIR_MODELS = {
             'add' : lambda in0, in1: in0.bvadd(in1),
@@ -135,7 +146,7 @@ class PeakMapper(MetaMapper):
                         1,)
                     )
                     if mappings:
-                        #print(f'Mappings found for {mod.name}', mappings)
+                        print(f'Mappings found for {mod.name}', mappings)
                         inst = mappings[0]['instruction']
                         input_map = mappings[0]['input_map']
                         output_map = mappings[0]['output_map']
@@ -149,7 +160,7 @@ class PeakMapper(MetaMapper):
                         self.add_rewrite_rule(mod_rule)
                     else:
                         pass
-                        #print(f'No Mapping found for {mod.name}')
+                        print(f'No Mapping found for {mod.name}')
                     #print('\n------------------------------------------------\n')
 
     

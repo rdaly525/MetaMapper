@@ -74,7 +74,8 @@ def test_io_simple():
     mapper = PeakMapper(c,"alu_ns")
     #This adds a peak primitive 
     io16 = mapper.add_io_and_rewrite("io16",16,"tofab","fromfab")
-    
+    mapper.add_const(16)
+    mapper.add_const(1)
     Alu = mapper.add_peak_primitive("alu",ALU)
     mapper.discover_peak_rewrite_rules(width=16)
     

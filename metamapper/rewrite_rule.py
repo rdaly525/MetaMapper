@@ -1,5 +1,6 @@
 import coreir
 import peak
+from hwtypes import BitVector
 
 #Represents a single rewrite rule that can be applied to a flattened CoreIR graph
 class RewriteRule:
@@ -9,6 +10,7 @@ class RewriteRule:
 #Only works with a single debug string
 class Peak1to1(RewriteRule):
     def __init__(self,coreir_prim : coreir.module.Module, peak_prim : coreir.module.Module, prim_instr : peak.ISABuilder, io_mapping):
+        print(io_mapping)
         self.coreir_prim = coreir_prim
         self.prim_instr = prim_instr
         #Actually construct the coreir definition
@@ -19,9 +21,13 @@ class Peak1to1(RewriteRule):
 
         peak_inst = coreir_def.add_module_instance(name="inst",module=peak_prim,config=modvalues)
         for coreir_port,peak_port in io_mapping.items():
+            print(coreir_port,peak_port)
             pio = peak_inst.select(peak_port)
-            cio = coreir_def.interface.select(coreir_port)
-            coreir_def.connect(pio,cio)
+            if coreir_port == "0":
+                coreir.connect_const(pio,0)
+            else:
+                cio = coreir_def.interface.select(coreir_port)
+                coreir_def.connect(pio,cio)
         self.coredef = coreir_def
 
     #returns a map from instance name to peak instr
