@@ -46,7 +46,7 @@ class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
         self.peak_primitives = {}
         self.io_primitives = {}
- 
+        self.discover_constraints = []
         super(PeakMapper,self).__init__(context,namespace_name)
         
     def add_peak_primitive(self,prim_name,peak_class : peak.Peak):
@@ -106,8 +106,11 @@ class PeakMapper(MetaMapper):
             io_prim=io_prim
         ))
 
+    def add_discover_constraint(self,fun):
+        assert callable(fun)
+        self.discover_constraints.append(fun)
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
-    def discover_peak_rewrite_rules(self,width):
+    def discover_peak_rewrite_rules(self,width,coreir_primitives=None):
         #Add constants
         self.add_const(width)
         self.add_const(1)
@@ -131,9 +134,14 @@ class PeakMapper(MetaMapper):
         }
         lib = self.context.get_namespace('coreir')
         mods = []
-        for gen in lib.generators.values():
-            if gen.params.keys() == {'width'}:
+        if coreir_primitives:
+            for mname in coreir_primitives:
+                gen = lib.generators[mname]
                 mods.append(gen(width=width))
+        else:
+            for name,gen in lib.generators.items():
+                if gen.params.keys() == {'width'}:
+                    mods.append(gen(width=width))
         #for all the peak primitives
         for pname, (peak_prim,peak_class,pisa) in self.peak_primitives.items():
             for mod in mods:
@@ -143,8 +151,9 @@ class PeakMapper(MetaMapper):
                         pisa,
                         mod,
                         __COREIR_MODELS[mod.name],
-                        1,)
-                    )
+                        1,
+                        constraints=self.discover_constraints
+                    ))
                     if mappings:
                         print(f'Mappings found for {mod.name}', mappings)
                         inst = mappings[0]['instruction']
@@ -159,8 +168,7 @@ class PeakMapper(MetaMapper):
                         )
                         self.add_rewrite_rule(mod_rule)
                     else:
-                        pass
                         print(f'No Mapping found for {mod.name}')
-                    #print('\n------------------------------------------------\n')
+                    print('\n------------------------------------------------\n')
 
     

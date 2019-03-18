@@ -46,6 +46,17 @@ def test_discover():
     imap = mapper.map_app(app)
     #c.run_passes(['printer'])
 
+def test_discover_add():
+    c = coreir.Context()
+    mapper = PeakMapper(c,"alu_ns")
+    Alu = mapper.add_peak_primitive("alu",ALU)
+    mapper.discover_peak_rewrite_rules(width=16,coreir_primitives=["add"])
+    
+    #test the mapper on simple add4 app
+    app = c.load_from_file("tests/add4.json")
+    imap = mapper.map_app(app)
+    #c.run_passes(['printer'])
+
 def test_io():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
