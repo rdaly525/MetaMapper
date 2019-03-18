@@ -1,56 +1,71 @@
 import coreir
 from collections import OrderedDict
-from hwtypes import BitVector
+from hwtypes import BitVector, AbstractBit, AbstractBitVector
 from peak.mapper import gen_mapping
 import peak
-from .rewrite_rule import Peak1to1
+from .rewrite_rule import Peak1to1, PeakIO
 
 class MetaMapper:
-
-    primitives = {}
-    rules = []
     def __init__(self,context : coreir.context,namespace_name):
+        self.backend_modules = set()
+        self.rules = []
+
         self.context = context
         self.ns = context.new_namespace(namespace_name)
     
     def add_rewrite_rule(self,rule):
         self.rules.append(rule)
 
-    #def add_backend_primitive(self, prim : coreir.module.Module):
-    #    self.primitives[prim.name] = (prim,None)
+    def add_backend_primitive(self, prim : coreir.module.Module):
+        self.backend_modules.add(prim)
+    
+    def add_const(self,width):
+        c = self.context
+        if width==1:
+            cnst = c.get_namespace("corebit").modules["const"]
+        else:
+            cnst = c.get_namespace("coreir").generators["const"](width=width)
+        self.add_backend_primitive(cnst)
 
     def map_app(self,app : coreir.module.Module):
         self.context.run_passes(['flatten'])
         mapped_instances = {}
         for rule in self.rules:
-            mapped = rule(self.context,app)
-            assert isinstance(mapped,dict)
-            mapped_instances = {**mapped_instances,**mapped}
+            mapped = rule(app)
+            if mapped is not None:
+                assert isinstance(mapped,dict)
+                mapped_instances = {**mapped_instances,**mapped}
         # Verify that all the instances in the application have the same type as the primitive list.
+        adef = app.definition
+        for inst in adef.instances:
+            if inst.module not in self.backend_modules:
+                raise Exception(f"{inst.name}:{inst.module.name} is not a backend_primitive\n prims: {str([mod.name for mod in self.backend_modules])}")
         return mapped_instances
 
 class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
+        self.peak_primitives = {}
+        self.io_primitives = {}
+        self.discover_constraints = []
         super(PeakMapper,self).__init__(context,namespace_name)
-
-    def add_peak_primitive(self,prim_name,gen_fn,isa : peak.ISABuilder):
-        peak_fn = gen_fn(BitVector.get_family())
-        assert hasattr(peak_fn,"_peak_inputs_")
-        assert hasattr(peak_fn,"_peak_outputs_")
+        
+    def add_peak_primitive(self,prim_name,peak_class : peak.Peak):
         c = self.context
+        peak_fn = peak_class.__call__
         #Create the coreIR type for this module
         inputs = peak_fn._peak_inputs_
         outputs = peak_fn._peak_outputs_
+        isa = peak_fn._peak_isa_[1]
         record_params = OrderedDict()
-        inst_cnt = 0
         for (io,bit_dir) in ((inputs,c.BitIn()),(outputs,c.Bit())):
             for name,bvtype in io.items():
-                if not issubclass(bvtype,BitVector):
-                    inst_cnt += 1
-                    continue
-                num_bits = bvtype(0).num_bits
-                record_params[name] = self.context.Array(num_bits,bit_dir)
-        assert inst_cnt == 1, inst_cnt
+                if issubclass(bvtype,AbstractBit):
+                    btype = bit_dir
+                elif issubclass(bvtype,AbstractBitVector):
+                    btype = self.context.Array(bvtype.size,bit_dir)
+                else:
+                    raise ValueError("Bad type")
+                record_params[name] = btype
         modtype = c.Record(record_params)
         
         #Create the modargs for this module
@@ -58,12 +73,47 @@ class PeakMapper(MetaMapper):
         modparams = c.newParams({isa_name : c.String()})
 
         coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
-        self.primitives[prim_name] = (coreir_prim,peak_fn,gen_fn,isa)
+        self.peak_primitives[prim_name] = (coreir_prim, peak_class, isa)
+        self.add_backend_primitive(coreir_prim)
         return coreir_prim
 
+    def add_io_primitive(self, name, width, to_fabric_name, from_fabric_name):
+        c = self.context
+        self.name = name
+        self.width = width
+        self.output = to_fabric_name
+        self.input = from_fabric_name
+        record_params = OrderedDict()
+        record_params[self.output] = self.context.Array(width,c.Bit())
+        record_params[self.input] = self.context.Array(width,c.BitIn())
+        modtype = c.Record(record_params)
+        io_prim = self.ns.new_module(name,modtype)
+        self.io_primitives[name] = io_prim
+        self.add_backend_primitive(io_prim)
+        return io_prim
+
+    def add_io_and_rewrite(self, name, width, to_fabric_name, from_fabric_name):
+        io_prim = self.add_io_primitive("io16",16,"tofab","fromfab")
+        assert self.context == io_prim.context
+        self.add_rewrite_rule(PeakIO(
+            width=width,
+            is_input=True,
+            io_prim=io_prim
+        ))
+        self.add_rewrite_rule(PeakIO(
+            width=width,
+            is_input=False,
+            io_prim=io_prim
+        ))
+
+    def add_discover_constraint(self,fun):
+        assert callable(fun)
+        self.discover_constraints.append(fun)
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
-    def discover_rewrite_rules(self,width):
-        
+    def discover_peak_rewrite_rules(self,width,coreir_primitives=None):
+        #Add constants
+        self.add_const(width)
+        self.add_const(1)
         #TODO replace this with the actual SMT methods
         __COREIR_MODELS = {
             'add' : lambda in0, in1: in0.bvadd(in1),
@@ -84,20 +134,26 @@ class PeakMapper(MetaMapper):
         }
         lib = self.context.get_namespace('coreir')
         mods = []
-        for gen in lib.generators.values():
-            if gen.params.keys() == {'width'}:
+        if coreir_primitives:
+            for mname in coreir_primitives:
+                gen = lib.generators[mname]
                 mods.append(gen(width=width))
+        else:
+            for name,gen in lib.generators.items():
+                if gen.params.keys() == {'width'}:
+                    mods.append(gen(width=width))
         #for all the peak primitives
-        for pname, (peak_prim,_,gen_fun, pisa) in self.primitives.items():
+        for pname, (peak_prim,peak_class,pisa) in self.peak_primitives.items():
             for mod in mods:
                 if mod.name in __COREIR_MODELS:
                     mappings = list(gen_mapping(
-                        gen_fun,
+                        peak_class,
                         pisa,
                         mod,
                         __COREIR_MODELS[mod.name],
-                        1,)
-                    )
+                        1,
+                        constraints=self.discover_constraints
+                    ))
                     if mappings:
                         print(f'Mappings found for {mod.name}', mappings)
                         inst = mappings[0]['instruction']
