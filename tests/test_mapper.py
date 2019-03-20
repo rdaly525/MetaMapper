@@ -1,12 +1,13 @@
-from peak.alu import *
+from peak.alu import gen_alu, Inst, ALUOP
 import coreir
 from metamapper import *
 from hwtypes import BitVector
 
+ALU = gen_alu(BitVector.get_family())
+Data = BitVector[16]
 
 def test_add():
-    alu = ALU(BitVector.get_family())
-    Data = alu.Data
+    alu = ALU()
     inst = Inst(ALUOP.Add)
     assert Data(9) == alu(inst,Data(4), Data(5))
     assert Data(1) == alu(inst,Data(0), Data(1))
@@ -17,7 +18,7 @@ def test_add_rewrite():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
     #This adds a peak primitive 
-    Alu = mapper.add_peak_primitive("alu",ALU)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     
     add16 = c.get_namespace("coreir").generators['add'](width=16)
     
@@ -38,7 +39,7 @@ def test_add_rewrite():
 def test_discover():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
-    Alu = mapper.add_peak_primitive("alu",ALU)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app
@@ -49,7 +50,7 @@ def test_discover():
 def test_discover_add():
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
-    Alu = mapper.add_peak_primitive("alu",ALU)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16,coreir_primitives=["add"])
     
     #test the mapper on simple add4 app
@@ -73,7 +74,7 @@ def test_io():
         io_prim=io16
     ))
     
-    Alu = mapper.add_peak_primitive("alu",ALU)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
@@ -87,7 +88,7 @@ def test_io_simple():
     io16 = mapper.add_io_and_rewrite("io16",16,"tofab","fromfab")
     mapper.add_const(16)
     mapper.add_const(1)
-    Alu = mapper.add_peak_primitive("alu",ALU)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app

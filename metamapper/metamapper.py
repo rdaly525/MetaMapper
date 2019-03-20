@@ -1,7 +1,7 @@
 import coreir
 from collections import OrderedDict
 from hwtypes import BitVector, AbstractBit, AbstractBitVector
-from peak.mapper import gen_mapping
+from peak.mapper import gen_mapping, SMTBitVector
 import peak
 from .rewrite_rule import Peak1to1, PeakIO
 
@@ -49,8 +49,10 @@ class PeakMapper(MetaMapper):
         self.discover_constraints = []
         super(PeakMapper,self).__init__(context,namespace_name)
         
-    def add_peak_primitive(self,prim_name,peak_class : peak.Peak):
+    def add_peak_primitive(self,prim_name,family_closure):
         c = self.context
+        #Just pass in BitVector to get the class
+        peak_class = family_closure(BitVector.get_family())
         peak_fn = peak_class.__call__
         #Create the coreIR type for this module
         inputs = peak_fn._peak_inputs_
@@ -73,7 +75,7 @@ class PeakMapper(MetaMapper):
         modparams = c.newParams({isa_name : c.String()})
 
         coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
-        self.peak_primitives[prim_name] = (coreir_prim, peak_class, isa)
+        self.peak_primitives[prim_name] = (coreir_prim, family_closure, isa)
         self.add_backend_primitive(coreir_prim)
         return coreir_prim
 
@@ -143,7 +145,9 @@ class PeakMapper(MetaMapper):
                 if gen.params.keys() == {'width'}:
                     mods.append(gen(width=width))
         #for all the peak primitives
-        for pname, (peak_prim,peak_class,pisa) in self.peak_primitives.items():
+        for pname, (peak_prim,family_closure,_pisa) in self.peak_primitives.items():
+            peak_class = family_closure(SMTBitVector.get_family())
+            pisa = peak_class.__call__._peak_isa_[1]
             for mod in mods:
                 if mod.name in __COREIR_MODELS:
                     mappings = list(gen_mapping(
