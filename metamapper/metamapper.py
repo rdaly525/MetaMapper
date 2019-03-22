@@ -117,8 +117,9 @@ class PeakMapper(MetaMapper):
         self.add_const(width)
         self.add_const(1)
         #TODO replace this with the actual SMT methods
-        __COREIR_MODELS = {
+        _COREIR_MODELS_ = {
             'add' : lambda in0, in1: in0.bvadd(in1),
+            'mul' : lambda in0, in1: in0.bvmul(in1),
             'sub' : lambda in0, in1: in0.bvsub(in1),
             'or'  : lambda in0, in1: in0.bvor(in1),
             'and' : lambda in0, in1: in0.bvand(in1),
@@ -149,12 +150,13 @@ class PeakMapper(MetaMapper):
             peak_class = family_closure(SMTBitVector.get_family())
             pisa = peak_class.__call__._peak_isa_[1]
             for mod in mods:
-                if mod.name in __COREIR_MODELS:
+                assert mod.name in _COREIR_MODELS_
+                if mod.name in _COREIR_MODELS_:
                     mappings = list(gen_mapping(
                         peak_class,
                         pisa,
                         mod,
-                        __COREIR_MODELS[mod.name],
+                        _COREIR_MODELS_[mod.name],
                         1,
                         constraints=self.discover_constraints
                     ))
