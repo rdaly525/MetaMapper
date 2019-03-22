@@ -10,7 +10,7 @@ setup(
     maintainer_email='rdaly525@stanford.edu',
     description='A Mapper constructor for CoreIR',
     packages=[
-        "metamapper",
+        "coreir == 2.0.1",
     ],
     install_requires=[],
     python_requires='>=3.6'
