@@ -95,7 +95,7 @@ class PeakMapper(MetaMapper):
         return io_prim
 
     def add_io_and_rewrite(self, name, width, to_fabric_name, from_fabric_name):
-        io_prim = self.add_io_primitive("io16",16,"tofab","fromfab")
+        io_prim = self.add_io_primitive(name,width,to_fabric_name,from_fabric_name)
         assert self.context == io_prim.context
         self.add_rewrite_rule(PeakIO(
             width=width,
