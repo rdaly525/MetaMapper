@@ -28,7 +28,7 @@ class MetaMapper:
         self.add_backend_primitive(cnst)
 
     def map_app(self,app : coreir.module.Module):
-        self.context.run_passes(['flatten'])
+        self.context.run_passes(['flatten','flattentypes'])
         mapped_instances = {}
         for rule in self.rules:
             mapped = rule(app)
