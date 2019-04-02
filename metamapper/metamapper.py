@@ -143,6 +143,9 @@ class PeakMapper(MetaMapper):
                 mods.append(gen(width=width))
         else:
             for name,gen in lib.generators.items():
+                #TODO this is a hack
+                if name not in _COREIR_MODELS_:
+                    continue;
                 if gen.params.keys() == {'width'}:
                     mods.append(gen(width=width))
         #for all the peak primitives
