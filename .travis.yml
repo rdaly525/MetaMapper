@@ -32,8 +32,8 @@ before_install:
 
 
 install:
-- cd peak && pip install -e . && cd -
 - pip install pytest
+- cd peak && pip install -e . && cd -
 - pip install -e .
 script:
 - pytest
