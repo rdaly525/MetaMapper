@@ -33,7 +33,9 @@ def test_add_rewrite():
 
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    imap = mapper.map_app(app)
+    mapper.map_app(app)
+    imap = mapper.extract_instr_map(app)
+    assert len(imap) == 3
     c.run_passes(['printer'])
 
 def test_discover():
@@ -44,8 +46,9 @@ def test_discover():
     
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    imap = mapper.map_app(app)
-    #c.run_passes(['printer'])
+    mapper.map_app(app)
+    imap = mapper.extract_instr_map(app)
+    assert len(imap) == 3
 
 def test_discover_add():
     c = coreir.Context()
@@ -55,8 +58,9 @@ def test_discover_add():
     
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    imap = mapper.map_app(app)
-    #c.run_passes(['printer'])
+    mapper.map_app(app)
+    imap = mapper.extract_instr_map(app)
+    assert len(imap) == 3
 
 def test_io():
     c = coreir.Context()
@@ -76,9 +80,12 @@ def test_io():
     
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
+    
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    imap = mapper.map_app(app)
+    mapper.map_app(app)
+    imap = mapper.extract_instr_map(app)
+    assert len(imap) == 3
     c.run_passes(['printer'])
 
 def test_io_simple():
@@ -93,7 +100,9 @@ def test_io_simple():
     
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/add4.json")
-    imap = mapper.map_app(app)
+    mapper.map_app(app)
+    imap = mapper.extract_instr_map(app)
+    assert len(imap) == 3
     c.run_passes(['printer'])
     
 
