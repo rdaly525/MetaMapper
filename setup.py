@@ -13,8 +13,8 @@ setup(
         "metamapper"
     ],
     install_requires=[
-        "coreir == 2.0.1"
-
+        "coreir == 2.0.1",
+        "peak"
     ],
     python_requires='>=3.6'
 )
