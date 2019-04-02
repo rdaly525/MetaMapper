@@ -19,7 +19,7 @@ class PeakMapper(MetaMapper):
         instr_map = {}
         for rr in self.rules:
             if isinstance(rr,Peak1to1):
-                instr_map = {**instr_map,**rr.instr_map}
+                instr_map.update(rr.instr_map)
         return instr_map
     
     def add_peak_primitive(self,prim_name,family_closure):
