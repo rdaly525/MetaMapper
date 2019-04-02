@@ -19,7 +19,7 @@ class PeakMapper(MetaMapper):
         instr_map = {}
         for rr in self.rules:
             if isinstance(rr,Peak1to1):
-                instr_map = {**instr_map,**rr.instr_map}
+                instr_map.update(rr.instr_map)
         return instr_map
     
     def add_peak_primitive(self,prim_name,family_closure):
@@ -123,14 +123,17 @@ class PeakMapper(MetaMapper):
                     mods.append(gen(width=width))
         #for all the peak primitives
         for pname, (peak_prim,family_closure,_pisa) in self.peak_primitives.items():
-            peak_class = family_closure(SMTBitVector.get_family())
-            pisa = peak_class.__call__._peak_isa_[1]
+            smt_peak_class = family_closure(SMTBitVector.get_family())
+            bv_peak_class = family_closure(BitVector.get_family())
+            smt_isa = smt_peak_class.__call__._peak_isa_[1]
+            bv_isa = bv_peak_class.__call__._peak_isa_[1]
             for mod in mods:
                 assert mod.name in _COREIR_MODELS_
                 if mod.name in _COREIR_MODELS_:
                     mappings = list(gen_mapping(
-                        peak_class,
-                        pisa,
+                        smt_peak_class,
+                        bv_isa,
+                        smt_isa,
                         mod,
                         _COREIR_MODELS_[mod.name],
                         1,
