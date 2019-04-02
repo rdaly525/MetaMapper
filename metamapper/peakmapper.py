@@ -132,8 +132,8 @@ class PeakMapper(MetaMapper):
                 if mod.name in _COREIR_MODELS_:
                     mappings = list(gen_mapping(
                         smt_peak_class,
-                        smt_isa,
                         bv_isa,
+                        smt_isa,
                         mod,
                         _COREIR_MODELS_[mod.name],
                         1,
