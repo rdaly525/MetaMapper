@@ -35,15 +35,21 @@ class Peak1to1(RewriteRule):
         c = app.context
         mdef = app.definition
         assert mdef
-        mapped_instances = {}
-        for inst in mdef.instances:
-            inst_mod = inst.module
-            if inst_mod == self.coreir_prim:
-                mapped_instances[inst.name+"$inst"] = self.prim_instr
-                inst_mod.definition = self.coredef
-                coreir.inline_instance(inst)
-
-        return mapped_instances
+        to_inline = [inst if inst.module==self.coreir_prim for inst in mdef.instances]
+        if len(to_inline)==0:
+            return False
+        self.coreir_prim.definition = self.coredef
+        def get_inst(name):
+            for inst in mdef.instances:
+                if inst.name==name:
+                    return inst
+            raise ValueError(name + " Not found")
+        for inst in to_inline:
+            inst_name = inst.name+"$inst"
+            coreir.inline_instance(inst)
+            inlined_inst = get_inst(inst_name)
+            inlined_inst._peak_instr_ = self.prim_instr
+        return True
 
 class PeakIO(RewriteRule):
     #Interpreting is_input as an input to the fabric which indicates the io_port_name is an output
