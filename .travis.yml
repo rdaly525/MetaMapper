@@ -28,12 +28,14 @@ before_install:
 - conda install pip
 
 # clone the peak repo
-- git clone https://github.com/phanrahan/peak.git
+#- git clone https://github.com/phanrahan/peak.git
 
 
 install:
 - pip install pytest
-- cd peak && pip install -e . && cd -
+- pip install git+git://github.com/leonardt/Pyverilog.git#egg=pyverilog
+- pip install git+git://github.com/phanrahan/peak.git#egg=peak
+  #- cd peak && pip install -e . && cd -
 - pip install -e .
 script:
 - pytest tests/
