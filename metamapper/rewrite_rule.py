@@ -10,7 +10,7 @@ class RewriteRule:
 #Only works with a single debug string
 class Peak1to1(RewriteRule):
     def __init__(self,coreir_prim : coreir.module.Module, peak_prim : coreir.module.Module, prim_instr : peak.ISABuilder, io_mapping):
-        print(io_mapping)
+        self.instr_map = {}
         self.coreir_prim = coreir_prim
         self.prim_instr = prim_instr
         #Actually construct the coreir definition
@@ -30,20 +30,26 @@ class Peak1to1(RewriteRule):
                 coreir_def.connect(pio,cio)
         self.coredef = coreir_def
 
-    #returns a map from instance name to peak instr
+    #returns whether any change occured
     def __call__(self,app : coreir.module.Module):
         c = app.context
         mdef = app.definition
         assert mdef
-        mapped_instances = {}
-        for inst in mdef.instances:
-            inst_mod = inst.module
-            if inst_mod == self.coreir_prim:
-                mapped_instances[inst.name+"$inst"] = self.prim_instr
-                inst_mod.definition = self.coredef
-                coreir.inline_instance(inst)
-
-        return mapped_instances
+        to_inline = [inst for inst in mdef.instances if inst.module==self.coreir_prim ]
+        if len(to_inline)==0:
+            return False
+        self.coreir_prim.definition = self.coredef
+        def get_inst(name):
+            for inst in mdef.instances:
+                if inst.name==name:
+                    return inst
+            raise ValueError(name + " Not found")
+        for inst in to_inline:
+            inst_name = inst.name+"$inst"
+            coreir.inline_instance(inst)
+            #inlined_inst = get_inst(inst_name)
+            self.instr_map[inst_name] = self.prim_instr
+        return len(to_inline)>0
 
 class PeakIO(RewriteRule):
     #Interpreting is_input as an input to the fabric which indicates the io_port_name is an output
@@ -68,11 +74,13 @@ class PeakIO(RewriteRule):
         c = app.context
         mdef = app.definition
         io = mdef.interface
+        modified = False
         for port_name, port_type in app.type.items():
             if port_type.size != self.width:
                 continue
             if port_type.is_input() != self.is_input:
                 continue
+            modified = True
             #This is a valid port
             pt = mdef.add_passthrough(io.select(port_name))
             
@@ -80,4 +88,4 @@ class PeakIO(RewriteRule):
             mdef.connect(pt.select("in"),io_inst.select(self.io_port_name))
             mdef.disconnect(pt.select("in"),io.select(port_name))
             coreir.inline_instance(pt)
-
+        return modified

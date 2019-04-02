@@ -29,18 +29,15 @@ class MetaMapper:
 
     def map_app(self,app : coreir.module.Module):
         self.context.run_passes(['flatten','flattentypes'])
-        mapped_instances = {}
+        changed = False
         for rule in self.rules:
-            mapped = rule(app)
-            if mapped is not None:
-                assert isinstance(mapped,dict)
-                mapped_instances = {**mapped_instances,**mapped}
+            changed |= rule(app)
+        
         # Verify that all the instances in the application have the same type as the primitive list.
         adef = app.definition
         for inst in adef.instances:
             if inst.module not in self.backend_modules:
                 raise Exception(f"{inst.name}:{inst.module.name} is not a backend_primitive\n prims: {str([mod.name for mod in self.backend_modules])}")
-        return mapped_instances
 
 class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
@@ -48,7 +45,14 @@ class PeakMapper(MetaMapper):
         self.io_primitives = {}
         self.discover_constraints = []
         super(PeakMapper,self).__init__(context,namespace_name)
-        
+ 
+    def extract_instr_map(self,app : coreir.module.Module):
+        instr_map = {}
+        for rr in self.rules:
+            if isinstance(rr,Peak1to1):
+                instr_map = {**instr_map,**rr.instr_map}
+        return instr_map
+    
     def add_peak_primitive(self,prim_name,family_closure):
         c = self.context
         #Just pass in BitVector to get the class
