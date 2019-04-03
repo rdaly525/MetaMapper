@@ -22,7 +22,6 @@ class Peak1to1(RewriteRule):
 
         peak_inst = coreir_def.add_module_instance(name="inst",module=peak_prim)
         for coreir_port,peak_port in io_mapping.items():
-            print(coreir_port,peak_port)
             pio = peak_inst.select(peak_port)
             if coreir_port == "0":
                 coreir.connect_const(pio,0)
@@ -44,8 +43,6 @@ class Peak1to1(RewriteRule):
             instr = self.instr_lambda(inst)
             inst_name = inst.name+"$inst"
             coreir.inline_instance(inst)
-            for i in mdef.instances:
-                print(i.name)
             inlined_inst = mdef.get_instance(inst_name)
             inlined_inst.add_metadata("instr_debug",f"\"{str(instr)}\"")
             self.instr_map[inst_name] = instr
