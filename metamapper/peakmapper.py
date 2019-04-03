@@ -43,11 +43,8 @@ class PeakMapper(MetaMapper):
                 record_params[name] = btype
         modtype = c.Record(record_params)
         
-        #Create the modargs for this module
-        isa_name = isa.__name__
-        modparams = c.newParams({isa_name : c.String()})
 
-        coreir_prim = self.ns.new_module(prim_name,modtype,modparams)
+        coreir_prim = self.ns.new_module(prim_name,modtype)
         self.peak_primitives[prim_name] = (coreir_prim, family_closure, isa)
         self.add_backend_primitive(coreir_prim)
         return coreir_prim
