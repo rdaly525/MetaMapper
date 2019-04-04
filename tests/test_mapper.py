@@ -2,6 +2,7 @@ from peak.alu import gen_alu, Inst, ALUOP
 import coreir
 from metamapper import *
 from hwtypes import BitVector
+import pytest
 
 ALU = gen_alu(BitVector.get_family())
 Data = BitVector[16]
@@ -104,7 +105,44 @@ def test_io_simple():
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
     c.run_passes(['printer'])
+
+def test_const():
+    c = coreir.Context()
+    mapper = PeakMapper(c,"alu_ns")
+    #This adds a peak primitive 
+    io16 = mapper.add_io_and_rewrite("io16",16,"tofab","fromfab")
+    mapper.add_const(16)
+    mapper.add_const(1)
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
+    mapper.discover_peak_rewrite_rules(width=16)
     
+    const16 = c.get_namespace("coreir").generators['const'](width=16)
+
+    def instr_lambda(inst):
+        cval = inst.config["value"].value
+        print(cval)
+        return Inst(ALUOP.Sub)
+        
+    #Adds a simple "1 to 1" rewrite rule
+    mapper.add_rewrite_rule(Peak1to1(
+        const16,
+        Alu,
+        instr_lambda,
+        dict(out="alu_res")
+    ))
+    
+    #test the mapper on simple const app
+    app = c.load_from_file("tests/const.json")
+    mapper.map_app(app)
+    imap = mapper.extract_instr_map(app)
+    assert len(imap) == 4
+    assert imap["c1$inst"] == Inst(ALUOP.Sub)
+    c.run_passes(['printer'])
+    #This should have the c1$inst op attached with the ALUOP metadata
+ 
+
+
+#test_const()
 
 #test_add()
 #test_add_rewrite()
