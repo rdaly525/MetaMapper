@@ -13,7 +13,6 @@ class Peak1to1(RewriteRule):
     def __init__(self,coreir_prim : coreir.module.Module, peak_prim : coreir.module.Module, prim_instr : BoundMeta, io_mapping):
         self.instr_map = {}
         self.coreir_prim = coreir_prim
-        print(prim_instr,type(prim_instr),is_adt_type(type(prim_instr)))
         if is_adt_type(type(prim_instr)):
             self.instr_lambda = lambda _ : prim_instr
         else:
