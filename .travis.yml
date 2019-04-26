@@ -39,12 +39,13 @@ install:
 - pysmt-install --check
 - pip install pytest-cov
 - git clone https://github.com/phanrahan/peak.git
-- git clone https://github.com/leonardt/pycoreir.git
+  #- git clone https://github.com/leonardt/pycoreir.git
 - pip install git+git://github.com/leonardt/Pyverilog.git#egg=pyverilog
+- pip install pycoreir
 #- pip install git+git://github.com/phanrahan/magma#egg=magma
 #- pip install git+git://github.com/phanrahan/mantle#egg=mantle
 - pip install -e ./peak
-- pip install -e ./pycoreir
+  #- pip install D-e ./pycoreir
 - pip install -e .
 - pip install hwtypes
 script:
