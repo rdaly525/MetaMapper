@@ -13,14 +13,23 @@ def test_add():
     assert Data(9) == alu(inst,Data(4), Data(5))
     assert Data(1) == alu(inst,Data(0), Data(1))
 
-def test_add_rewrite():
+def test_peak_primitive():
     #Create an ALU primitive
-    #For now keep it in global. but really should have new namespace
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
     #This adds a peak primitive 
     Alu = mapper.add_peak_primitive("alu",gen_alu)
-    
+    assert 'a' in dict(Alu.type.items())
+    assert 'b' in dict(Alu.type.items())
+    assert 'alu_res' in dict(Alu.type.items())
+
+def test_add_rewrite():
+    #Create an ALU primitive
+    c = coreir.Context()
+    mapper = PeakMapper(c,"alu_ns")
+    #This adds a peak primitive 
+    Alu = mapper.add_peak_primitive("alu",gen_alu)
+
     add16 = c.get_namespace("coreir").generators['add'](width=16)
     
     #Adds a simple "1 to 1" rewrite rule
