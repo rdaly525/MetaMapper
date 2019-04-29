@@ -42,7 +42,7 @@ def test_add_rewrite():
     mapper.add_rewrite_rule(add16_rule)
 
     #test the mapper on simple add4 app
-    app = c.load_from_file("tests/add4.json")
+    app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
@@ -55,7 +55,7 @@ def test_discover():
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app
-    app = c.load_from_file("tests/add4.json")
+    app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
@@ -67,7 +67,7 @@ def test_discover_add():
     mapper.discover_peak_rewrite_rules(width=16,coreir_primitives=["add"])
     
     #test the mapper on simple add4 app
-    app = c.load_from_file("tests/add4.json")
+    app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
@@ -92,7 +92,7 @@ def test_io():
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app
-    app = c.load_from_file("tests/add4.json")
+    app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
@@ -109,7 +109,7 @@ def test_io_simple():
     mapper.discover_peak_rewrite_rules(width=16)
     
     #test the mapper on simple add4 app
-    app = c.load_from_file("tests/add4.json")
+    app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
@@ -141,7 +141,7 @@ def test_const():
     ))
     
     #test the mapper on simple const app
-    app = c.load_from_file("tests/const.json")
+    app = c.load_from_file("tests/examples/const.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 4

@@ -3,11 +3,12 @@ from .metamapper import MetaMapper
 from collections import OrderedDict
 from hwtypes import BitVector, AbstractBit, AbstractBitVector
 from peak.mapper import gen_mapping, SMTBitVector
+from peak.auto_assembler import generate_assembler
 import peak
 from .rewrite_rule import Peak1to1, PeakIO
 
 
-
+   
 class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
         self.peak_primitives = {}
@@ -81,8 +82,33 @@ class PeakMapper(MetaMapper):
     def add_discover_constraint(self,fun):
         assert callable(fun)
         self.discover_constraints.append(fun)
+    
+    def add_rr_from_description(self,rr):
+        
+        assert rr['kind'] == "1to1"
+        
+        #get coreir module
+        ns, name = rr['coreir_prim']
+        genargs = rr['genargs']
+        coreir_prim = self.context.get_namespace(ns).generators[name](**genargs)
+        
+        peak_prim, _, isa  = self.peak_primitives[rr['peak_prim']]
+        coreir_mapping = rr['binding']
+        assembler, disassembler, width, layout =  generate_assembler(isa)
+        isize, ival = rr['instr']
+        assert width == isize
+        instr = disassembler(BitVector[isize](ival))
+        
+        mod_rule = Peak1to1(
+            coreir_prim,
+            peak_prim,
+            instr,
+            coreir_mapping
+        )
+        self.add_rewrite_rule(mod_rule)
+
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
-    def discover_peak_rewrite_rules(self,width,coreir_primitives=None):
+    def discover_peak_rewrite_rules(self,width,coreir_primitives=None,serialize=False):
         #Add constants
         self.add_const(width)
         self.add_const(1)
@@ -118,14 +144,20 @@ class PeakMapper(MetaMapper):
                     continue;
                 if gen.params.keys() == {'width'}:
                     mods.append(gen(width=width))
+        
+        #datastructure for serializing
+        #For now just keep them in a list
+        rrs = []
         #for all the peak primitives
         for pname, (peak_prim,family_closure,_pisa) in self.peak_primitives.items():
             smt_peak_class = family_closure(SMTBitVector.get_family())
             bv_peak_class = family_closure(BitVector.get_family())
             smt_isa = smt_peak_class.__call__._peak_isa_[1]
             bv_isa = bv_peak_class.__call__._peak_isa_[1]
+            assembler, _, _, _ =  generate_assembler(bv_isa)
             for mod in mods:
                 assert mod.name in _COREIR_MODELS_
+                genargs = {k:v.value for k,v in mod.generator_args.items()}
                 if mod.name in _COREIR_MODELS_:
                     mappings = list(gen_mapping(
                         smt_peak_class,
@@ -137,20 +169,29 @@ class PeakMapper(MetaMapper):
                         constraints=self.discover_constraints
                     ))
                     if mappings:
-                        print(f'Mappings found for {mod.name}', mappings)
-                        inst = mappings[0]['instruction']
+                        instr = mappings[0]['instruction']
                         input_map = mappings[0]['input_map']
                         output_map = mappings[0]['output_map']
-                        coreir_mapping = {**input_map,**output_map}
-                        mod_rule = Peak1to1(
-                            mod,
-                            peak_prim,
-                            inst,
-                            coreir_mapping
+                        port_binding = {**input_map,**output_map}
+                        assem_instr = assembler(instr)
+                        iwidth,ival = assem_instr.size, int(assem_instr)
+                        rr = dict(
+                            kind="1to1",
+                            coreir_prim = ["coreir",mod.name],
+                            genargs = genargs,
+                            peak_prim = pname,
+                            binding = port_binding,
+                            instr= [iwidth,ival] #size,value
                         )
-                        self.add_rewrite_rule(mod_rule)
+                        rrs.append(rr)
+                        print(f'Mappings found for {mod.name}', rr)
+                        
                     else:
                         print(f'No Mapping found for {mod.name}')
                     print('\n------------------------------------------------\n')
+        if serialize:
+            return rrs
+        else:
+            for rr in rrs:
+                self.add_rr_from_description(rr)
 
-    
