@@ -27,7 +27,7 @@ def test_add_rewrite():
     add16_rule = Peak1to1(
         add16,
         Alu,
-        Inst(),
+        Inst(ALUOP.Add),
         dict(in0='a',in1='b',out="alu_res")
     )
     mapper.add_rewrite_rule(add16_rule)

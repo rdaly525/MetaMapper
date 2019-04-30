@@ -1,18 +1,19 @@
 import coreir
 import peak
-from hwtypes import BitVector
+from hwtypes import BitVector, is_adt_type
+from hwtypes.adt_meta import BoundMeta
 
 #Represents a single rewrite rule that can be applied to a flattened CoreIR graph
 class RewriteRule:
     def __call__(self,c,app):
         raise NotImplementedError
 
-#prim_instr can either be a lambda or an ISABuilder instruction
+#prim_instr can either be a lambda or an adt instruction
 class Peak1to1(RewriteRule):
-    def __init__(self,coreir_prim : coreir.module.Module, peak_prim : coreir.module.Module, prim_instr : peak.ISABuilder, io_mapping):
+    def __init__(self,coreir_prim : coreir.module.Module, peak_prim : coreir.module.Module, prim_instr : BoundMeta, io_mapping):
         self.instr_map = {}
         self.coreir_prim = coreir_prim
-        if isinstance(prim_instr,peak.ISABuilder):
+        if is_adt_type(type(prim_instr)):
             self.instr_lambda = lambda _ : prim_instr
         else:
             self.instr_lambda = prim_instr
