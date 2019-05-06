@@ -8,21 +8,21 @@ import peak
 from .rewrite_rule import Peak1to1, PeakIO
 
 
-   
+
 class PeakMapper(MetaMapper):
     def __init__(self,context : coreir.context,namespace_name):
         self.peak_primitives = {}
         self.io_primitives = {}
         self.discover_constraints = []
         super(PeakMapper,self).__init__(context,namespace_name)
- 
+
     def extract_instr_map(self,app : coreir.module.Module):
         instr_map = {}
         for rr in self.rules:
             if isinstance(rr,Peak1to1):
                 instr_map.update(rr.instr_map)
         return instr_map
-    
+
     def add_peak_primitive(self,prim_name,family_closure):
         c = self.context
         #Just pass in BitVector to get the class
@@ -43,7 +43,7 @@ class PeakMapper(MetaMapper):
                     raise ValueError("Bad type")
                 record_params[name] = btype
         modtype = c.Record(record_params)
-        
+
 
         coreir_prim = self.ns.new_module(prim_name,modtype)
         self.peak_primitives[prim_name] = (coreir_prim, family_closure, isa)
@@ -82,23 +82,23 @@ class PeakMapper(MetaMapper):
     def add_discover_constraint(self,fun):
         assert callable(fun)
         self.discover_constraints.append(fun)
-    
+
     def add_rr_from_description(self,rr):
-        
+
         assert rr['kind'] == "1to1"
-        
+
         #get coreir module
         ns, name = rr['coreir_prim']
         genargs = rr['genargs']
         coreir_prim = self.context.get_namespace(ns).generators[name](**genargs)
-        
+
         peak_prim, _, isa  = self.peak_primitives[rr['peak_prim']]
         coreir_mapping = rr['binding']
         assembler, disassembler, width, layout =  generate_assembler(isa)
         isize, ival = rr['instr']
         assert width == isize
         instr = disassembler(BitVector[isize](ival))
-        
+
         mod_rule = Peak1to1(
             coreir_prim,
             peak_prim,
@@ -108,7 +108,7 @@ class PeakMapper(MetaMapper):
         self.add_rewrite_rule(mod_rule)
 
     #This will automatically discover rewrite rules for the coreir primitives using all the added peak primitives
-    def discover_peak_rewrite_rules(self,width,coreir_primitives=None,serialize=False):
+    def discover_peak_rewrite_rules(self,width,coreir_primitives=None,serialize=False,verbose=False):
         #Add constants
         self.add_const(width)
         self.add_const(1)
@@ -144,7 +144,7 @@ class PeakMapper(MetaMapper):
                     continue;
                 if gen.params.keys() == {'width'}:
                     mods.append(gen(width=width))
-        
+
         #datastructure for serializing
         #For now just keep them in a list
         rrs = []
@@ -166,7 +166,8 @@ class PeakMapper(MetaMapper):
                         mod,
                         _COREIR_MODELS_[mod.name],
                         1,
-                        constraints=self.discover_constraints
+                        constraints=self.discover_constraints,
+                        verbose=verbose
                     ))
                     if mappings:
                         instr = mappings[0]['instruction']
@@ -181,11 +182,12 @@ class PeakMapper(MetaMapper):
                             genargs = genargs,
                             peak_prim = pname,
                             binding = port_binding,
-                            instr= [iwidth,ival] #size,value
+                            instr= [iwidth,ival], #size,value
+                            instr_debug= str(instr)
                         )
                         rrs.append(rr)
                         print(f'Mappings found for {mod.name}', rr)
-                        
+
                     else:
                         print(f'No Mapping found for {mod.name}')
                     print('\n------------------------------------------------\n')

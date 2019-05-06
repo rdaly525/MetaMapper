@@ -32,12 +32,13 @@ def test_add_ser():
             in1='b',
             out="alu_res"
         ),
-        instr= [size,value] #size,value
+        instr= [size,value], #size,value
+        instr_debug = str(add_instr)
     )
     with open('tests/examples/_addrr.json','w') as jfile:
         json.dump(add16_rr,jfile,indent=2)
 
-    
+
     #Create an ALU primitive
     c = coreir.Context()
     mapper = PeakMapper(c,"alu_ns")
@@ -45,7 +46,7 @@ def test_add_ser():
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     with open('tests/examples/_addrr.json','r') as jfile:
         rr = json.load(jfile)
-  
+
     mapper.add_rr_from_description(rr)
 
     #test the mapper on simple add4 app
@@ -64,18 +65,16 @@ def test_ser_discovery():
     assert rrs
     with open('tests/examples/_discover_rr.json','w') as jfile:
         json.dump(rrs,jfile,indent=2)
- 
+
     with open('tests/examples/_discover_rr.json','r') as jfile:
         rrs = json.load(jfile)
-    
+
     for rr in rrs:
         mapper.add_rr_from_description(rr)
-   
+
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
     imap = mapper.extract_instr_map(app)
     assert len(imap) == 3
 
-
-test_ser_discovery()
