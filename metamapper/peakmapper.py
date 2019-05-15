@@ -57,8 +57,13 @@ class PeakMapper(MetaMapper):
         self.output = to_fabric_name
         self.input = from_fabric_name
         record_params = OrderedDict()
-        record_params[self.output] = self.context.Array(width,c.Bit())
-        record_params[self.input] = self.context.Array(width,c.BitIn())
+        if width > 1:
+            record_params[self.output] = c.Array(width,c.Bit())
+            record_params[self.input] = c.Array(width,c.BitIn())
+        else:
+            record_params[self.output] = c.Bit()
+            record_params[self.input] = c.BitIn()
+
         modtype = c.Record(record_params)
         io_prim = self.ns.new_module(name,modtype)
         self.io_primitives[name] = io_prim
