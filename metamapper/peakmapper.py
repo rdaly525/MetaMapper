@@ -119,6 +119,7 @@ class PeakMapper(MetaMapper):
         self.add_const(1)
         #TODO replace this with the actual SMT methods
         _COREIR_MODELS_ = {
+            'mux' : lambda in0, in1, sel: sel.ite(in1,in0),
             'add' : lambda in0, in1: in0.bvadd(in1),
             'mul' : lambda in0, in1: in0.bvmul(in1),
             'sub' : lambda in0, in1: in0.bvsub(in1),
