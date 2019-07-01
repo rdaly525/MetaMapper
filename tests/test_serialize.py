@@ -1,4 +1,4 @@
-from peak.alu import gen_alu, Inst, ALUOP
+from examples.alu import gen_alu, Inst, ALUOP
 from peak.auto_assembler import generate_assembler
 import coreir
 from metamapper import *

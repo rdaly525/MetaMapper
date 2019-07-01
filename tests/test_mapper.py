@@ -1,4 +1,4 @@
-from peak.alu import gen_alu, Inst, ALUOP
+from  examples.alu import gen_alu, Inst, ALUOP
 import coreir
 from metamapper import *
 from hwtypes import BitVector
@@ -31,7 +31,7 @@ def test_add_rewrite():
     Alu = mapper.add_peak_primitive("alu",gen_alu)
 
     add16 = c.get_namespace("coreir").generators['add'](width=16)
-    
+
     #Adds a simple "1 to 1" rewrite rule
     add16_rule = Peak1to1(
         add16,
@@ -53,7 +53,7 @@ def test_discover():
     mapper = PeakMapper(c,"alu_ns")
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
-    
+
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
@@ -65,7 +65,7 @@ def test_discover_add():
     mapper = PeakMapper(c,"alu_ns")
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16,coreir_primitives=["add"])
-    
+
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
@@ -87,10 +87,10 @@ def test_io():
         is_input=False,
         io_prim=io16
     ))
-    
+
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
-    
+
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
@@ -107,7 +107,7 @@ def test_io_simple():
     mapper.add_const(1)
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
-    
+
     #test the mapper on simple add4 app
     app = c.load_from_file("tests/examples/add4.json")
     mapper.map_app(app)
@@ -124,14 +124,14 @@ def test_const():
     mapper.add_const(1)
     Alu = mapper.add_peak_primitive("alu",gen_alu)
     mapper.discover_peak_rewrite_rules(width=16)
-    
+
     const16 = c.get_namespace("coreir").generators['const'](width=16)
 
     def instr_lambda(inst):
         cval = inst.config["value"].value
         print(cval)
         return Inst(ALUOP.Sub)
-        
+
     #Adds a simple "1 to 1" rewrite rule
     mapper.add_rewrite_rule(Peak1to1(
         const16,
@@ -139,7 +139,7 @@ def test_const():
         instr_lambda,
         dict(out="alu_res")
     ))
-    
+
     #test the mapper on simple const app
     app = c.load_from_file("tests/examples/const.json")
     mapper.map_app(app)
@@ -148,7 +148,7 @@ def test_const():
     assert imap["c1$inst"] == Inst(ALUOP.Sub)
     c.run_passes(['printer'])
     #This should have the c1$inst op attached with the ALUOP metadata
- 
+
 
 
 #test_const()
