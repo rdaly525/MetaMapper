@@ -1,5 +1,5 @@
 from examples.alu import gen_alu, Inst, ALUOP
-from peak.auto_assembler import generate_assembler
+from peak.assembler.assembler import Assembler
 import coreir
 from metamapper import *
 import json
@@ -15,11 +15,11 @@ def test_add_ser():
 
     #add16 = c.get_namespace("coreir").generators['add'](width=16)
 
-    assembler, disassembler, width, layout =  generate_assembler(Inst)
+    assembler = Assembler(Inst)
     add_instr = Inst(ALUOP.Add)
-    instr_bv = assembler(add_instr)
+    instr_bv = assembler.assemble(add_instr)
     size, value = instr_bv.size, int(instr_bv)
-    assert disassembler(instr_bv) == add_instr
+    assert assembler.disassemble(instr_bv) == add_instr
 
     #dictionary containing the rewrite rule information:
     add16_rr = dict(

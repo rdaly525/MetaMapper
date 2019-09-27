@@ -3,7 +3,7 @@ from .metamapper import MetaMapper
 from collections import OrderedDict
 from hwtypes import BitVector, AbstractBit, AbstractBitVector
 from peak.mapper import gen_mapping, SMTBitVector
-from peak.auto_assembler import generate_assembler
+from peak.assembler.assembler import Assembler
 import peak
 from .rewrite_rule import Peak1to1, PeakIO
 
@@ -99,10 +99,11 @@ class PeakMapper(MetaMapper):
 
         peak_prim, _, isa  = self.peak_primitives[rr['peak_prim']]
         coreir_mapping = rr['binding']
-        assembler, disassembler, width, layout =  generate_assembler(isa)
+        assembler = Assembler(isa)
+        width = assembler.width
         isize, ival = rr['instr']
         assert width == isize
-        instr = disassembler(BitVector[isize](ival))
+        instr = assembler.disassemble(BitVector[isize](ival))
 
         mod_rule = Peak1to1(
             coreir_prim,
@@ -159,7 +160,7 @@ class PeakMapper(MetaMapper):
             bv_peak_class = family_closure(BitVector.get_family())
             smt_isa = smt_peak_class.__call__._peak_isa_[1]
             bv_isa = bv_peak_class.__call__._peak_isa_[1]
-            assembler, _, _, _ =  generate_assembler(bv_isa)
+            assembler = Assembler(bv_isa)
             for mod in mods:
                 assert mod.name in _COREIR_MODELS_
                 genargs = {k:v.value for k,v in mod.generator_args.items()}
@@ -179,7 +180,7 @@ class PeakMapper(MetaMapper):
                         input_map = mappings[0]['input_map']
                         output_map = mappings[0]['output_map']
                         port_binding = {**input_map,**output_map}
-                        assem_instr = assembler(instr)
+                        assem_instr = assembler.assemble(instr)
                         iwidth,ival = assem_instr.size, int(assem_instr)
                         rr = dict(
                             kind="1to1",
