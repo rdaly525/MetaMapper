@@ -11,11 +11,6 @@ before_install:
 - mkdir deps/bin
 - mkdir deps/lib
 - mkdir deps/include
-# install coreir
-- curl -s -L https://github.com/rdaly525/coreir/releases/latest | grep "href.*coreir-$linux.tar.gz" | cut -d \" -f 2 | xargs -I {} wget https://github.com"{}"
-- mkdir coreir_release;
-- tar -xf coreir-linux.tar.gz -C coreir_release --strip-components 1;
-- cd coreir_release && sudo make install && cd ..
 # install conda
 - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
 - chmod +x miniconda.sh
@@ -28,6 +23,12 @@ before_install:
 - source activate test-env
 - conda install pip
 install:
+# install coreir
+- curl -s -L https://github.com/rdaly525/coreir/releases/latest | grep "href.*coreir-${TRAVIS_OS_NAME}.tar.gz" | cut -d \" -f 2 | xargs -I {} wget https://github.com"{}"
+- mkdir coreir_release;
+- tar -xf coreir-${TRAVIS_OS_NAME}.tar.gz -C coreir_release --strip-components 1;
+- cd coreir_release && sudo make install && cd ..
+
 - pip install pysmt
 - pysmt-install --z3 --confirm-agreement
 - export PYTHONPATH="/home/travis/.smt_solvers/python-bindings-3.6:${PYTHONPATH}"
