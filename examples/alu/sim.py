@@ -1,28 +1,27 @@
-from peak import Peak, name_outputs, PeakNotImplementedError
-import typing as  tp
-from .isa import *
-from hwtypes import TypeFamily
+from peak import Peak, name_outputs, family_closure, assemble
+from .isa import Inst_fc
 
-def gen_alu(family : TypeFamily, width=16):
-    Data = family.BitVector[16]
-    def alu(op : ALUOP, a : Data, b : Data):
-        if op == ALUOP.Add:
-            res = a + b
-        elif op == ALUOP.Sub:
-            res = a-b
-        elif op == ALUOP.And:
-            res = a & b
-        elif op == ALUOP.Or:
-            res = a | b
-        elif op == ALUOP.XOr:
-            res = a ^ b
-        else:
-            raise PeakNotImplementedError(op)
-        return res
+def gen_ALU(width):
+    @family_closure
+    def ALU_fc(family):
+        Data = family.BitVector[width]
+        Inst, OP = Inst_fc(family)
 
-    class ALU(Peak):
-
-        @name_outputs(alu_res=Data)
-        def __call__(self,inst : Inst, a : Data, b : Data):
-            return alu(inst.alu_op,a,b)
-    return ALU
+        @assemble(family, locals(), globals())
+        class ALU(Peak):
+            @name_outputs(alu_res=Data)
+            def __call__(self, inst : Inst, a : Data, b : Data):
+                op = inst.op
+                if op == OP.Add:
+                    res = a + b
+                elif op == OP.Sub:
+                    res = a - b
+                elif op == OP.And:
+                    res = a & b
+                elif op == OP.Or:
+                    res = a | b
+                else: # op == ALUOP.XOr:
+                    res = a ^ b
+                return res
+        return ALU
+    return ALU_fc

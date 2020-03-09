@@ -1,15 +1,15 @@
-from hwtypes.adt import Product, Sum, new_instruction, Enum
-from hwtypes import BitVector
+from peak import Enum_fc, Product_fc, family_closure
 
-Datawidth = 16
-Data = BitVector[Datawidth]
+@family_closure
+def Inst_fc(family):
+    class OP(Enum_fc(family)):
+        Add = 0
+        Sub = 1
+        Or =  2
+        And = 3
+        XOr = 4
 
-class ALUOP(Enum):
-    Add = new_instruction()
-    Sub = new_instruction()
-    Or =  new_instruction()
-    And = new_instruction()
-    XOr = new_instruction()
+    class Inst(Product_fc(family)):
+        op = OP
 
-class Inst(Product):
-    alu_op = ALUOP
+    return Inst, OP
