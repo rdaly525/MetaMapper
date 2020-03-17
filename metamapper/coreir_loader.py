@@ -65,7 +65,7 @@ class Loader:
             self.nodes[("self", n)] = onode
             output_nodes.append(onode)
 
-        self.expr = Expr(output_nodes, input_nodes)
+        self.dag = Dag(output_nodes, input_nodes)
 
     def add_output(self, port_name):
         io = self.mod.definition.interface
@@ -111,4 +111,4 @@ class Loader:
         return dpath[0], dpath[1]
 
 def load_coreir_module(mod):
-    return Loader(mod).expr
+    return Loader(mod).dag

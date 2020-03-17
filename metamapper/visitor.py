@@ -17,6 +17,9 @@ class Dag:
     def outputs(self):
         return self._parents
 
+    def parents(self):
+        yield from self._parents
+
     @property
     def num_outputs(self):
         return self.num_parents
