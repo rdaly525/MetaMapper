@@ -1,5 +1,31 @@
 import coreir
 
+#class Nodes:
+#    def __init__(self):
+#
+#    @abc.abstract
+#
+#
+#class ArchNodes:
+#    def __init__(self, arch: Peak):
+#        pass
+#
+#
+#
+##This will hold rewrite rules where each pattern is in from_nodes and each replacement is in to_nodes
+#class RewriteRuleTable:
+#    def __init__(self, from_nodes : Nodes, to_nodes: Nodes):
+#        pass
+#
+#
+#class Rewriter:
+#    def __init__(self, rrt: RewriteRuleTable):
+#        pass
+#
+#    def apply(self, graph):
+#        pass
+
+
 class MetaMapper:
     def __init__(self,context : coreir.context,namespace_name):
         self.backend_modules = set()

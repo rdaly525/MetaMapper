@@ -4,109 +4,11 @@ from functools import wraps
 import abc
 from enum import Enum
 from collections import OrderedDict
+from .node import create_node, Node, Input, Output
+from .irs.coreir import gen_CoreIR
 
-
-#def is_bitvector(ctype):
-#    return issubclass(ctype, (BitVector, Bit))
-##Node, Select, Expr = gen_multi_output_visited(is_bitvector)
-
-class Node(Visited):
-    def __init__(self, *children):
-        assert len(children) == self.num_inputs
-        self._children = children
-
-    def children(self):
-        yield from self._children
-
-    def inputs(self):
-        return self._children
-
-    @property
-    def num_inputs(self):
-        return len(self.input_names())
-
-    @property
-    def num_outputs(self):
-        return len(self.output_names())
-
-    @abc.abstractmethod
-    def input_names(self):
-        pass
-
-    @abc.abstractmethod
-    def output_names(self):
-        pass
-
-    #def __getitem__(self, key : tp.Union[str,int]):
-    #    if isinstance(key, int):
-    #        assert key in range(self.num_outputs)
-    #        key = tuple(self.Ts.keys())[0]
-    #        return self.__getitem__(key)
-    #    elif isinstance(key, str):
-    #        return Select(self, key)
-
-class Expr(Dag):
-    def __init__(self, outputs, inputs):
-        self.inputs = inputs
-        self.outputs = outputs
-        super().__init__(outputs)
-
-    def outputs(self):
-        return self._parents
-
-    @property
-    def num_outputs(self):
-        return self.num_parents
-
-    @property
-    def num_inputs(self):
-        return len(self.inputs)
-
-class Op(Enum):
-    Add=0
-    Mul=1
-    And=2
-    Or=3
-    Xor=4
-
-class Input(Node):
-    def __init__(self, port_name):
-        self.port_name = port_name
-        super().__init__()
-
-    def input_names(self):
-        return []
-
-    def output_names(self):
-        return [self.port_name]
-
-class Output(Node):
-    def __init__(self, port_name, child):
-        self.port_name = port_name
-        super().__init__(child)
-
-    def input_names(self):
-        return [self.port_name]
-
-    def output_names(self):
-        return []
-
-class Add(Node):
-    def __init__(self, iname, in0, in1):
-        self.iname = iname
-        super().__init__(in0, in1)
-
-    def input_names(self):
-        return ["in0", "in1"]
-
-    def output_names(self):
-        return ["out"]
-
-#class Const(Node):
-#    def __init__(self, value : BitVector):
-#        self.value = value
-#        super().__init__(type(value))
-
+width = 16 #Assumption for now
+CoreIR = gen_CoreIR(width)
 
 #returns input objects and output objects
 def parse_rtype(rtype):
@@ -153,7 +55,7 @@ class Loader:
         input_nodes = []
         for n, t in inputs.items():
             #TODO verify t is a good type
-            inode = Input(n)
+            inode = Input(port_name=n)
             self.nodes[("self", n)] = inode
             input_nodes.append(inode)
 
@@ -169,7 +71,7 @@ class Loader:
         io = self.mod.definition.interface
         iname, iport = self.get_driver(io.select(port_name))
         driver = self.add_node(iname, iport)
-        return Output(port_name, driver)
+        return Output(driver, port_name=port_name)
 
     def add_node(self, iname, iport):
         if iname == "self":
@@ -191,10 +93,12 @@ class Loader:
 
         assert inst.module.namespace.name == 'coreir'
         mkind = inst.module.name
-        if mkind == "add":
-            node = Add(iname, *children)
+        if mkind in CoreIR.dag_nodes:
+            NodeKind = CoreIR.dag_nodes[mkind]
+            node = NodeKind(*children, iname=iname)
         else:
-            assert 0
+            raise Exception(f"Missing {mkind}")
+
         self.nodes[iname] = node
         return node
 

@@ -5,12 +5,14 @@ def gen_ALU(width):
     @family_closure
     def ALU_fc(family):
         Data = family.BitVector[width]
+        SData = family.Signed[width]
         Inst, OP = Inst_fc(family)
 
         @assemble(family, locals(), globals())
         class ALU(Peak):
-            @name_outputs(alu_res=Data)
-            def __call__(self, inst : Inst, a : Data, b : Data):
+            def __call__(self, inst : Inst, a : Data, b : Data) -> Data:
+                a = SData(a)
+                b = SData(b)
                 op = inst.op
                 if op == OP.Add:
                     res = a + b
