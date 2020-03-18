@@ -4,11 +4,12 @@ from functools import wraps
 import abc
 from enum import Enum
 from collections import OrderedDict
-from .node import create_node, Node, Input, Output
 from .irs.coreir import gen_CoreIR
 
 width = 16 #Assumption for now
-CoreIR = gen_CoreIR(width)
+CoreIRNodes = gen_CoreIR(width)
+Input = CoreIRNodes.dag_nodes["Input"]
+Output = CoreIRNodes.dag_nodes["Output"]
 
 #returns input objects and output objects
 def parse_rtype(rtype):
@@ -33,16 +34,13 @@ def parse_rtype(rtype):
 #    elif ct.kind is 'Bit' or et.kind is 'BitIn':
 #        return Bit
 
-#def cache_node(f):
-#    @wraps(f)
-#    def create_node(self,iname,sink=False):
-#        key = (iname,sink)
-#        if key in self.nodes:
-#            return self.nodes[key]
-#        node = f(self,iname,sink)
-#        self.nodes[key] = node
-#        return node
-#    return create_node
+def get_driver(port) -> ("iname", "port"):
+    conns = port.connected_wireables
+    assert len(conns) == 1
+    driver = conns[0]
+    dpath = driver.selectpath
+    assert len(dpath) == 2
+    return dpath[0], dpath[1]
 
 class Loader:
     def __init__(self, mod):
@@ -69,7 +67,7 @@ class Loader:
 
     def add_output(self, port_name):
         io = self.mod.definition.interface
-        iname, iport = self.get_driver(io.select(port_name))
+        iname, iport = get_driver(io.select(port_name))
         driver = self.add_node(iname, iport)
         return Output(driver, port_name=port_name)
 
@@ -87,14 +85,14 @@ class Loader:
         assert iport in outputs
         children = []
         for port, t in inputs.items():
-            dname, dport = self.get_driver(inst.select(port))
+            dname, dport = get_driver(inst.select(port))
             driver = self.add_node(dname, dport)
             children.append(driver)
 
         assert inst.module.namespace.name == 'coreir'
         mkind = inst.module.name
-        if mkind in CoreIR.dag_nodes:
-            NodeKind = CoreIR.dag_nodes[mkind]
+        if mkind in CoreIRNodes.dag_nodes:
+            NodeKind = CoreIRNodes.dag_nodes[mkind]
             node = NodeKind(*children, iname=iname)
         else:
             raise Exception(f"Missing {mkind}")
@@ -102,13 +100,6 @@ class Loader:
         self.nodes[iname] = node
         return node
 
-    def get_driver(self, port) -> ("iname", "port"):
-        conns = port.connected_wireables
-        assert len(conns) == 1
-        driver = conns[0]
-        dpath = driver.selectpath
-        assert len(dpath) == 2
-        return dpath[0], dpath[1]
 
-def load_coreir_module(mod):
+def coreir_module_to_dag(mod):
     return Loader(mod).dag

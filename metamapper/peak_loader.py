@@ -2,10 +2,9 @@ import magma as m
 import peak
 from peak.assembler import Assembler
 from hwtypes import Bit
-from .node import Node, create_node
+from .node import Nodes
 
-#Returns
-def load_from_peak(peak_fc) -> ("dagnode", "magma_circuit"):
+def load_from_peak(nodes: Nodes, peak_fc) -> ("dagnode", "magma_circuit"):
     class HashableDict(dict):
         def __hash__(self):
             return hash(tuple(sorted(self.keys())))
@@ -39,6 +38,6 @@ def load_from_peak(peak_fc) -> ("dagnode", "magma_circuit"):
             outputs.append(p)
         else:
             assert 0
-    dag_node = create_node(Node, peak_bv.__name__, inputs, outputs)
-    return dag_node, peak_m
-
+    node_name = peak_bv.__name__
+    dag_node = nodes.create_dag_node(node_name, inputs, outputs)
+    nodes.add(node_name, dag_node, peak_fc, peak_m)
