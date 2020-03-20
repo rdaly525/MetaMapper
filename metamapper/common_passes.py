@@ -26,3 +26,16 @@ class Printer(Visitor):
         print(f"Output:{node.port_name}({child_ids})")
         Visitor.generic_visit(self, node)
 
+class CheckIfTree(Visitor):
+    def __init__(self, dag):
+        self.parent_cnt = {}
+        super().__init__(dag)
+        self.is_tree = dag.num_outputs==1 and all(cnt <2 for cnt in self.parent_cnt.values())
+
+    def generic_visit(self, node):
+        for child in node.children():
+            self.parent_cnt.setdefault(child, 0)
+            self.parent_cnt[child] += 1
+        Visitor.generic_visit(self, node)
+
+

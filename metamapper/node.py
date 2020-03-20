@@ -108,7 +108,7 @@ class Nodes:
 
 #Defining a few common DagNodes
 CommonNodes = Nodes("Common")
-Input = CommonNodes.create_dag_node("Input", [], [0])
-Output = CommonNodes.create_dag_node("Output", [0], [])
+Input = CommonNodes.create_dag_node("Input", [], [0], ("idx",))
+#Output = CommonNodes.create_dag_node("Output", [0], [])
 Select = CommonNodes.create_dag_node("Select", [0], [0], ("sel_idx",))
 Constant = CommonNodes.create_dag_node("Constant", [], [0], ("value",))

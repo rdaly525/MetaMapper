@@ -4,10 +4,10 @@ from functools import wraps
 import abc
 from enum import Enum
 from collections import OrderedDict
-from .irs.coreir import gen_CoreIR
+from .irs.coreir import gen_CoreIRNodes
 
 width = 16 #Assumption for now
-CoreIRNodes = gen_CoreIR(width)
+CoreIRNodes = gen_CoreIRNodes(width)
 Input = CoreIRNodes.dag_nodes["Input"]
 Output = CoreIRNodes.dag_nodes["Output"]
 

@@ -66,34 +66,38 @@ class Visitor(metaclass=VisitorMeta):
             self.visit(child)
 
 
+#Semantics are if you return None, then do not change anything
+#If you return something then replace current node with that thing
 class Transformer(metaclass=VisitorMeta):
     def __init__(self, dag: Dag):
         self._dag_cache = {}
-        new_outputs = []
         for output in dag.parents():
-            new_outputs.append(self.visit(output))
-        self.outputs = new_outputs
+            self.generic_visit(output)
 
-    def visit(self, data_obj):
-        if data_obj in self._dag_cache:
-            return self._dag_cache[data_obj]
+    def visit(self, node):
+        if node in self._dag_cache:
+            return self._dag_cache[node]
         visited = False
-        for kind_str in data_obj.kind():
+        for kind_str in node.kind():
             visit_name = f"visit_{kind_str}"
             if hasattr(self, visit_name):
-                ret = getattr(self, visit_name)(data_obj)
+                ret = getattr(self, visit_name)(node)
                 visited = True
                 break
         if not visited:
-            ret = self.generic_visit(data_obj)
-        self._dag_cache[data_obj] = ret
+            ret = self.generic_visit(node)
+        if ret is None:
+            ret = node
+        self._dag_cache[node] = ret
+        return ret
 
-    def generic_visit(self, data_obj):
+    def generic_visit(self, node):
         #Modify the current node with the new children
         new_children = []
-        for child in data_obj.children():
+        for child in node.children():
             new_child = self.visit(child)
             assert new_child is not None
             new_children.append(new_child)
-        data_obj.set_children(*new_children)
+        node.set_children(*new_children)
+        return node
 

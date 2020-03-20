@@ -1,7 +1,7 @@
 from .ir import gen_peak_CoreIR
 from ...node import Nodes
 
-def gen_CoreIR(width):
+def gen_CoreIRNodes(width):
     CoreIRNodes = Nodes("CoreIR")
 
     Input = CoreIRNodes.create_dag_node("Input", [], [0], ("port_name",))
