@@ -26,13 +26,6 @@ def parse_rtype(rtype):
 
     return inputs, outputs
 
-#def ctype_to_hwtype(ct):
-#    if ct.kind is 'Array':
-#        et = ct.element_type
-#        assert et.kind is 'Bit' or et.kind is 'BitIn'
-#        return BitVector[ct.size]
-#    elif ct.kind is 'Bit' or et.kind is 'BitIn':
-#        return Bit
 
 def get_driver(port) -> ("iname", "port"):
     conns = port.connected_wireables

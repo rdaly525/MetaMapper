@@ -8,6 +8,8 @@ from metamapper.dag_rewrite import EagerCovering
 import coreir
 from metamapper import coreir_module_to_dag
 from metamapper.visitor import Visitor
+from metamapper.to_magma import dag_to_magma
+import magma as m
 
 def test_rewrite_rule():
     ArchNodes = Nodes("Arch")
@@ -29,8 +31,8 @@ def test_eager_covering():
     assert rr
 
     c = coreir.Context()
-    mod = c.load_from_file("examples/add4.json")
-    dag = coreir_module_to_dag(mod)
+    cmod = c.load_from_file("examples/add4.json")
+    dag = coreir_module_to_dag(cmod)
 
     inst_sel = EagerCovering(table)
 
@@ -55,4 +57,5 @@ def test_eager_covering():
             Visitor.generic_visit(self, node)
     Verify(mapped_dag)
 
-    #mapped_m = dag_to_magma(mapped_dag)
+    mapped_m = dag_to_magma(cmod, mapped_dag, ArchNodes)
+    m.compile("build/add4_mapped", mapped_m, output="coreir")

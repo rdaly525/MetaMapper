@@ -46,23 +46,23 @@ class Visitor(metaclass=VisitorMeta):
         for output in dag.parents():
             self.visit(output)
 
-    def visit(self, data_obj):
-        if data_obj in self._dag_cache:
+    def visit(self, node):
+        if node in self._dag_cache:
             return
         visited = False
-        for kind_str in data_obj.kind():
+        for kind_str in node.kind():
             visit_name = f"visit_{kind_str}"
             if hasattr(self, visit_name):
-                getattr(self, visit_name)(data_obj)
+                getattr(self, visit_name)(node)
                 visited = True
                 break
         if not visited:
-            self.generic_visit(data_obj)
-        self._dag_cache.add(data_obj)
+            self.generic_visit(node)
+        self._dag_cache.add(node)
 
-    def generic_visit(self, data_obj):
+    def generic_visit(self, node):
         #Do nothing for current node
-        for child in data_obj.children():
+        for child in node.children():
             self.visit(child)
 
 
