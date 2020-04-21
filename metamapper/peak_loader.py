@@ -1,6 +1,6 @@
-import magma as m
 import peak
 from peak.assembler import Assembler
+from peak import family
 from hwtypes import Bit
 from .node import Nodes
 
@@ -9,12 +9,12 @@ def load_from_peak(nodes: Nodes, peak_fc) -> ("dagnode", "magma_circuit"):
         def __hash__(self):
             return hash(tuple(sorted(self.keys())))
 
-    peak_m = peak_fc(m.get_family())
+    peak_m = peak_fc(family.MagmaFamily())
 
     #TODO Better way to get the first port name?
     instr_name = list(peak_m.interface.items())[0][0]
 
-    peak_bv = peak_fc(Bit.get_family())
+    peak_bv = peak_fc(family.PyFamily())
     instr_type = peak_bv.input_t.field_dict[instr_name]
     asm = Assembler(instr_type)
     instr_magma_type = type(peak_m.interface.ports[instr_name])

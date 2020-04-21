@@ -1,4 +1,4 @@
-from examples.alu import gen_ALU, Inst_fc
+from examples.alu import gen_ALU, Inst, OP
 from metamapper.peak_loader import load_from_peak
 from metamapper.node import Nodes
 

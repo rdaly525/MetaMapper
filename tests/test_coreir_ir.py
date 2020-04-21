@@ -1,12 +1,13 @@
-from metamapper.irs.coreir import gen_CoreIR
+from metamapper.irs.coreir import gen_CoreIRNodes
 from hwtypes import Bit, BitVector as BV
+from peak import family
 
 def test_coreir_add():
     #Generate an 8 bit coreir
-    ir = gen_CoreIR(8)
-    assert "add" in ir.instructions
-    Add_fc = ir.instructions["add"]
-    Add = Add_fc(Bit.get_family())
+    ir = gen_CoreIRNodes(8)
+    assert "add" in ir.peak_nodes
+    Add_fc = ir.peak_nodes["add"]
+    Add = Add_fc(family.PyFamily())
 
     add = Add()
     assert BV[8](6) == add(BV[8](5), BV[8](1))

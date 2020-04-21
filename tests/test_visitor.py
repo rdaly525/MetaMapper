@@ -1,11 +1,11 @@
 import coreir
-from metamapper import load_coreir_module
+from metamapper import coreir_module_to_dag
 from metamapper.visitor import Visitor
 
 def test_visitor():
     c = coreir.Context()
     mod = c.load_from_file("examples/add4.json")
-    expr = load_coreir_module(mod)
+    expr = coreir_module_to_dag(mod)
 
     class AddID(Visitor):
         def __init__(self, dag):
@@ -41,11 +41,11 @@ def test_visitor():
     print(p.res)
     assert p.res == '''
 0<Output:out>(1)
-1<Add:a1>(2, 5)
-2<Add:a00>(3, 4)
+1<add:a1>(2, 5)
+2<add:a00>(3, 4)
 3<Input:in0>
 4<Input:in1>
-5<Add:a01>(6, 7)
+5<add:a01>(6, 7)
 6<Input:in2>
 7<Input:in3>
 '''

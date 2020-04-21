@@ -18,25 +18,6 @@ def ctype_to_mtype(ct):
         return m.Out(m.Bit)
     assert 0
 
-    #add00 = Alu_m(name="add00")
-    #add01 = Alu_m(name="add01")
-    #add1 = Alu_m(name="add1")
-    #add00.ASYNCRESET @= io.RESET
-    #add01.ASYNCRESET @= io.RESET
-    #add1.ASYNCRESET @= io.RESET
-    #add00.inst @= 2
-    #add01.inst @= 2
-    #add1.inst @= 2
-    #add1.inst @= 2
-    #m.wire(io.in0, add00.a)
-    #m.wire(io.in1, add00.b)
-    #m.wire(io.in2, add01.a)
-    #m.wire(io.in3, add01.b)
-    #m.wire(add00.O, add1.a)
-    #m.wire(add01.O, add1.b)
-    #m.wire(add1.O, io.out)
-
-
 class ToMagma(Visitor):
     def __init__(self, io, dag, nodes):
         self.nodes = nodes
@@ -84,7 +65,7 @@ def dag_to_magma(cmod: "CoreIR.circuit", dag: Dag, nodes: Nodes):
         mIO[pname] = ctype_to_mtype(ct)
 
     #TODO make ALU name generic
-    class ALU(m.Circuit): 
+    class ALU(m.Circuit):
         io = m.IO(**mIO) + m.ClockIO(has_reset=True)
         ToMagma(io, dag, nodes)
 

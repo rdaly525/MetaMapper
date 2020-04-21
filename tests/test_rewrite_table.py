@@ -1,6 +1,6 @@
 from metamapper.irs.coreir import gen_CoreIRNodes
 from metamapper.peak_loader import load_from_peak
-from examples.alu import gen_ALU, Inst_fc
+from examples.alu import gen_ALU, Inst, OP
 from metamapper.node import Nodes
 from metamapper.common_passes import AddID, Printer
 from metamapper.rewrite_table import RewriteTable
@@ -58,4 +58,4 @@ def test_eager_covering():
     Verify(mapped_dag)
 
     mapped_m = dag_to_magma(cmod, mapped_dag, ArchNodes)
-    m.compile("build/add4_mapped", mapped_m, output="coreir")
+    m.compile("tests/build/add4_mapped", mapped_m, output="coreir")

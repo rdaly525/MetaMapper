@@ -1,14 +1,13 @@
-from peak import Peak, name_outputs, family_closure, assemble
-from .isa import Inst_fc
+from peak import Peak, name_outputs, family_closure
+from .isa import Inst, OP
 
 def gen_ALU(width):
     @family_closure
     def ALU_fc(family):
         Data = family.BitVector[width]
         SData = family.Signed[width]
-        Inst, OP = Inst_fc(family)
 
-        @assemble(family, locals(), globals())
+        @family.assemble(locals(), globals())
         class ALU(Peak):
             def __call__(self, inst : Inst, a : Data, b : Data) -> Data:
                 a = SData(a)

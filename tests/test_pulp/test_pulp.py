@@ -25,9 +25,9 @@ print(x.name, x.varValue)
 
 
 
-Lets say I have graph
-Expr = Add(Mul(a,b),c)
-
-T1 = Mul(i0,i1)
-T2 = Add(i0,i1)
-T0 = Add(Mul(i0,i1),i2)
+#Lets say I have graph
+#Expr = Add(Mul(a,b),c)
+#
+#T1 = Mul(i0,i1)
+#T2 = Add(i0,i1)
+#T0 = Add(Mul(i0,i1),i2)
