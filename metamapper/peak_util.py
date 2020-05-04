@@ -70,25 +70,19 @@ def dag_to_peak(nodes: Nodes, dag: Dag):
     raise NotImplementedError("TODO")
     pass
 
-#Creates a new DagNode based off a peak class. returns the name of the node
-def peak_to_node(nodes: Nodes, peak_fc) -> "node_name":
+# Creates a new DagNode (and CoreIR node) based off a peak class.
+# Adds it to the Nodes class and returns the name of the node
+def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
 
-    #Create CoreIR node
-    cmod = peak_to_coreir(peak_fc)
+    #Create CoreIR node if not specified
+    if cmod is None:
+        cmod = peak_to_coreir(peak_fc)
 
     #Create DagNode
-    inputs = []
-    outputs = []
-    for p, T in cmod.type.items():
-        if p in ("CLK", "ASYNCRESET"):
-            continue
-        if T.is_input():
-            inputs.append(p)
-        elif T.is_output():
-            outputs.append(p)
-        else:
-            assert 0
-    node_name = peak_fc(family.PyFamily()).__name__
+    peak_bv = peak_fc(family.PyFamily())
+    inputs = list(peak_bv.input_t.field_dict.keys())
+    outputs = list(peak_bv.output_t.field_dict.keys())
+    node_name = peak_bv.__name__
     dag_node = nodes.create_dag_node(node_name, inputs, outputs, ('iname',))
     nodes.add(node_name, dag_node, peak_fc, cmod)
     return node_name
