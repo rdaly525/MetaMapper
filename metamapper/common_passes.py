@@ -16,9 +16,8 @@ class VerifyNodes(Visitor):
         Visitor.generic_visit(self, node)
 
     def generic_visit(self, node):
-        if not isinstance(node, ArchNodes.dag_node_cls):
-            print(f"{node} is not of type {ArchNodes.dag_node_cls}")
-            assert 0
+        if not isinstance(node, self.nodes.dag_node_cls):
+            raise ValueError(f"{node} is not of type {self.nodes}")
         Visitor.generic_visit(self, node)
 
 class AddID(Visitor):
@@ -38,12 +37,12 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
 
     def visit_Input(self, node):
-        print(f"{node._id_}<Input:{node.port_name}>")
+        print(f"{node._id_}<Input:{node.idx}>")
         Visitor.generic_visit(self, node)
 
     def visit_Output(self, node):
         child_ids = ", ".join([str(child._id_) for child in node.children()])
-        print(f"Output:{node.port_name}({child_ids})")
+        print(f"Output:{node.idx}({child_ids})")
         Visitor.generic_visit(self, node)
 
 class CheckIfTree(Visitor):

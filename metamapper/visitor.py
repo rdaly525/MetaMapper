@@ -42,11 +42,13 @@ class VisitorMeta(type):
 
 class Visitor(metaclass=VisitorMeta):
     def __init__(self, dag: Dag):
+        assert isinstance(dag, Dag)
         self._dag_cache = set()
         for output in dag.parents():
             self.visit(output)
 
-    def visit(self, node):
+    def visit(self, node: Visited):
+        assert isinstance(node, Visited)
         if node in self._dag_cache:
             return
         visited = False
@@ -68,9 +70,12 @@ class Visitor(metaclass=VisitorMeta):
 
 #Semantics are if you return None, then do not change anything
 #If you return something then replace current node with that thing
+#TODO Does replacing even work if you are replacing a Node that has multiple parents??
 class Transformer(metaclass=VisitorMeta):
     def __init__(self, dag: Dag):
+        assert isinstance(dag, Dag)
         self._dag_cache = {}
+        self._dag = {}
         for output in dag.parents():
             self.generic_visit(output)
 
@@ -89,6 +94,7 @@ class Transformer(metaclass=VisitorMeta):
         if ret is None:
             ret = node
         self._dag_cache[node] = ret
+        #TODO inputs and outputs should be replaced appropriately ??
         return ret
 
     def generic_visit(self, node):

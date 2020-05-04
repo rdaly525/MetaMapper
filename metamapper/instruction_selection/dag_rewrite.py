@@ -4,6 +4,7 @@ from ..node import Input
 
 class Clone(Visitor):
     def __init__(self, dag):
+        assert dag is not None
         self.node_map = {}
         super().__init__(dag)
         dag_copy = Dag(

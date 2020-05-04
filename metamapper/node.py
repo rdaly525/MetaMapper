@@ -58,15 +58,26 @@ class Nodes:
         self.dag_nodes = {}
         self.peak_nodes = {}
         self.coreir_modules = {}
-        self.coreir_names = {}
 
+    def __str__(self):
+        return f"Nodes<{self.name}>"
     #returns Node name from coreir module name
-    def get_from_coreir(self, cmod) -> str:
-        raise NotImplementedError("need coreir module name")
+    def name_from_coreir(self, cmod) -> str:
+        print(cmod)
+        print(self.coreir_modules)
+        names = [k for k,v in self.coreir_modules.items() if v == cmod]
+        assert len(names) <2
+        if len(names) == 1:
+            return names[0]
+        return None
 
-    #returns Node name from coreir module name
-    def get_from_peak(self, peak_fc) -> str:
-        raise NotImplementedError("need coreir module name")
+    #returns Node name from coreir module name or None if not found
+    def name_from_peak(self, peak_fc) -> str:
+        names = [k for k,v in self.peak_nodes.items() if v is peak_fc]
+        assert len(names) <2
+        if len(names) == 1:
+            return names[0]
+        return None
 
     #Adds all 3 kinds of nodes under one name
     def add(self, node_name, dag_node, peak_node, mod):
@@ -81,12 +92,14 @@ class Nodes:
         node_cls = self.dag_node_cls
         assert isinstance(inputs, list)
         assert isinstance(outputs, list)
-        assert len(outputs) <=1, "NYI"
+        if len(outputs) > 1:
+            raise NotImplementedError("TODO")
 
         def __init__(self, *args, **kwargs):
             self.set_children(*args)
             self.set_kwargs(**kwargs)
 
+        #TODO Backe in 'iname' as attribute in all nodes
         def set_kwargs(self, **kwargs):
             assert len(kwargs) == len(attrs), f"{kwargs} != {attrs}"
             assert all(attr in kwargs for attr in attrs)
@@ -119,6 +132,6 @@ class Nodes:
 #Defining a few common DagNodes
 CommonNodes = Nodes("Common")
 Input = CommonNodes.create_dag_node("Input", [], [0], ("idx",))
-#Output = CommonNodes.create_dag_node("Output", [0], [])
+Output = CommonNodes.create_dag_node("Output", [0], [], ("idx",))
 Select = CommonNodes.create_dag_node("Select", [0], [0], ("sel_idx",))
 Constant = CommonNodes.create_dag_node("Constant", [], [0], ("value",))

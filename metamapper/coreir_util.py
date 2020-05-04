@@ -6,12 +6,7 @@ import abc
 from enum import Enum
 from collections import OrderedDict
 from .irs.coreir import gen_CoreIRNodes
-from .node import Nodes
-
-width = 16 #Assumption for now
-CoreIRNodes = gen_CoreIRNodes(width)
-Input = CoreIRNodes.dag_nodes["Input"]
-Output = CoreIRNodes.dag_nodes["Output"]
+from .node import Nodes, Input, Output
 
 #returns input objects and output objects
 def parse_rtype(rtype):
@@ -28,7 +23,6 @@ def parse_rtype(rtype):
 
     return inputs, outputs
 
-
 def get_driver(port) -> ("iname", "port"):
     conns = port.connected_wireables
     assert len(conns) == 1
@@ -37,11 +31,9 @@ def get_driver(port) -> ("iname", "port"):
     assert len(dpath) == 2
     return dpath[0], dpath[1]
 
-
 #TODO this is really just coreir module to a dag where the instances in the coreir are nodes in nodes
 class Loader:
     def __init__(self, mod, nodes: Nodes):
-        raise NotImplementedError("Verify all instances are in nodes")
         self.mod = mod
         self.nodes = nodes
         self.c = mod.context
@@ -52,7 +44,7 @@ class Loader:
         input_nodes = []
         for n, t in inputs.items():
             #TODO verify t is a good type
-            inode = Input(port_name=n)
+            inode = Input(idx=n)
             self.node_map[("self", n)] = inode
             input_nodes.append(inode)
 
@@ -67,7 +59,7 @@ class Loader:
         io = self.mod.definition.interface
         iname, iport = get_driver(io.select(port_name))
         driver = self.add_node(iname, iport)
-        return Output(driver, port_name=port_name)
+        return Output(driver, idx=port_name)
 
     def add_node(self, iname, iport):
         if iname == "self":
@@ -87,10 +79,10 @@ class Loader:
             driver = self.add_node(dname, dport)
             children.append(driver)
 
-        assert inst.module.namespace.name == 'coreir'
-        mkind = inst.module.name
-        node_name = self.nodes.from_coreir(mkind)
-        NodeKind = self.dag_nodes[dag_node_name]
+        node_name = self.nodes.name_from_coreir(inst.module)
+        if node_name is None:
+            raise ValueError(f"coreir module {inst.module.name} missing from {self.nodes}")
+        NodeKind = self.nodes.dag_nodes[node_name]
         node = NodeKind(*children, iname=iname)
 
         self.node_map[iname] = node
@@ -129,5 +121,5 @@ def preprocess(cmod):
     raise NotImplementedError("TODO")
 
     #dagify all the primitive_blocks
-    pb_dags = {inst:coreir_module_to_dag(inst.module) for inst in primitive_blocks}
+    pb_dags = {inst:coreir_to_dag(inst.module) for inst in primitive_blocks}
     return pb_dags
