@@ -3,12 +3,13 @@ from peak.assembler import Assembler
 from peak import family
 from peak.mapper import RewriteRule as PeakRule
 from hwtypes import Bit
-from .node import Nodes
-
+from .node import Nodes, DagNode
+from .visitor import Dag
+import coreir
 
 #I basically have the cross product of translating between (dag, node, peak, coreir)
 
-#Wraps this node as a Dag
+#Wraps this node as a Dag.
 def node_to_dag(node: DagNode, rr=None):
     if rr is None:
         raise NotImplementedError("Just want a pure wrapping")
@@ -56,6 +57,15 @@ def peak_to_dag(nodes: Nodes, peak_fc, **kwargs):
     cmod = peak_to_coreir(peak_fc)
     return coreir_module_to_dag(cmod, nodes)
 
+
+
+def magma_to_coreir(mod):
+    backend = m.frontend.coreir_.GetCoreIRBackend(c)
+    backend.compile(mod)
+    cname = mod.coreir_name
+    return backend.modules[cname]
+
+
 def peak_to_coreir(peak_fc) -> coreir.Module:
     raise NotImplementedError("TODO")
     class HashableDict(dict):
@@ -79,13 +89,17 @@ def peak_to_coreir(peak_fc) -> coreir.Module:
         instr_magma_type
     )
 
+    cmod = magma_to_coreir(peak_m)
+
+
+
 #TODO I need a way to go from a Dag to a single Peak class
 def dag_to_peak(nodes: Nodes, dag: Dag):
     raise NotImplementedError("TODO")
     pass
 
 #Creates a new DagNode based off a peak class. returns the name of the node
-def peak_to_node(nodes: Nodes, peak_fc) -> "node_name"
+def peak_to_node(nodes: Nodes, peak_fc) -> "node_name":
 
     #Create CoreIR node
     cmod = peak_to_coreir(peak_fc)

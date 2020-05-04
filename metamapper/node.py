@@ -2,6 +2,7 @@ from .visitor import Visited, Dag
 import abc
 import typing as tp
 
+#I should possibly have Dag is a kind of Node. I am basically recreating coreir
 #Passes will be run on this
 class DagNode(Visited):
     def __init__(self, *children):

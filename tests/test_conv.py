@@ -1,18 +1,14 @@
-from metamapper.irs.coreir import gen_CoreIRNodes
 from examples.alu import gen_ALU, Inst, OP
 
+from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
-
 import metamapper.peak_util as putil
-
 from metamapper.rewrite_table import RewriteTable
-
 from metamapper.node import Nodes
 from metamapper.instruction_selection import GreedyCovering
+from peak.mapper import RewriteRule as PeakRule
 
 import coreir
-
-from peak.mapper import RewriteRule as PeakRule
 
 import typing as tp
 

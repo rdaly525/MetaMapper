@@ -1,5 +1,25 @@
-from metamapper.visitor import Visitor
+from .visitor import Visitor, Dag
+from .node import Nodes
 
+class VerifyNodes(Visitor):
+    def __init__(self, nodes: Nodes, dag: Dag):
+        self.nodes = nodes
+        super().__init__(dag)
+
+    def visit_Input(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Constant(self, node):
+        Visitor.generic_visit(self, node)
+
+    def generic_visit(self, node):
+        if not isinstance(node, ArchNodes.dag_node_cls):
+            print(f"{node} is not of type {ArchNodes.dag_node_cls}")
+            assert 0
+        Visitor.generic_visit(self, node)
 
 class AddID(Visitor):
     def __init__(self, dag):

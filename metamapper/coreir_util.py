@@ -6,6 +6,7 @@ import abc
 from enum import Enum
 from collections import OrderedDict
 from .irs.coreir import gen_CoreIRNodes
+from .node import Nodes
 
 width = 16 #Assumption for now
 CoreIRNodes = gen_CoreIRNodes(width)

@@ -1,29 +1,36 @@
-from metamapper.irs.coreir import gen_CoreIRNodes
-from metamapper.peak_loader import load_from_peak
-from examples.alu import gen_ALU, Inst, OP
-from metamapper.node import Nodes
-from metamapper.common_passes import AddID, Printer
 from metamapper.rewrite_table import RewriteTable
-from metamapper.dag_rewrite import GreedyCovering
+from metamapper.instruction_selection import GreedyCovering
+
+from examples.alu import gen_ALU, Inst, OP
+
+from metamapper.irs.coreir import gen_CoreIRNodes
+import metamapper.coreir_util as cutil
+import metamapper.peak_util as putil
+import metamapper.magma_util as mutil
+from metamapper.rewrite_table import RewriteTable
+from metamapper.node import Nodes
+from metamapper.instruction_selection import GreedyCovering
+from peak.mapper import RewriteRule as PeakRule
+
 import coreir
-from metamapper.coreir_loader import load_from_json
-from metamapper.visitor import Visitor
-from metamapper.to_magma import dag_to_magma
+
+from metamapper.common_passes import AddID, Printer, VerifyNodes
+
 import magma as m
 
-def test_rewrite_rule():
+def test_discover():
     ArchNodes = Nodes("Arch")
-    ALU_fc = gen_ALU(16)
-    load_from_peak(ArchNodes, ALU_fc)
+    arch_fc = gen_ALU(16)
+    name = putil.peak_to_node(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover_1to1_rewrite("add", "ALU")
+    rr = table.discover("add", "ALU")
     assert rr is not None
 
 def test_eager_covering():
     ArchNodes = Nodes("Arch")
-    ALU_fc = gen_ALU(16)
-    load_from_peak(ArchNodes, ALU_fc)
+    arch_fc = gen_ALU(16)
+    name = putil.peak_to_node(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
     rr = table.discover_1to1_rewrite("add", "ALU")
@@ -38,23 +45,7 @@ def test_eager_covering():
     mapped_dag = inst_sel(dag)
     AddID(mapped_dag)
     Printer(mapped_dag)
-
-    class Verify(Visitor):
-        def visit_Input(self, node):
-            Visitor.generic_visit(self, node)
-
-        def visit_Output(self, node):
-            Visitor.generic_visit(self, node)
-
-        def visit_Constant(self, node):
-            Visitor.generic_visit(self, node)
-
-        def generic_visit(self, node):
-            if not isinstance(node, ArchNodes.dag_node_cls):
-                print(f"{node} is not of type {ArchNodes.dag_node_cls}")
-                assert 0
-            Visitor.generic_visit(self, node)
     Verify(mapped_dag)
 
-    mapped_m = dag_to_magma(cmod, mapped_dag, ArchNodes)
+    mapped_m = mutil.dag_to_magma(cmod, mapped_dag, ArchNodes)
     m.compile("tests/build/add4_mapped", mapped_m, output="coreir")

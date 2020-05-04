@@ -1,6 +1,6 @@
-from .visitor import Dag, Visitor, Transformer
-from .rewrite_table import RewriteTable
-from .node import Input
+from ..visitor import Dag, Visitor, Transformer
+from ..rewrite_table import RewriteTable
+from ..node import Input
 
 class Clone(Visitor):
     def __init__(self, dag):

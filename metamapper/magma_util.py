@@ -1,7 +1,7 @@
 import magma as m
 from .visitor import Visitor, Dag
 from .node import Nodes
-from .coreir_loader import parse_rtype
+from .coreir_util import parse_rtype
 from collections import OrderedDict
 
 def ctype_to_mtype(ct):
@@ -70,3 +70,5 @@ def dag_to_magma(cmod: "CoreIR.circuit", dag: Dag, nodes: Nodes):
         ToMagma(io, dag, nodes)
 
     return PE
+
+
