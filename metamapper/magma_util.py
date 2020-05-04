@@ -64,9 +64,9 @@ def dag_to_magma(cmod: "CoreIR.circuit", dag: Dag, nodes: Nodes):
     for pname, ct in {**inputs, **outputs}.items():
         mIO[pname] = ctype_to_mtype(ct)
 
-    #TODO make ALU name generic
-    class ALU(m.Circuit):
+    #TODO make ALU name be cmod.name
+    class PE(m.Circuit):
         io = m.IO(**mIO) + m.ClockIO(has_reset=True)
         ToMagma(io, dag, nodes)
 
-    return ALU
+    return PE

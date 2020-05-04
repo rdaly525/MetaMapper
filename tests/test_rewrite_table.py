@@ -4,9 +4,9 @@ from examples.alu import gen_ALU, Inst, OP
 from metamapper.node import Nodes
 from metamapper.common_passes import AddID, Printer
 from metamapper.rewrite_table import RewriteTable
-from metamapper.dag_rewrite import EagerCovering
+from metamapper.dag_rewrite import GreedyCovering
 import coreir
-from metamapper import coreir_module_to_dag
+from metamapper.coreir_loader import load_from_json
 from metamapper.visitor import Visitor
 from metamapper.to_magma import dag_to_magma
 import magma as m
@@ -20,7 +20,6 @@ def test_rewrite_rule():
     rr = table.discover_1to1_rewrite("add", "ALU")
     assert rr is not None
 
-
 def test_eager_covering():
     ArchNodes = Nodes("Arch")
     ALU_fc = gen_ALU(16)
@@ -31,10 +30,10 @@ def test_eager_covering():
     assert rr
 
     c = coreir.Context()
-    cmod = c.load_from_file("examples/add4.json")
-    dag = coreir_module_to_dag(cmod)
+    dag = load_from_json(c, "examples/add4.json")
+    #dag = coreir_module_to_dag(cmod)
 
-    inst_sel = EagerCovering(table)
+    inst_sel = GreedyCovering(table)
 
     mapped_dag = inst_sel(dag)
     AddID(mapped_dag)

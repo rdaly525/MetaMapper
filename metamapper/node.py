@@ -56,7 +56,16 @@ class Nodes:
         self._node_names = set()
         self.dag_nodes = {}
         self.peak_nodes = {}
-        self.modules = {}
+        self.coreir_modules = {}
+        self.coreir_names = {}
+
+    #returns Node name from coreir module name
+    def get_from_coreir(self, cmod) -> str:
+        raise NotImplementedError("need coreir module name")
+
+    #returns Node name from coreir module name
+    def get_from_peak(self, peak_fc) -> str:
+        raise NotImplementedError("need coreir module name")
 
     #Adds all 3 kinds of nodes under one name
     def add(self, node_name, dag_node, peak_node, mod):

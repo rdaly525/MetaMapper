@@ -45,8 +45,8 @@ class ReplaceInputs(Transformer):
     def visit_Input(self, node):
         return self.ireps[node.idx]
 
-#Given a Dag, eagerly apply each rewrite rule
-class EagerReplace(Transformer):
+#Given a Dag, greedly apply each rewrite rule
+class GreedyReplace(Transformer):
     def __init__(self, rr, dag):
         self.rr = rr
         self.root = rr.tile.outputs[0]
@@ -70,7 +70,7 @@ class EagerReplace(Transformer):
         node_copy = replace_dag_copy.outputs[0]
         return node_copy
 
-class EagerCovering:
+class GreedyCovering:
     def __init__(self, rrt: RewriteTable):
         self.rrt = rrt
 
@@ -79,7 +79,7 @@ class EagerCovering:
         dag = Clone(dag).dag_copy
         for rr in self.rrt.rules:
             #Will update dag in place
-            EagerReplace(rr, dag)
+            GreedyReplace(rr, dag)
         return dag
 
 

@@ -38,4 +38,20 @@ class CheckIfTree(Visitor):
             self.parent_cnt[child] += 1
         Visitor.generic_visit(self, node)
 
+class VerifyMapping(Visitor):
+    def __init__(self, ArchNodes):
+        self.ArchNodes = ArchNodes
 
+    def visit_Input(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Constant(self, node):
+        Visitor.generic_visit(self, node)
+
+    def generic_visit(self, node):
+        if not isinstance(node, self.ArchNodes.dag_node_cls):
+            raise ValueError(f"{node} is not of type {ArchNodes.dag_node_cls}")
+        Visitor.generic_visit(self, node)
