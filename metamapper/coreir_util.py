@@ -1,5 +1,6 @@
 import coreir
-from .visitor import Visited, Dag, DagNode
+from .visitor import Visited, Dag
+from .node import DagNode
 from functools import wraps
 import abc
 from enum import Enum

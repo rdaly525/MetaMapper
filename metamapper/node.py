@@ -73,7 +73,7 @@ class Nodes:
             raise ValueError(f"{node_name} already exists")
         self.dag_nodes[node_name] = dag_node
         self.peak_nodes[node_name] = peak_node
-        self.modules[node_name] = mod
+        self.coreir_modules[node_name] = mod
         self._node_names.add(node_name)
 
     def create_dag_node(self, node_name, inputs, outputs, attrs: tp.List = []):
