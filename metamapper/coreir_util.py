@@ -94,25 +94,14 @@ def coreir_to_dag(nodes: Nodes, cmod):
     return Loader(cmod, nodes).dag
 
 #returns module, and map from instances to dags
-def load_from_json(c, file):
-    c.load_library("commonlib")
-    c.load_library("lakelib")
+def load_from_json(c, file, libraries=[]):
+    for lib in libraries:
+        c.load_library("lib")
     cmod = c.load_from_file(file)
     return cmod
 
-# Hack
-# custom inline the modules I care about (in Python)
-# Run (isolate_coreir, removebulkconnections, flattentypes, 
-
-#  What this needs to do
-#  -Inline all modules that are commonlib but not lakelib
-#    -Ideally mark commonlib generators to be inlined, then call inline pass
-#    -Alternatively, 
-#  Convert module into BitvectorForm:
-#    -Flatten types of only that module (Unneeded for most things)
-#    -removebulkconnections, use_slices/concats/muxes for BV<->Bool interactions
 def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Instance, Dag]:
-    #First inline all commonlib instances (rungenerators for commonlbi first)
+    #First inline all commonlib instances (rungenerators for commonlib first)
     #TODO
 
     c = cmod.context
@@ -129,7 +118,6 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Ins
     #dagify all the primitive_blocks
     pb_dags = {inst:coreir_to_dag(CoreIRNodes, inst.module) for inst in primitive_blocks}
     return pb_dags
-
 
 class ToCoreir(Visitor):
     def __init__(self, nodes: Nodes, def_: coreir.ModuleDef, dag: Dag):
