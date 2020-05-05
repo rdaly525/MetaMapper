@@ -64,11 +64,15 @@ class GreedyReplace(Transformer):
         #Replace current node with a clone of the replacement pattern
         new_children = [None for _ in range(self.rr.tile.num_inputs)]
         for (i, child) in matched:
+            #if hasattr(child, "iname"):
+            #    child.iname = node.iname + child.iname
             new_children[i] = child
         assert all(child is not None for child in new_children)
         replace_dag_copy = Clone(self.rr.replace(None)).dag_copy
         ReplaceInputs(replace_dag_copy, new_children)
         node_copy = replace_dag_copy.outputs[0]
+        if hasattr(node_copy, "iname"):
+            node_copy.iname = node.iname + node_copy.iname
         return node_copy
 
 class GreedyCovering:

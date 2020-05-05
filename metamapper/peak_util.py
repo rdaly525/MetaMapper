@@ -15,7 +15,7 @@ def node_to_dag(node: DagNode):
 
     inputs = [Input(idx=i) for i, name in enumerate(node.input_names())]
     #TODO what if node has multiple outputs?
-    output = node(*inputs, iname=0)
+    output = node(*inputs, iname="i0")
     dag = Dag([output], inputs)
     return dag
 

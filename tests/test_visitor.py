@@ -1,11 +1,14 @@
 import coreir
-from metamapper import coreir_module_to_dag
+from metamapper.coreir_util import coreir_to_dag
 from metamapper.visitor import Visitor
+from metamapper.irs.coreir import gen_CoreIRNodes
+from metamapper import CoreIRContext
 
 def test_visitor():
-    c = coreir.Context()
-    mod = c.load_from_file("examples/add4.json")
-    expr = coreir_module_to_dag(mod)
+    c = CoreIRContext(reset=True)
+    CoreIRNodes = gen_CoreIRNodes(16)
+    cmod = c.load_from_file("examples/add4.json")
+    dag = coreir_to_dag(CoreIRNodes, cmod)
 
     class AddID(Visitor):
         def __init__(self, dag):
@@ -28,17 +31,16 @@ def test_visitor():
             Visitor.generic_visit(self, node)
 
         def visit_Input(self, node):
-            self.res += f"{node._id_}<Input:{node.port_name}>\n"
+            self.res += f"{node._id_}<Input:{node.idx}>\n"
             Visitor.generic_visit(self, node)
 
         def visit_Output(self, node):
             child_ids = ", ".join([str(child._id_) for child in node.children()])
-            self.res += f"{node._id_}<Output:{node.port_name}>({child_ids})\n"
+            self.res += f"{node._id_}<Output:{node.idx}>({child_ids})\n"
             Visitor.generic_visit(self, node)
 
-    AddID(expr)
-    p = Printer(expr)
-    print(p.res)
+    AddID(dag)
+    p = Printer(dag)
     assert p.res == '''
 0<Output:out>(1)
 1<add:a1>(2, 5)

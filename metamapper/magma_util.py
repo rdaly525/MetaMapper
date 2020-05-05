@@ -14,7 +14,7 @@ def ctype_to_mtype(ct):
         assert 0
     elif ct.kind is 'Bit':
         return m.In(m.Bit)
-    elif et.kind is 'BitIn':
+    elif ct.kind is 'BitIn':
         return m.Out(m.Bit)
     assert 0
 

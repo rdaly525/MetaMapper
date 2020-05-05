@@ -1,5 +1,5 @@
 import coreir
-from .visitor import Visited, Dag
+from .visitor import Visited, Dag, Visitor
 from .node import DagNode
 from functools import wraps
 import abc
@@ -7,6 +7,8 @@ from enum import Enum
 from collections import OrderedDict
 from .irs.coreir import gen_CoreIRNodes
 from .node import Nodes, Input, Output
+from . import CoreIRContext
+import typing as tp
 
 #returns input objects and output objects
 def parse_rtype(rtype):
@@ -25,7 +27,7 @@ def parse_rtype(rtype):
 
 def get_driver(port) -> ("iname", "port"):
     conns = port.connected_wireables
-    assert len(conns) == 1
+    assert len(conns) == 1, f"{len(conns)}, {port}"
     driver = conns[0]
     dpath = driver.selectpath
     assert len(dpath) == 2
@@ -109,17 +111,82 @@ def load_from_json(c, file):
 #  Convert module into BitvectorForm:
 #    -Flatten types of only that module (Unneeded for most things)
 #    -removebulkconnections, use_slices/concats/muxes for BV<->Bool interactions
-def preprocess(cmod):
+def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Instance, Dag]:
     #First inline all commonlib instances (rungenerators for commonlbi first)
-    raise NotImplementedError("TODO")
+    #TODO
 
+    c = cmod.context
     #Run isolate_primitives pass
-    c.run_passes("isolate_primtiives")
-
+    c.run_passes(["isolate_primitives"])
     #Find all instances of modules which need to be mapped (All the _.*primitives) modules
     primitive_blocks = []
-    raise NotImplementedError("TODO")
+    assert cmod.definition
+    for inst in cmod.definition.instances:
+        ns_name = inst.module.namespace.name
+        if ns_name == "_":
+            primitive_blocks.append(inst)
 
     #dagify all the primitive_blocks
-    pb_dags = {inst:coreir_to_dag(inst.module) for inst in primitive_blocks}
+    pb_dags = {inst:coreir_to_dag(CoreIRNodes, inst.module) for inst in primitive_blocks}
     return pb_dags
+
+
+class ToCoreir(Visitor):
+    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef, dag: Dag):
+        self.coreir_const = CoreIRContext().get_namespace("coreir").generators["const"]
+        self.nodes = nodes
+        self.def_ = def_
+        self.node_to_inst = {}  # inst is really the output port of the instance
+        super().__init__(dag)
+
+    def visit_Input(self, node):
+        self.node_to_inst[node] = self.def_.interface.select(node.idx)
+
+    def visit_Constant(self, node):
+        bv_val = node.value
+        iname ="c"+str(id(node))
+        const_mod = self.coreir_const(width=bv_val.size)
+        config = CoreIRContext().new_values(fields=dict(value=bv_val))
+        inst = self.def_.add_module_instance(iname, const_mod, config=config)
+        self.node_to_inst[node] = inst.select("out")
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        # create new instance
+        node_kind = type(node).__name__
+        Module = self.nodes.coreir_modules[node_kind]
+
+        #TODO what if this has modparams?
+        inst = self.def_.add_module_instance(node.iname, Module)
+
+        # Wire all the children (inputs)
+        for port, child in zip(node.input_names(), node.children()):
+            child_inst = self.node_to_inst[child]
+            self.def_.connect(child_inst, inst.select(port))
+
+        # TODO assuming single output
+        oport = node.coreir_output_name(0)
+        self.node_to_inst[node] = inst.select(oport)
+
+        # CLK and ASYNC?
+        #inst.ASYNCRESET @= self.io.RESET
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+        child_inst = self.node_to_inst[node.inputs()[0]]
+        output_port = node.idx
+        self.def_.connect(child_inst, self.def_.interface.select(output_port))
+
+#This will construct a coreir module from the dag with ref_type
+def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module) -> coreir.ModuleDef:
+    inputs, outputs = parse_rtype(ref_mod.type)
+
+    #Verify that the dag nodes match the reference type
+    for i, (p, T) in enumerate(inputs.items()):
+        assert dag.inputs[i].idx == p
+
+    for i, (p, T) in enumerate(outputs.items()):
+        assert dag.outputs[i].idx == p
+    def_ = ref_mod.new_definition()
+    ToCoreir(nodes, def_, dag)
+    return def_

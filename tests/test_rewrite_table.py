@@ -1,21 +1,13 @@
-from metamapper.rewrite_table import RewriteTable
-from metamapper.instruction_selection import GreedyCovering
-
-from examples.alu import gen_ALU, Inst, OP
-
+from examples.alu import gen_ALU
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
-import metamapper.magma_util as mutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes
 from metamapper.instruction_selection import GreedyCovering
-from peak.mapper import RewriteRule as PeakRule
 
 from metamapper.common_passes import AddID, Printer, VerifyNodes
 from metamapper import CoreIRContext
-
-import magma as m
 
 def test_discover():
     ArchNodes = Nodes("Arch")
@@ -32,6 +24,8 @@ def verify_and_print(nodes, dag):
     VerifyNodes(nodes, dag)
 
 def test_eager_covering():
+    c = CoreIRContext(reset=True)
+
     ArchNodes = Nodes("Arch")
     arch_fc = gen_ALU(16)
     name = putil.peak_to_node(ArchNodes, arch_fc)
@@ -40,7 +34,6 @@ def test_eager_covering():
     rr = table.discover("add", "ALU")
     assert rr
 
-    c = CoreIRContext()
     cmod = cutil.load_from_json(c, "examples/add4.json")
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
     verify_and_print(CoreIRNodes, dag)

@@ -40,6 +40,11 @@ class DagNode(Visited):
     def copy(self):
         pass
 
+    def coreir_output_name(self, idx):
+        if self.num_outputs()==1:
+            return "O"
+        else:
+            raise NotImplementedError("TODO")
 #A container for all the kinds of nodes (DagNodes, peakNodes, and modules)
 #Each container has a particular name (CoreIR, Lassen, etc...) and has an associated unique DagNode Class <class CoreIR(DagNode): pass>
 class Nodes:
@@ -63,8 +68,6 @@ class Nodes:
         return f"Nodes<{self.name}>"
     #returns Node name from coreir module name
     def name_from_coreir(self, cmod) -> str:
-        print(cmod)
-        print(self.coreir_modules)
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
         assert len(names) <2
         if len(names) == 1:
