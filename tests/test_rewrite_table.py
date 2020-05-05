@@ -1,61 +1,47 @@
+from examples.alu import gen_ALU
 from metamapper.irs.coreir import gen_CoreIRNodes
-from metamapper.peak_loader import load_from_peak
-from examples.alu import gen_ALU, Inst, OP
-from metamapper.node import Nodes
-from metamapper.common_passes import AddID, Printer
+import metamapper.coreir_util as cutil
+import metamapper.peak_util as putil
 from metamapper.rewrite_table import RewriteTable
-from metamapper.dag_rewrite import EagerCovering
-import coreir
-from metamapper import coreir_module_to_dag
-from metamapper.visitor import Visitor
-from metamapper.to_magma import dag_to_magma
-import magma as m
+from metamapper.node import Nodes
+from metamapper.instruction_selection import GreedyCovering
 
-def test_rewrite_rule():
+from metamapper.common_passes import AddID, Printer, VerifyNodes
+from metamapper import CoreIRContext
+
+def test_discover():
     ArchNodes = Nodes("Arch")
-    ALU_fc = gen_ALU(16)
-    load_from_peak(ArchNodes, ALU_fc)
+    arch_fc = gen_ALU(16)
+    name = putil.peak_to_node(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover_1to1_rewrite("add", "ALU")
+    rr = table.discover("add", name)
     assert rr is not None
 
+def verify_and_print(nodes, dag):
+    AddID(dag)
+    Printer(dag)
+    VerifyNodes(nodes, dag)
 
 def test_eager_covering():
+    c = CoreIRContext(reset=True)
+
     ArchNodes = Nodes("Arch")
-    ALU_fc = gen_ALU(16)
-    load_from_peak(ArchNodes, ALU_fc)
+    arch_fc = gen_ALU(16)
+    name = putil.peak_to_node(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover_1to1_rewrite("add", "ALU")
+    rr = table.discover("add", "ALU")
     assert rr
 
-    c = coreir.Context()
-    cmod = c.load_from_file("examples/add4.json")
-    dag = coreir_module_to_dag(cmod)
+    cmod = cutil.load_from_json(c, "examples/add4.json")
+    dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
+    verify_and_print(CoreIRNodes, dag)
 
-    inst_sel = EagerCovering(table)
+    inst_sel = GreedyCovering(table)
 
     mapped_dag = inst_sel(dag)
-    AddID(mapped_dag)
-    Printer(mapped_dag)
+    verify_and_print(ArchNodes, mapped_dag)
 
-    class Verify(Visitor):
-        def visit_Input(self, node):
-            Visitor.generic_visit(self, node)
-
-        def visit_Output(self, node):
-            Visitor.generic_visit(self, node)
-
-        def visit_Constant(self, node):
-            Visitor.generic_visit(self, node)
-
-        def generic_visit(self, node):
-            if not isinstance(node, ArchNodes.dag_node_cls):
-                print(f"{node} is not of type {ArchNodes.dag_node_cls}")
-                assert 0
-            Visitor.generic_visit(self, node)
-    Verify(mapped_dag)
-
-    mapped_m = dag_to_magma(cmod, mapped_dag, ArchNodes)
-    m.compile("tests/build/add4_mapped", mapped_m, output="coreir")
+    #mapped_m = mutil.dag_to_magma(cmod, mapped_dag, ArchNodes)
+    #m.compile("tests/build/add4_mapped", mapped_m, output="coreir")

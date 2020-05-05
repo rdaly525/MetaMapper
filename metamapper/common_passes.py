@@ -1,5 +1,24 @@
-from metamapper.visitor import Visitor
+from .visitor import Visitor, Dag
+from .node import Nodes
 
+class VerifyNodes(Visitor):
+    def __init__(self, nodes: Nodes, dag: Dag):
+        self.nodes = nodes
+        super().__init__(dag)
+
+    def visit_Input(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Constant(self, node):
+        Visitor.generic_visit(self, node)
+
+    def generic_visit(self, node):
+        if not isinstance(node, self.nodes.dag_node_cls):
+            raise ValueError(f"{node} is not of type {self.nodes}")
+        Visitor.generic_visit(self, node)
 
 class AddID(Visitor):
     def __init__(self, dag):
@@ -18,12 +37,12 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
 
     def visit_Input(self, node):
-        print(f"{node._id_}<Input:{node.port_name}>")
+        print(f"{node._id_}<Input:{node.idx}>")
         Visitor.generic_visit(self, node)
 
     def visit_Output(self, node):
         child_ids = ", ".join([str(child._id_) for child in node.children()])
-        print(f"Output:{node.port_name}({child_ids})")
+        print(f"Output:{node.idx}({child_ids})")
         Visitor.generic_visit(self, node)
 
 class CheckIfTree(Visitor):
@@ -38,4 +57,20 @@ class CheckIfTree(Visitor):
             self.parent_cnt[child] += 1
         Visitor.generic_visit(self, node)
 
+class VerifyMapping(Visitor):
+    def __init__(self, ArchNodes):
+        self.ArchNodes = ArchNodes
 
+    def visit_Input(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_Constant(self, node):
+        Visitor.generic_visit(self, node)
+
+    def generic_visit(self, node):
+        if not isinstance(node, self.ArchNodes.dag_node_cls):
+            raise ValueError(f"{node} is not of type {ArchNodes.dag_node_cls}")
+        Visitor.generic_visit(self, node)
