@@ -95,7 +95,8 @@ def coreir_to_dag(nodes: Nodes, cmod):
     return Loader(cmod, nodes).dag
 
 #returns module, and map from instances to dags
-def load_from_json(c, file, libraries=[]):
+def load_from_json(file, libraries=[]):
+    c = CoreIRContext()
     for lib in libraries:
         c.load_library("lib")
     cmod = c.load_from_file(file)
