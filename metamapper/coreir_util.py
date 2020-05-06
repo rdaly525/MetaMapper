@@ -85,7 +85,8 @@ class Loader:
         if node_name is None:
             raise ValueError(f"coreir module {inst.module.name} missing from {self.nodes}")
         NodeKind = self.nodes.dag_nodes[node_name]
-        node = NodeKind(*children, iname=iname)
+        modparams = {k: v.value for k,v in inst.config.items()}
+        node = NodeKind(*children, iname=iname, **modparams)
 
         self.node_map[iname] = node
         return node
@@ -94,7 +95,8 @@ def coreir_to_dag(nodes: Nodes, cmod):
     return Loader(cmod, nodes).dag
 
 #returns module, and map from instances to dags
-def load_from_json(c, file, libraries=[]):
+def load_from_json(file, libraries=[]):
+    c = CoreIRContext()
     for lib in libraries:
         c.load_library("lib")
     cmod = c.load_from_file(file)
@@ -143,8 +145,8 @@ class ToCoreir(Visitor):
         # create new instance
         node_kind = type(node).__name__
         Module = self.nodes.coreir_modules[node_kind]
-
         #TODO what if this has modparams?
+
         inst = self.def_.add_module_instance(node.iname, Module)
 
         # Wire all the children (inputs)

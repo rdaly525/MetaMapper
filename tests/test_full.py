@@ -9,9 +9,7 @@ from metamapper.coreir_mapper import Mapper
 
 import pytest
 
-#This is going to write out the full flow
-
-@pytest.mark.parametrize("app", ["add4",])
+@pytest.mark.parametrize("app", ["add4", "add_const"])
 def test_app(app):
     c = CoreIRContext(reset=True)
     file_name = f"examples/{app}.json"
@@ -21,7 +19,6 @@ def test_app(app):
     putil.peak_to_node(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     mapper = Mapper(CoreIRNodes, ArchNodes)
-
-    cmod = cutil.load_from_json(c, file_name)
+    cmod = cutil.load_from_json(file_name)
     mapped_mod = mapper.do_mapping(cmod)
     mapped_mod.save_to_file(f"tests/build/{app}_mapped.json")

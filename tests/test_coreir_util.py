@@ -4,9 +4,9 @@ from metamapper import CoreIRContext
 from metamapper.irs.coreir import gen_CoreIRNodes
 
 def test_coreir_to_dag():
-    c = CoreIRContext(reset=True)
+    CoreIRContext(reset=True)
     CoreIRNodes = gen_CoreIRNodes(16)
-    cmod = cutil.load_from_json(c, "examples/add4.json")
+    cmod = cutil.load_from_json("examples/add4.json")
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
     VerifyNodes(CoreIRNodes, dag)
     for i in range(4):

@@ -62,6 +62,7 @@ def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
             instr_magma_type
         )
 
+    #TODO This  compilation is sometimes cached.
     cmod = magma_to_coreir(peak_m)
     return cmod
 
@@ -80,9 +81,16 @@ def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
 
     #Create DagNode
     peak_bv = peak_fc(family.PyFamily())
+
+    dag_attrs = ('iname',)
+    #I can easily filter modparams here
     inputs = list(peak_bv.input_t.field_dict.keys())
+    if "modparams" in inputs:
+        inputs.remove("modparams")
+        dag_attrs += tuple(peak_bv.input_t.modparams.field_dict.keys())
+
     outputs = list(peak_bv.output_t.field_dict.keys())
     node_name = peak_bv.__name__
-    dag_node = nodes.create_dag_node(node_name, inputs, outputs, ('iname',))
+    dag_node = nodes.create_dag_node(node_name, inputs, outputs, dag_attrs)
     nodes.add(node_name, dag_node, peak_fc, cmod)
     return node_name

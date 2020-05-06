@@ -24,7 +24,7 @@ def verify_and_print(nodes, dag):
     VerifyNodes(nodes, dag)
 
 def test_eager_covering():
-    c = CoreIRContext(reset=True)
+    CoreIRContext(reset=True)
 
     ArchNodes = Nodes("Arch")
     arch_fc = gen_ALU(16)
@@ -34,7 +34,7 @@ def test_eager_covering():
     rr = table.discover("add", "ALU")
     assert rr
 
-    cmod = cutil.load_from_json(c, "examples/add4.json")
+    cmod = cutil.load_from_json("examples/add4.json")
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
     verify_and_print(CoreIRNodes, dag)
 
