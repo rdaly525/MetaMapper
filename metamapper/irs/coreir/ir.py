@@ -1,21 +1,23 @@
 from peak.ir import IR
 from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
-from peak import Peak, name_outputs
+from peak import Peak, name_outputs, family_closure
 
 def gen_peak_CoreIR(width):
     CoreIR = IR()
 
-    Data = BitVector[width]
-    class ConstModParams(Product):
-        value_=Data
+    @family_closure
+    def const_fc(family):
+        Data = family.BitVector[width]
+        class ConstModParams(Product):
+            value=Data
+        class const(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, modparams : ConstModParams):
+                return modparams.value
+        return const
 
-    class const(Peak):
-        @name_outputs(out=Data)
-        def __call__(self, modparams : ConstModParams):
-            return modparams.value_
-
-    CoreIR.add_instruction("const", const)
+    CoreIR.add_instruction("const", const_fc)
 
     class UnaryInput(Product):
         in0=BitVector[width]

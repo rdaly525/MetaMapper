@@ -91,7 +91,7 @@ class Nodes:
         self.coreir_modules[node_name] = mod
         self._node_names.add(node_name)
 
-    def create_dag_node(self, node_name, inputs, outputs, attrs: tp.List = []):
+    def create_dag_node(self, node_name, inputs, outputs, attrs: tp.List = [], other_parents = ()):
         node_cls = self.dag_node_cls
         assert isinstance(inputs, list)
         assert isinstance(outputs, list)
@@ -105,7 +105,7 @@ class Nodes:
         #TODO Backe in 'iname' as attribute in all nodes
         def set_kwargs(self, **kwargs):
             assert len(kwargs) == len(attrs), f"{kwargs} != {attrs}"
-            assert all(attr in kwargs for attr in attrs)
+            assert all(attr in kwargs for attr in attrs), f"{kwargs} != {attrs}"
             for attr in attrs:
                 setattr(self, attr, kwargs[attr])
 
@@ -122,7 +122,7 @@ class Nodes:
         def output_names(cls):
             return outputs
 
-        node = type(node_name, (node_cls,), dict(
+        node = type(node_name, (node_cls,) + other_parents, dict(
             _attrs_=attrs,
             __init__=__init__,
             set_kwargs=set_kwargs,

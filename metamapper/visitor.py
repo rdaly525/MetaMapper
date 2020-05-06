@@ -2,7 +2,7 @@ class Visited(object):
 
     #Defaults to the class name
     def kind(self) -> str:
-        return [type(self).__name__]
+        return [cls.__name__ for cls in type(self).mro()][:-1]
 
     def children(self):
         raise NotImplemented()
