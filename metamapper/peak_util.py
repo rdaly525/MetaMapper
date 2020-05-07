@@ -3,8 +3,7 @@ from peak.assembler import Assembler
 from peak import family
 from peak.mapper import RewriteRule as PeakRule
 from hwtypes import Bit
-from .node import Nodes, DagNode, Input
-from .visitor import Dag
+from .node import Nodes, DagNode, Dag, Input
 import coreir
 import magma
 
@@ -73,8 +72,9 @@ def dag_to_peak(nodes: Nodes, dag: Dag):
 
 # Creates a new DagNode (and CoreIR node) based off a peak class.
 # Adds it to the Nodes class and returns the name of the node
-def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
-
+def peak_to_node(nodes: Nodes, peak_fc, cmod=None, stateful=False) -> "node_name":
+    if stateful:
+        raise NotImplementedError("TODO")
     #Create CoreIR node if not specified
     if cmod is None:
         cmod = peak_to_coreir(peak_fc)
@@ -82,7 +82,7 @@ def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
     #Create DagNode
     peak_bv = peak_fc(family.PyFamily())
 
-    dag_attrs = ('iname',)
+    dag_attrs = ()
     #I can easily filter modparams here
     inputs = list(peak_bv.input_t.field_dict.keys())
     if "modparams" in inputs:
@@ -91,6 +91,6 @@ def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
 
     outputs = list(peak_bv.output_t.field_dict.keys())
     node_name = peak_bv.__name__
-    dag_node = nodes.create_dag_node(node_name, inputs, outputs, dag_attrs)
-    nodes.add(node_name, dag_node, peak_fc, cmod)
+    dag_node = nodes.create_dag_node(node_name, len(inputs), stateful=False, attrs=dag_attrs)
+    nodes.add(node_name, peak_fc, cmod, dag_node)
     return node_name

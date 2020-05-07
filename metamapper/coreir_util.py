@@ -1,17 +1,15 @@
 import coreir
-from .visitor import Visited, Dag, Visitor
-from .node import DagNode
+from .visitor import Visitor
+from .node import DagNode, Dag
 from functools import wraps
 import abc
-from enum import Enum
 from collections import OrderedDict
-from .irs.coreir import gen_CoreIRNodes
 from .node import Nodes, Input, Output
 from . import CoreIRContext
 import typing as tp
 
 #returns input objects and output objects
-def parse_rtype(rtype):
+def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     assert isinstance(rtype, coreir.Record)
     inputs = OrderedDict()
     outputs = OrderedDict()
@@ -25,71 +23,109 @@ def parse_rtype(rtype):
 
     return inputs, outputs
 
-def get_driver(port) -> ("iname", "port"):
-    conns = port.connected_wireables
-    assert len(conns) == 1, f"{len(conns)}, {port}"
-    driver = conns[0]
-    dpath = driver.selectpath
-    assert len(dpath) == 2
-    return dpath[0], dpath[1]
 
 #TODO this is really just coreir module to a dag where the instances in the coreir are nodes in nodes
 class Loader:
-    def __init__(self, mod, nodes: Nodes):
-        self.mod = mod
+    def __init__(self, cmod: coreir.Module, nodes: Nodes):
+        self.cmod = cmod
         self.nodes = nodes
-        self.c = mod.context
-        self.node_map: tp.Mapping["inst", DagNode] = {}
-        inputs, outputs = parse_rtype(mod.type)
+        self.c = cmod.context
+        self.node_map: tp.Mapping[coreir.Instance, str] = {}
 
-        #Create all input nodes first
-        input_nodes = []
-        for n, t in inputs.items():
-            #TODO verify t is a good type
-            inode = Input(idx=n)
-            self.node_map[("self", n)] = inode
-            input_nodes.append(inode)
+        #Verify all instances are from particular nodes
+        #TODO Find all stateful instances
+        for inst in cmod.definition.instances:
+            node_name = self.nodes.name_from_coreir(inst.module)
+            if node_name is None:
+                raise ValueError(f"{inst.module.name} was never loaded into {self.nodes}")
+            if self.nodes.is_stateful(node_name):
+                raise NotImplementedError("TODO")
 
-        output_nodes = []
-        for n, t in outputs.items():
-            onode = self.add_output(n)
-            self.node_map[("self", n)] = onode
-            output_nodes.append(onode)
-        self.dag = Dag(output_nodes, input_nodes)
+        inputs, outputs = parse_rtype(cmod.type)
 
-    def add_output(self, port_name):
-        io = self.mod.definition.interface
-        iname, iport = get_driver(io.select(port_name))
-        driver = self.add_node(iname, iport)
-        return Output(driver, idx=port_name)
+        source_nodes = [Input(iname="self")]
+        stateful_instances = [cmod.definition.interface]
+        # load up node_map with source nodes
+        for source, inst in zip(source_nodes, stateful_instances):
+            self.node_map[inst] = source
 
-    def add_node(self, iname, iport):
-        if iname == "self":
-            key = (iname, iport)
-            assert key in self.node_map
-            return self.node_map[key]
-        if iname in self.node_map:
-            return self.node_map[iname]
-        inst = self.mod.definition.get_instance(iname)
-        inputs, outputs = parse_rtype(inst.module.type)
-        #iport should be the first and only output (for now)
-        assert len(outputs)==1
-        assert iport in outputs
+        #for n, t in inputs.items():
+        #    inode = Input(idx=n)
+        #    self.node_map[("self", n)] = inode
+        #    input_nodes.append(inode)
+
+        #for n, t in outputs.items():
+        #    onode = self.add_output(n)
+        #    self.node_map[("self", n)] = onode
+        #    output_nodes.append(onode)
+
+        #create all the sinks
+        sink_nodes = []
+        for source, inst in zip(source_nodes, stateful_instances):
+            sink_t = type(source).sink_t
+            sink_node = self.add_node(inst, sink_t=sink_t)
+            assert isinstance(sink_node, DagNode)
+            sink_nodes.append(sink_node)
+        print(1,sink_nodes)
+        self.dag = Dag(source_nodes, sink_nodes)
+
+    def add_node(self, inst: coreir.Instance, sink_t=None):
+        if sink_t is None and inst in self.node_map:
+            return self.node_map[inst]
+        if sink_t is None:
+            node_name = self.nodes.name_from_coreir(inst.module)
+            node_t = self.nodes.dag_nodes[node_name]
+            assert issubclass(node_t, DagNode)
+        else:
+            node_t = sink_t
         children = []
-        for port, t in inputs.items():
-            dname, dport = get_driver(inst.select(port))
-            driver = self.add_node(dname, dport)
-            children.append(driver)
+        for child_inst, port in self.get_drivers(inst):
+            child_node = self.add_node(child_inst)
+            children.append(child_node.select(port))
 
-        node_name = self.nodes.name_from_coreir(inst.module)
-        if node_name is None:
-            raise ValueError(f"coreir module {inst.module.name} missing from {self.nodes}")
-        NodeKind = self.nodes.dag_nodes[node_name]
-        modparams = {k: v.value for k,v in inst.config.items()}
-        node = NodeKind(*children, iname=iname, **modparams)
-
-        self.node_map[iname] = node
+        #interface has no modparams
+        if inst is self.cmod.definition.interface:
+            modparams = {}
+            iname = "self"
+        else:
+            modparams = {k: v.value for k, v in inst.config.items()}
+            iname = inst.name
+        node = node_t(*children, iname=iname, **modparams)
+        if sink_t is None:
+            self.node_map[inst] = node
         return node
+
+    def inst_from_name(self, iname):
+        if iname == "self":
+            return self.cmod.definition.interface
+        else:
+            return self.cmod.definition.get_instance(iname)
+
+    def inst_to_type(self, inst: coreir.Instance) -> coreir.Record:
+        if inst is self.cmod.definition.interface:
+            T = self.c.Flip(self.cmod.type)
+        else:
+            T = inst.module.type
+        return T
+
+    def get_drivers(self, inst: tp.Union[coreir.Instance, coreir.Interface]) -> tp.List[tp.Tuple[coreir.Instance, str]]:
+
+        if inst is self.cmod.definition.interface:
+            outputs, inputs = parse_rtype(self.cmod.type)
+        else:
+            inputs, outputs = parse_rtype(inst.module.type)
+        drivers = []
+        for port_name, t in inputs.items():
+            port = inst.select(port_name)
+            conns = port.connected_wireables
+            assert len(conns) == 1, f"{len(conns)}, {port}"
+            driver = conns[0]
+            dpath = driver.selectpath
+            assert len(dpath) == 2
+            driver_iname, driver_port = dpath[0], dpath[1]
+            driver_inst = self.inst_from_name(driver_iname)
+            drivers.append((driver_inst, driver_port))
+        return drivers
 
 def coreir_to_dag(nodes: Nodes, cmod):
     return Loader(cmod, nodes).dag

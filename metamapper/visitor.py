@@ -1,3 +1,5 @@
+import typing as tp
+
 class Visited(object):
 
     #Defaults to the class name
@@ -7,48 +9,31 @@ class Visited(object):
     def children(self):
         raise NotImplemented()
 
-
-class Dag:
-    def __init__(self, outputs, inputs):
-        self.inputs = inputs
-        self.outputs = outputs
-        self._parents = outputs
-
-    def outputs(self):
-        return self._parents
+class AbstractDag:
+    def __init__(self, *parents):
+        print(parents)
+        self._parents = parents
 
     def parents(self):
         yield from self._parents
 
-    @property
-    def num_outputs(self):
-        return self.num_parents
-
-    @property
-    def num_inputs(self):
-        return len(self.inputs)
-
-    @property
-    def num_parents(self):
-        return len(self._parents)
-
-
 class VisitorMeta(type):
     def __new__(self, name, bases, dct):
-        if bases and "visit" in dct:
+        if bases and ("visit" in dct or "run" in dct):
             raise SyntaxError("Cannot override visit")
         return type.__new__(self, name, bases, dct)
 
-
 class Visitor(metaclass=VisitorMeta):
-    def __init__(self, dag: Dag):
-        assert isinstance(dag, Dag)
+    def run(self, dag: AbstractDag):
+        assert isinstance(dag, AbstractDag), f"{dag}"
         self._dag_cache = set()
-        for output in dag.parents():
-            self.visit(output)
+        for parent in dag.parents():
+            assert parent is not None
+            self.visit(parent)
 
     def visit(self, node: Visited):
-        assert isinstance(node, Visited)
+        assert node is not None
+        assert isinstance(node, Visited), f"{node}"
         if node in self._dag_cache:
             return
         visited = False
@@ -63,6 +48,7 @@ class Visitor(metaclass=VisitorMeta):
         self._dag_cache.add(node)
 
     def generic_visit(self, node):
+        assert node is not None
         #Do nothing for current node
         for child in node.children():
             self.visit(child)
@@ -72,8 +58,8 @@ class Visitor(metaclass=VisitorMeta):
 #If you return something then replace current node with that thing
 #TODO Does replacing even work if you are replacing a Node that has multiple parents??
 class Transformer(metaclass=VisitorMeta):
-    def __init__(self, dag: Dag):
-        assert isinstance(dag, Dag)
+    def __init__(self, dag: AbstractDag):
+        assert isinstance(dag, AbstractDag)
         self._dag_cache = {}
         self._dag = {}
         for output in dag.parents():
