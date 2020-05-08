@@ -71,7 +71,6 @@ class GreedyReplace(Transformer):
         #Then replacing the body of the tile to this node
         #TODO verify and call with the matched dag
         replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{node.iname}_")
-        print_dag(replace_dag_copy)
         ReplaceInputs(matches).run(replace_dag_copy)
         return replace_dag_copy.output.children()[0]
 
