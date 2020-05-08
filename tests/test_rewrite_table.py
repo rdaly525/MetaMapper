@@ -1,3 +1,5 @@
+import pytest
+
 from examples.alu import gen_ALU
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -9,26 +11,29 @@ from metamapper.instruction_selection import GreedyCovering
 from metamapper.common_passes import AddID, Printer, VerifyNodes
 from metamapper import CoreIRContext
 
-def test_discover():
+@pytest.mark.parametrize("op", ["add", "and_", "or_", "const"])
+def test_discover(op):
+    if op == "const":
+        pytest.skip()
     ArchNodes = Nodes("Arch")
     arch_fc = gen_ALU(16)
-    name = putil.peak_to_node(ArchNodes, arch_fc)
+    name = putil.load_from_peak(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover("add", name)
+    rr = table.discover(op, name)
     assert rr is not None
 
 def verify_and_print(nodes, dag):
-    AddID(dag)
-    Printer(dag)
-    VerifyNodes(nodes, dag)
+    AddID().run(dag)
+    print(Printer().run(dag).res)
+    VerifyNodes(nodes).run(dag)
 
 def test_eager_covering():
     CoreIRContext(reset=True)
 
     ArchNodes = Nodes("Arch")
     arch_fc = gen_ALU(16)
-    name = putil.peak_to_node(ArchNodes, arch_fc)
+    name = putil.load_from_peak(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
     rr = table.discover("add", "ALU")

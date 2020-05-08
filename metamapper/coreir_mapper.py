@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes
+from metamapper.common_passes import VerifyNodes, print_dag
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
 from metamapper.rewrite_table import RewriteTable
@@ -17,8 +17,8 @@ class Mapper:
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         if peak_rules is None:
             #auto discover the rules for CoreIR
-            for op in ("add", "const", "mul"):
-                peak_rule = self.table.discover("add", "ALU")
+            for op in ("add",):
+                peak_rule = self.table.discover(op, "ALU")
             assert peak_rule is not None
         else:
             #load the rules
@@ -31,10 +31,12 @@ class Mapper:
         #inline inlines them back in
         pb_dags = cutil.preprocess(self.CoreIRNodes, cmod)
         for inst, dag in pb_dags.items():
+            print_dag(dag)
             #TODO
             #pre_mapped_fc = putil.dag_to_peak(dag, self.CoreIRNodes)
             mapped_dag = self.inst_sel(dag)
-            VerifyNodes(self.ArchNodes, mapped_dag)
+            VerifyNodes(self.ArchNodes).run(mapped_dag)
+            print_dag(mapped_dag)
 
             #mapped_fc = dag_to_peak(dag, ArchNodes)
             #counter_example = PeakRule(

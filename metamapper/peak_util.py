@@ -1,38 +1,38 @@
 import peak
 from peak.assembler import Assembler
 from peak import family
-from peak.mapper import RewriteRule as PeakRule
-from hwtypes import Bit
-from .node import Nodes, DagNode, Input
-from .visitor import Dag
+from .node import Nodes, DagNode, Dag, Input, Output
 import coreir
 import magma
-
-#I basically have the cross product of translating between (dag, node, peak, coreir)
-
-#Wraps this node as a Dag.
-def node_to_dag(node: DagNode):
-
-    inputs = [Input(idx=i) for i, name in enumerate(node.input_names())]
-    #TODO what if node has multiple outputs?
-    output = node(*inputs, iname="i0")
-    dag = Dag([output], inputs)
-    return dag
 
 def peak_to_dag(nodes: Nodes, peak_fc):
     # Two cases:
     # 1) Either peak_fc will already be a single node in nodes, so just need to simply wrap it
     # 2) peak_fc needs to be compiled into a coreir module where each instance within the module should correspond to a node in Nodes
-
-    #case 1
     node_name = nodes.name_from_peak(peak_fc)
-    if node_name is not None:
-        return node_to_dag(nodes.dag_nodes[node_name])
-    assert 0
 
     #case 2
-    cmod = peak_to_coreir(peak_fc)
-    return coreir_module_to_dag(cmod, nodes)
+    if node_name is None:
+        raise NotImplementedError
+        cmod = peak_to_coreir(peak_fc)
+        return coreir_to_dag(cmod, nodes)
+
+    #case 1
+
+    #Get input/output names from peak_cls
+    peak_bv = peak_fc(family.PyFamily())
+    input_fields = list(peak_bv.input_t.field_dict.keys())
+    output_fields = list(peak_bv.output_t.field_dict.keys())
+
+    input = Input(iname="self")
+    children = [input.select(field) for field in input_fields]
+    node_t = nodes.dag_nodes[node_name]
+    assert issubclass(node_t, DagNode)
+    node = node_t(*children)
+    output_children = [node.select(field) for field in output_fields]
+    output = Output(*output_children)
+    dag = Dag([input], [output])
+    return dag
 
 def magma_to_coreir(mod):
     backend = magma.frontend.coreir_.GetCoreIRBackend()
@@ -71,19 +71,15 @@ def dag_to_peak(nodes: Nodes, dag: Dag):
     raise NotImplementedError("TODO")
     pass
 
-# Creates a new DagNode (and CoreIR node) based off a peak class.
-# Adds it to the Nodes class and returns the name of the node
-def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
-
-    #Create CoreIR node if not specified
-    if cmod is None:
-        cmod = peak_to_coreir(peak_fc)
+# Creates a new DagNode based off a peak class.
+def peak_to_node(nodes: Nodes, peak_fc, stateful) -> (DagNode, str):
+    if stateful:
+        raise NotImplementedError("TODO")
 
     #Create DagNode
     peak_bv = peak_fc(family.PyFamily())
 
-    dag_attrs = ('iname',)
-    #I can easily filter modparams here
+    dag_attrs = ()
     inputs = list(peak_bv.input_t.field_dict.keys())
     if "modparams" in inputs:
         inputs.remove("modparams")
@@ -91,6 +87,11 @@ def peak_to_node(nodes: Nodes, peak_fc, cmod=None) -> "node_name":
 
     outputs = list(peak_bv.output_t.field_dict.keys())
     node_name = peak_bv.__name__
-    dag_node = nodes.create_dag_node(node_name, inputs, outputs, dag_attrs)
-    nodes.add(node_name, dag_node, peak_fc, cmod)
+    return nodes.create_dag_node(node_name, len(inputs), stateful=False, attrs=dag_attrs), node_name
+
+def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None) -> str:
+    if cmod is None:
+        cmod = peak_to_coreir(peak_fc)
+    dag_node, node_name = peak_to_node(nodes, peak_fc, stateful=stateful)
+    nodes.add(node_name, peak_fc, cmod, dag_node)
     return node_name
