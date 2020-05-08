@@ -11,7 +11,6 @@ class Visited(object):
 
 class AbstractDag:
     def __init__(self, *parents):
-        print(parents)
         self._parents = parents
 
     def parents(self):
@@ -20,7 +19,7 @@ class AbstractDag:
 class VisitorMeta(type):
     def __new__(self, name, bases, dct):
         if bases and ("visit" in dct or "run" in dct):
-            raise SyntaxError("Cannot override visit")
+            raise ValueError("Cannot override visit")
         return type.__new__(self, name, bases, dct)
 
 class Visitor(metaclass=VisitorMeta):
@@ -30,6 +29,8 @@ class Visitor(metaclass=VisitorMeta):
         for parent in dag.parents():
             assert parent is not None
             self.visit(parent)
+        #For chaining
+        return self
 
     def visit(self, node: Visited):
         assert node is not None
@@ -58,10 +59,9 @@ class Visitor(metaclass=VisitorMeta):
 #If you return something then replace current node with that thing
 #TODO Does replacing even work if you are replacing a Node that has multiple parents??
 class Transformer(metaclass=VisitorMeta):
-    def __init__(self, dag: AbstractDag):
+    def run(self, dag: AbstractDag):
         assert isinstance(dag, AbstractDag)
         self._dag_cache = {}
-        self._dag = {}
         for output in dag.parents():
             self.generic_visit(output)
 

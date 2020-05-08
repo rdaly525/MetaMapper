@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from .visitor import Visited, AbstractDag
 import abc
 import typing as tp
@@ -7,6 +9,7 @@ import coreir
 class DagNode(Visited):
     def __init__(self, *children):
         self.set_children(*children)
+        self._selects = set()
 
     def set_children(self, *children):
         expected_children = type(self).num_children
@@ -20,8 +23,9 @@ class DagNode(Visited):
     #def inputs(self):
     #    return self._children
 
-    # Convenience
+    @lru_cache(None)
     def select(self, field):
+        self._selects.add(field)
         return Select(self, field=field)
 
     @abc.abstractmethod
@@ -54,27 +58,17 @@ class Dag(AbstractDag):
         #self.outputs = sinks[0]
         #self.input = srcs[0]
 
-    #def outputs(self):
-    #    return self._parents
+    @property
+    def input(self):
+        return self.sources[0]
 
-    #@property
-    #def num_outputs(self):
-    #    return self.num_parents
-
-    #@property
-    #def num_inputs(self):
-    #    return len(self.inputs)
-
-    #@property
-    #def num_parents(self):
-    #    return len(self._parents)
+    @property
+    def output(self):
+        return self.sinks[0]
 
 
 #A container for all the kinds of nodes (DagNodes, peakNodes, and modules)
 #Each container has a particular name (CoreIR, Lassen, etc...) and has an associated unique DagNode Class <class CoreIR(DagNode): pass>
-
-
-
 class Nodes:
     _cache = {}
     def __new__(cls, name):
@@ -91,7 +85,7 @@ class Nodes:
         #if node is stateful, it points to a tuple(Source, Sink)
         self.dag_nodes = {}
         self.peak_nodes = {}
-        self.coreir_modules = {}
+        self.coreir_modules: tp.Mapping[str, coreir.Module] = {}
 
     def __str__(self):
         return f"Nodes<{self.name}>"
@@ -149,10 +143,11 @@ class Nodes:
         def __init__(self, *args, **kwargs):
             self.set_children(*args)
             self.set_kwargs(**kwargs)
+            self._selects = set()
 
         def set_kwargs(self, **kwargs):
             if "iname" not in kwargs:
-                kwargs.update({"iname":str(id(self))})
+                kwargs.update({"iname":f"i{id(self)}"})
 
             assert len(kwargs) == len(attrs), f"{kwargs} != {attrs}"
             assert all(attr in kwargs for attr in attrs), f"{kwargs} != {attrs}"

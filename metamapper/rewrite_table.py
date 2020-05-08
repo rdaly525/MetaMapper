@@ -1,10 +1,10 @@
 from .common_passes import CheckIfTree, VerifyNodes, AddID, Printer
 import typing as tp
-from .node import Nodes, Constant, Input
-from .visitor import Dag
+from .node import Nodes, DagNode, Dag, Constant, Input, Output
 from .peak_util import peak_to_dag
 from peak.mapper import ArchMapper
 from peak.mapper import RewriteRule as PeakRule
+from peak import family
 
 #debug
 from peak.mapper.utils import pretty_print_binding
@@ -18,8 +18,9 @@ class RewriteRule:
         checker: tp.Callable = None
     ):
 
-        pattern_is_tree = CheckIfTree(tile).is_tree
+        pattern_is_tree = CheckIfTree().is_tree(tile)
         if not pattern_is_tree:
+            print(Printer().run(tile).res)
             raise NotImplementedError("Tile not a tree")
 
         self.tile = tile
@@ -38,7 +39,7 @@ class RewriteTable:
         if not isinstance(rr, RewriteRule):
             raise ValueError("rule is not a Rewrite Rule")
         #Verify from from rule
-        VerifyNodes(self.from_, rr.tile)
+        VerifyNodes(self.from_).run(rr.tile)
         self.rules.append(rr)
 
     def add_peak_rule(self, rule: PeakRule):
@@ -46,65 +47,52 @@ class RewriteTable:
             raise ValueError("rule is not a Peak Rule")
 
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
+        from_bv = rule.ir_fc(family.PyFamily())
+        # Create to_dag by Wrapping _to_dag within ibinding and obinding
+        # Get input/output names from peak_cls
 
-        _to_dag = peak_to_dag(self.to, rule.arch_fc)
-
-        #TODO generalize the following code on a Dag Visitor pass in case to_dag is actually a complicated Dag
-        #TODO also make the Select node general in that instead of just selecting index, it uses the ADT fields as selects ??
-        assert all([isinstance(child, Input) for child in _to_dag.outputs[0].inputs()])
-        from_node = from_dag.outputs[0] #HACK
-        to_node = _to_dag.outputs[0] #HACK
-
-        to_inputs = [input.copy() for input in from_dag.inputs]
-        arch_to_ir = {}
-        for ib, ab in rule.ibinding:
-            assert isinstance(ab, tuple), "NYI"
-            assert len(ab) == 1, "NYI"
-            ab_idx = to_node.input_names().index(ab[0])
-            if isinstance(ib, tuple):
-                assert len(ib)==1, "NYI"
-                ib_idx = from_node.input_names().index(ib[0])
-                arch_to_ir[ab_idx] = to_inputs[ib_idx]
+        to_fc = rule.arch_fc
+        to_node_name = self.to.name_from_peak(to_fc)
+        to_node_t = self.to.dag_nodes[to_node_name]
+        assert issubclass(to_node_t, DagNode)
+        to_bv = to_fc(family.PyFamily())
+        to_input = Input(iname="self")
+        to_children = [None for _ in to_bv.input_t.field_dict]
+        for from_b, to_b in rule.ibinding:
+            assert isinstance(to_b, tuple), "NYI"
+            assert len(to_b) == 1, "NYI"
+            to_sel = to_b[0]
+            to_idx = list(to_bv.input_t.field_dict.keys()).index(to_sel)
+            if isinstance(from_b, tuple):
+                assert len(from_b)==1, "NYI"
+                from_sel = from_b[0]
+                child = to_input.select(from_sel)
             else:
-                arch_to_ir[ab_idx] = Constant(value=ib)
+                child = Constant(value=from_b)
+                print("child_iname", child.iname)
 
-        #create to_dag
-        to_children = []
-        for ab_idx, child in enumerate(to_node.children()):
-            to_children.append(arch_to_ir[ab_idx])
-        to_output = to_node.copy()
-        to_output.set_children(*to_children)
-        to_dag = Dag([to_output], to_inputs)
+            to_children[to_idx] = child
+        assert all(node is not None for node in to_children)
+        to_node = to_node_t(*to_children)
 
-    #    tile_inputs = [None for _ in range(from_node.num_inputs())]
-    #    rep_inputs = [None for _ in range(to_node.num_inputs())]
-    #    rep_dag_inputs = []
-    #    for ib, ab in peak_rr.ibinding:
-    #        assert isinstance(ab, tuple), "NYI"
-    #        assert len(ab) == 1, "NYI"
-    #        ab_idx = to_node.input_names().index(ab[0])
-    #        if isinstance(ib, tuple):
-    #            assert len(ib)==1, "NYI"
-    #            ib_idx = from_node.input_names().index(ib[0])
-    #            node = Input(idx=ib_idx)
-    #            tile_inputs[ib_idx] = node
-    #            rep_inputs[ab_idx] = node
-    #        else:
-    #            rep_inputs[ab_idx] = Constant(value=ib)
+        to_output_children = [None for _ in to_bv.output_t.field_dict]
+        for from_b, to_b in rule.obinding:
+            assert isinstance(to_b, tuple), "NYI"
+            assert len(to_b) == 1, "NYI"
+            to_sel = to_b[0]
+            assert isinstance(from_b, tuple)
+            assert len(from_b)==1, "NYI"
+            from_sel = from_b[0]
+            from_idx = list(from_bv.output_t.field_dict.keys()).index(from_sel)
+            child = to_node.select(to_sel)
+            to_output_children[from_idx] = child
+        assert all(node is not None for node in to_output_children)
+        to_output = Output(*to_output_children, iname="self")
+        to_dag = Dag([to_input], [to_output])
 
-    #assert all(node is not None and node.idx == i for (i, node) in enumerate(tile_inputs))
-    #assert all(node is not None for (i, node) in enumerate(rep_inputs))
-
-    ##create tile dag:
-    #tile_out = from_node(*tile_inputs, iname=0)
-    #tile_dag = Dag([tile_out], tile_inputs)
-    #rep_out = to_node(*rep_inputs)
-    ##the inputs are the same for both dags
-    #rep_dag = Dag([rep_out], tile_inputs)
-
-
-        #, a=from_dag, b=rule.ibinding, c=rule.obinding)
-
+        #Verify that the io matches
+        assert from_dag.sources[0]._selects == to_dag.sources[0]._selects
+        #TODO verify outputs match
         rr = RewriteRule(
             tile = from_dag,
             replace = lambda _: to_dag,

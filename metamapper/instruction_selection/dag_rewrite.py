@@ -1,79 +1,79 @@
-from ..visitor import Dag, Visitor, Transformer
-from ..rewrite_table import RewriteTable
-from ..node import Input
+from ..visitor import Visitor, Transformer
+from ..rewrite_table import RewriteTable, RewriteRule
+from ..node import Input, Dag
+from ..common_passes import VerifyNodes, print_dag
 
 class Clone(Visitor):
-    def __init__(self, dag):
+    def clone(self, dag: Dag, iname_prefix: str = ""):
         assert dag is not None
         self.node_map = {}
-        super().__init__(dag)
+        self.iname_prefix = iname_prefix
+        self.run(dag)
         dag_copy = Dag(
-            inputs=[self.node_map[node] for node in dag.inputs],
-            outputs=[self.node_map[node] for node in dag.outputs]
+            sources=[self.node_map[node] for node in dag.sources],
+            sinks=[self.node_map[node] for node in dag.sinks]
         )
-        self.dag_copy = dag_copy
+        return dag_copy
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
         new_node = node.copy()
         children = (self.node_map[child] for child in node.children())
         new_node.set_children(*children)
+        new_node.iname = self.iname_prefix + new_node.iname
         self.node_map[node] = new_node
 
-#It will match a tree pattern to a tree (program)
-def match_node(p_node, a_node):
-    if isinstance(p_node, Input):
-        return ((p_node.idx, a_node),)
-
-    #Verify p_node is a_node
-    if type(p_node) != type(a_node):
-        return None
-
-    matched = ()
-    for p_child, a_child in zip(p_node.children(), a_node.children()):
-        child_matched = match_node(p_child, a_child)
-        if child_matched is None:
-            return None
-        matched = (*matched, *child_matched)
-    return matched
-
 class ReplaceInputs(Transformer):
-    def __init__(self, dag, input_replacements):
-        assert len(dag.inputs) == len(input_replacements)
-        self.ireps = input_replacements
-        super().__init__(dag)
+    def __init__(self, replacements):
+        self.reps = replacements
 
-    def visit_Input(self, node):
-        return self.ireps[node.idx]
+    def visit_Select(self, node):
+        Transformer.generic_visit(self, node)
+        if isinstance(node.children()[0], Input) and node.field in self.reps:
+            return self.reps[node.field]
 
-#Given a Dag, greedly apply each rewrite rule
+#Given a Dag, greedly apply the rewrite rule
 class GreedyReplace(Transformer):
-    def __init__(self, rr, dag):
+    def __init__(self, rr: RewriteRule):
         self.rr = rr
-        self.root = rr.tile.outputs[0]
-        super().__init__(dag)
 
-    def generic_visit(self, node):
+        #Match needs to match all output_selects up to but not including input_selects
+        self.output_selects = rr.tile.output.children()
+        self.input_selects = set(rr.tile.input.select(field) for field in rr.tile.input._selects)
+        self.state_roots = rr.tile.sinks[1:]
+        if len(self.output_selects) > 1 or self.state_roots != []:
+            raise NotImplementedError("TODO")
+
+    def match_node(self, tile_node, dag_node):
+        if tile_node in self.input_selects:
+            return {tile_node.field:dag_node}
+
+        # Verify p_node is a_node
+        if type(tile_node) != type(dag_node):
+            return None
+
+        matches = {}
+        for tile_child, dag_child in zip(tile_node.children(), dag_node.children()):
+            child_matched = self.match_node(tile_child, dag_child)
+            if child_matched is None:
+                return None
+            matches.update(child_matched)
+        return matches
+
+    def visit_Select(self, node):
         #visit all children first
         Transformer.generic_visit(self, node)
 
-        matched = match_node(self.root, node)
-        if matched is None:
-            return node
-
-        #Replace current node with a clone of the replacement pattern
-        new_children = [None for _ in range(self.rr.tile.num_inputs)]
-        for (i, child) in matched:
-            #if hasattr(child, "iname"):
-            #    child.iname = node.iname + child.iname
-            new_children[i] = child
-        assert all(child is not None for child in new_children)
-        replace_dag_copy = Clone(self.rr.replace(None)).dag_copy
-        ReplaceInputs(replace_dag_copy, new_children)
-        node_copy = replace_dag_copy.outputs[0]
-        if hasattr(node_copy, "iname"):
-            node_copy.iname = node.iname + node_copy.iname
-        return node_copy
+        matches = self.match_node(self.output_selects[0], node)
+        if matches is None:
+            return None
+        #What this is doing is pointing the matched inputs of the dag to the body of the tile.
+        #Then replacing the body of the tile to this node
+        #TODO verify and call with the matched dag
+        replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{node.iname}_")
+        print_dag(replace_dag_copy)
+        ReplaceInputs(matches).run(replace_dag_copy)
+        return replace_dag_copy.output.children()[0]
 
 class GreedyCovering:
     def __init__(self, rrt: RewriteTable):
@@ -81,10 +81,11 @@ class GreedyCovering:
 
     def __call__(self, dag: Dag):
         #Make a unique copy
-        dag = Clone(dag).dag_copy
+        dag = Clone().clone(dag)
         for rr in self.rrt.rules:
             #Will update dag in place
-            GreedyReplace(rr, dag)
+            GreedyReplace(rr).run(dag)
+        VerifyNodes(self.rrt.to).run(dag)
         return dag
 
 

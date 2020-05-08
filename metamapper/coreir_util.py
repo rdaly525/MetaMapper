@@ -1,5 +1,5 @@
 import coreir
-from .visitor import Visitor
+from .visitor import Visitor, Transformer
 from .node import DagNode, Dag
 from functools import wraps
 import abc
@@ -7,6 +7,8 @@ from collections import OrderedDict
 from .node import Nodes, Input, Output
 from . import CoreIRContext
 import typing as tp
+from peak import family
+from .common_passes import print_dag
 
 #returns input objects and output objects
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
@@ -21,10 +23,14 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
         else:
             raise ValueError("Bad io type!")
 
+    #Filter out "ASYNCRESET" and "CLK"
+    for d in (inputs, outputs):
+        for name in ("ASYNCRESET", "CLK"):
+            if name in d:
+                del d[name]
     return inputs, outputs
 
 
-#TODO this is really just coreir module to a dag where the instances in the coreir are nodes in nodes
 class Loader:
     def __init__(self, cmod: coreir.Module, nodes: Nodes):
         self.cmod = cmod
@@ -66,7 +72,6 @@ class Loader:
             sink_node = self.add_node(inst, sink_t=sink_t)
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
-        print(1,sink_nodes)
         self.dag = Dag(source_nodes, sink_nodes)
 
     def add_node(self, inst: coreir.Instance, sink_t=None):
@@ -158,15 +163,20 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Ins
     return pb_dags
 
 class ToCoreir(Visitor):
-    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef, dag: Dag):
+    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef):
         self.coreir_const = CoreIRContext().get_namespace("coreir").generators["const"]
         self.nodes = nodes
         self.def_ = def_
-        self.node_to_inst = {}  # inst is really the output port of the instance
-        super().__init__(dag)
+        self.node_to_inst: tp.Mapping[DagNode, coreir.Wireable] = {}  # inst is really the output port of the instance
+
+    def visit_Select(self, node):
+        Visitor.generic_visit(self, node)
+        child_inst = self.node_to_inst[node.children()[0]]
+        print(child_inst.module.name, child_inst.selectpath)
+        self.node_to_inst[node] = child_inst.select(node.field)
 
     def visit_Input(self, node):
-        self.node_to_inst[node] = self.def_.interface.select(node.idx)
+        self.node_to_inst[node] = self.def_.interface
 
     def visit_Constant(self, node):
         bv_val = node.value
@@ -178,41 +188,82 @@ class ToCoreir(Visitor):
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
+        cmod_t = self.nodes.coreir_modules[type(node).node_name]
+
         # create new instance
-        node_kind = type(node).__name__
-        Module = self.nodes.coreir_modules[node_kind]
         #TODO what if this has modparams?
+        inst = self.def_.add_module_instance(node.iname, cmod_t)
 
-        inst = self.def_.add_module_instance(node.iname, Module)
-
+        inst_inputs = list(self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t.field_dict.keys())
         # Wire all the children (inputs)
-        for port, child in zip(node.input_names(), node.children()):
+        for port, child in zip(inst_inputs, node.children()):
             child_inst = self.node_to_inst[child]
             self.def_.connect(child_inst, inst.select(port))
 
-        # TODO assuming single output
-        oport = node.coreir_output_name(0)
-        self.node_to_inst[node] = inst.select(oport)
+        self.node_to_inst[node] = inst
 
         # CLK and ASYNC?
         #inst.ASYNCRESET @= self.io.RESET
 
     def visit_Output(self, node):
         Visitor.generic_visit(self, node)
-        child_inst = self.node_to_inst[node.inputs()[0]]
-        output_port = node.idx
-        self.def_.connect(child_inst, self.def_.interface.select(output_port))
+
+        _, outputs = parse_rtype(self.def_.module.type)
+        io = self.def_.interface
+        # Wire all the children (inputs)
+        for port, child in zip(outputs.keys(), node.children()):
+            child_inst = self.node_to_inst[child]
+            self.def_.connect(child_inst, io.select(port))
+
+
+class VerifyUniqueIname(Visitor):
+    def __init__(self):
+        self.inames = {}
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        if node.iname in self.inames:
+            raise ValueError(f"{node.iname} for {node} already used by {self.inames[node.iname]}")
+        self.inames[node.iname] = node
+
+    def visit_Input(self, node):
+        pass
+
+# Magma compiles output ports into either "O" for single outputs or "O0", "O1" etc for multi-output
+# This pass replaces non-input selects to the better name
+class FixSelects(Transformer):
+    def __init__(self, nodes):
+        self.field_map = {}
+        for node_name in nodes._node_names:
+            peak_fc = nodes.peak_nodes[node_name]
+            dag_node = nodes.dag_nodes[node_name]
+            assert issubclass(dag_node, DagNode), f"{dag_node}"
+            peak_outputs = list(peak_fc(family.PyFamily()).output_t.field_dict.keys())
+            if len(peak_outputs) == 1:
+                assert peak_outputs[0] == 0
+                self.field_map[dag_node] = {0: "O"}
+            else:
+                assert peak_outputs == list(range(len(peak_outputs)))
+                self.field_map[dag_node] = {i: f"O{i}" for i in peak_outputs}
+
+    def visit_Select(self, node):
+        Transformer.generic_visit(self, node)
+        child = node.children()[0]
+        if isinstance(child, Input):
+            return None
+        assert type(child) in self.field_map
+        replace_field = self.field_map[type(child)][node.field]
+        return child.select(replace_field)
+
+        # Create a map from field to coreir field
 
 #This will construct a coreir module from the dag with ref_type
 def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module) -> coreir.ModuleDef:
-    inputs, outputs = parse_rtype(ref_mod.type)
-
-    #Verify that the dag nodes match the reference type
-    for i, (p, T) in enumerate(inputs.items()):
-        assert dag.inputs[i].idx == p
-
-    for i, (p, T) in enumerate(outputs.items()):
-        assert dag.outputs[i].idx == p
+    print_dag(dag)
+    VerifyUniqueIname().run(dag)
+    print("FIXING SELS")
+    FixSelects(nodes).run(dag)
+    print_dag(dag)
     def_ = ref_mod.new_definition()
-    ToCoreir(nodes, def_, dag)
+    ToCoreir(nodes, def_).run(dag)
     return def_

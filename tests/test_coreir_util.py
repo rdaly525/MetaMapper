@@ -8,8 +8,4 @@ def test_coreir_to_dag():
     CoreIRNodes = gen_CoreIRNodes(16)
     cmod = cutil.load_from_json("examples/add4.json")
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
-    VerifyNodes(CoreIRNodes, dag)
-    for i in range(4):
-        assert dag.inputs[i].idx == f"in{i}"
-    assert len(dag.outputs) == 1
-    assert dag.outputs[0].idx == "out"
+    VerifyNodes(CoreIRNodes).run(dag)

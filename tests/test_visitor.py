@@ -9,8 +9,6 @@ def test_visitor():
     CoreIRNodes = gen_CoreIRNodes(16)
     cmod = c.load_from_file("examples/add4.json")
     dag = coreir_to_dag(CoreIRNodes, cmod)
-    print(dag)
-    print(list(dag.parents()))
     class AddID(Visitor):
         def __init__(self):
             self.curid = 0
@@ -45,14 +43,18 @@ def test_visitor():
     AddID().run(dag)
     p = Printer()
     p.run(dag)
+    print(p.res)
     assert p.res == '''
-0<Output:out>(1)
-1<add:a1>(2, 5)
-2<add:a00>(3, 4)
-3<Input:in0>
-4<Input:in1>
-5<add:a01>(6, 7)
-6<Input:in2>
-7<Input:in3>
+0<Output:self>(1)
+1<Select:out>(2)
+2<add:a1>(3, 8)
+3<Select:out>(4)
+4<add:a00>(5, 7)
+5<Select:in0>(6)
+6<Input:self>
+7<Select:in1>(6)
+8<Select:out>(9)
+9<add:a01>(10, 11)
+10<Select:in2>(6)
+11<Select:in3>(6)
 '''
-

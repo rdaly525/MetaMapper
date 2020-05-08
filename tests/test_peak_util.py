@@ -11,11 +11,12 @@ import pytest
 def test_peak_to_node():
     ArchNodes = Nodes("Arch")
     ALU_fc = gen_ALU(16)
-    dag_name = putil.peak_to_node(ArchNodes, ALU_fc)
+    dag_name = putil.load_from_peak(ArchNodes, ALU_fc, stateful=False)
     assert dag_name == "ALU"
     dag_node = ArchNodes.dag_nodes[dag_name]
-    assert dag_node.input_names() == ["inst", "a", "b"]
-    assert dag_node.output_names() == [0]
+    assert dag_node.num_children == 3
+    assert dag_node.nodes is ArchNodes
+    assert dag_node.node_name== dag_name
 
 @pytest.mark.skip()
 def test_dag_to_peak():
