@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from .visitor import Visited, AbstractDag
+from DagVisitor import Visited, AbstractDag
 import abc
 import typing as tp
 import coreir

@@ -1,6 +1,6 @@
 import magma as m
-from .visitor import Visitor, Dag
-from .node import Nodes
+from DagVisitor import Visitor
+from .node import Nodes, Dag
 from .coreir_util import parse_rtype
 from collections import OrderedDict
 
