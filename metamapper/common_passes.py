@@ -1,4 +1,4 @@
-from .visitor import Visitor
+from DagVisitor import Visitor
 from .node import Nodes, Dag, Input
 
 class VerifyNodes(Visitor):

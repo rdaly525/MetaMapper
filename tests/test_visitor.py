@@ -1,6 +1,6 @@
 import coreir
 from metamapper.coreir_util import coreir_to_dag
-from metamapper.visitor import Visitor
+from DagVisitor import Visitor
 from metamapper.irs.coreir import gen_CoreIRNodes
 from metamapper import CoreIRContext
 

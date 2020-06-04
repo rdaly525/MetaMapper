@@ -1,4 +1,4 @@
-from ..visitor import Visitor, Transformer
+from DagVisitor import Visitor, Transformer
 from ..rewrite_table import RewriteTable, RewriteRule
 from ..node import Input, Dag
 from ..common_passes import VerifyNodes, print_dag

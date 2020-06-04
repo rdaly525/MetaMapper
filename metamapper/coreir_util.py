@@ -1,5 +1,5 @@
 import coreir
-from .visitor import Visitor, Transformer
+from DagVisitor import Visitor, Transformer
 from .node import DagNode, Dag
 from functools import wraps
 import abc
