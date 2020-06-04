@@ -9,10 +9,9 @@ from metamapper.coreir_mapper import Mapper
 
 import pytest
 
-@pytest.mark.parametrize("app", ["add4", "add_const"])
+#@pytest.mark.parametrize("app", ["add4", "add_const"])
+@pytest.mark.parametrize("app", ["add_const"])
 def test_app(app):
-    if app == "add_const":
-        pytest.skip()
     c = CoreIRContext(reset=True)
     file_name = f"examples/{app}.json"
 

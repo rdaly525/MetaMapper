@@ -28,7 +28,7 @@ class AddID(Visitor):
 
     def generic_visit(self, node):
         node._id_ = self.curid
-        self.curid +=1
+        self.curid += 1
         Visitor.generic_visit(self, node)
 
 class Printer(Visitor):

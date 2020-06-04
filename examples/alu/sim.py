@@ -1,4 +1,4 @@
-from peak import Peak, name_outputs, family_closure
+from peak import Peak, family_closure
 from .isa import Inst, OP
 
 def gen_ALU(width):
@@ -9,7 +9,7 @@ def gen_ALU(width):
 
         @family.assemble(locals(), globals())
         class ALU(Peak):
-            def __call__(self, inst : Inst, a : Data, b : Data) -> Data:
+            def __call__(self, inst: Inst, a: Data, b: Data) -> Data:
                 a = SData(a)
                 b = SData(b)
                 op = inst.op

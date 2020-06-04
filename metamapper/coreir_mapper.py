@@ -17,7 +17,7 @@ class Mapper:
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         if peak_rules is None:
             #auto discover the rules for CoreIR
-            for op in ("add",):
+            for op in ("add", "const"):
                 peak_rule = self.table.discover(op, "ALU")
             assert peak_rule is not None
         else:

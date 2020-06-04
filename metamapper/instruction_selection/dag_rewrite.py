@@ -84,6 +84,8 @@ class GreedyCovering:
         for rr in self.rrt.rules:
             #Will update dag in place
             GreedyReplace(rr).run(dag)
+        print_dag(dag)
+        assert 0
         VerifyNodes(self.rrt.to).run(dag)
         return dag
 
