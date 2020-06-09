@@ -1,24 +1,13 @@
 from DagVisitor import Visitor
-from .node import Nodes, Dag, Input
+from .node import Nodes, Dag, Input, Common
 
 class VerifyNodes(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
 
-    def visit_Input(self, node):
-        Visitor.generic_visit(self, node)
-
-    def visit_Output(self, node):
-        Visitor.generic_visit(self, node)
-
-    def visit_Constant(self, node):
-        Visitor.generic_visit(self, node)
-
-    def visit_Select(self, node):
-        Visitor.generic_visit(self, node)
-
     def generic_visit(self, node):
-        if type(node).nodes != self.nodes:
+        nodes = type(node).nodes
+        if nodes != self.nodes and nodes != Common:
             raise ValueError(f"{node} is not of type {self.nodes}")
         Visitor.generic_visit(self, node)
 
@@ -84,7 +73,6 @@ class Printer2(Visitor):
 def print_dag(dag: Dag):
     AddID().run(dag)
     print(Printer().run(dag).res)
-    #print(Printer2().run(dag).res)
 
 class CheckIfTree(Visitor):
     def __init__(self):

@@ -31,12 +31,12 @@ class Mapper:
         #inline inlines them back in
         pb_dags = cutil.preprocess(self.CoreIRNodes, cmod)
         for inst, dag in pb_dags.items():
-            print_dag(dag)
+            #print_dag(dag)
             #TODO
             #pre_mapped_fc = putil.dag_to_peak(dag, self.CoreIRNodes)
             mapped_dag = self.inst_sel(dag)
             VerifyNodes(self.ArchNodes).run(mapped_dag)
-            print_dag(mapped_dag)
+            #print_dag(mapped_dag)
 
             #mapped_fc = dag_to_peak(dag, ArchNodes)
             #counter_example = PeakRule(

@@ -34,14 +34,18 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     dag = Dag([input], [output])
     return dag
 
+import tempfile
 def magma_to_coreir(mod):
-    backend = magma.frontend.coreir_.GetCoreIRBackend()
-    backend.compile(mod)
+    f = tempfile.NamedTemporaryFile(delete=False)
+    magma.compile(f.name, mod, output="coreir")
     cname = mod.coreir_name
+    backend = magma.frontend.coreir_.GetCoreIRBackend()
+    #backend.compile(mod)
     return backend.modules[cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
     peak_m = peak_fc(family.MagmaFamily())
+    assert wrap
     if wrap:
         class HashableDict(dict):
             def __hash__(self):
@@ -59,7 +63,9 @@ def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
             asm.disassemble,
             asm.width,
             HashableDict(asm.layout),
-            instr_magma_type
+            instr_magma_type,
+            wrapped_name= "Wrapped"+peak_m.name
+            #wrapped_name = "WrappedPE"
         )
 
     #TODO This  compilation is sometimes cached.
@@ -91,7 +97,7 @@ def peak_to_node(nodes: Nodes, peak_fc, stateful) -> (DagNode, str):
 
 def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None) -> str:
     if cmod is None:
-        cmod = peak_to_coreir(peak_fc)
+        cmod = peak_to_coreir(peak_fc, wrap=True)
     dag_node, node_name = peak_to_node(nodes, peak_fc, stateful=stateful)
     nodes.add(node_name, peak_fc, cmod, dag_node)
     return node_name

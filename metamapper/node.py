@@ -7,36 +7,49 @@ import coreir
 
 #Passes will be run on this
 class DagNode(Visited):
-    def __init__(self, *children):
-        self.set_children(*children)
+    def __init__(self, *args, **kwargs):
+        self.set_kwargs(**kwargs)
+        self.set_children(*args)
         self._selects = set()
 
     def set_children(self, *children):
-        expected_children = type(self).num_children
+        expected_children = self.num_children
         if expected_children >=0 and len(children) != expected_children:
-            raise ValueError(f"len({children}) != {expected_children}")
+            raise ValueError(f"len({children}) != {expected_children} for {self}")
         self._children = children
+
+    def set_kwargs(self, **kwargs):
+        if "iname" not in kwargs:
+            kwargs.update({"iname": f"i{id(self)}"})
+
+        assert len(kwargs) == len(self.attributes), f"{kwargs} != {self.attributes}"
+        assert all(attr in kwargs for attr in self.attributes), f"{kwargs} != {self.attributes}"
+        for attr in self.attributes:
+            setattr(self, attr, kwargs[attr])
 
     def children(self):
         return self._children
 
-    #def inputs(self):
-    #    return self._children
+    @property
+    @abc.abstractmethod
+    def attributes(self):
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def num_children(self):
+        raise NotImplementedError()
 
     @lru_cache(None)
     def select(self, field):
         self._selects.add(field)
         return Select(self, field=field)
 
-    @abc.abstractmethod
     def copy(self):
-        pass
+        args = self.children()
+        kwargs = {attr:getattr(self, attr) for attr in self.attributes}
+        return type(self)(*args, **kwargs)
 
-    #def coreir_output_name(self, idx):
-    #    if self.num_outputs()==1:
-    #        return "O"
-    #    else:
-    #        raise NotImplementedError("TODO")
 
 #This holds a single RTL dag. The first source/sink pair represents the interface whereas the rest represent instances with state
 class Dag(AbstractDag):
@@ -130,9 +143,8 @@ class Nodes:
         self._node_names.add(node_name)
 
     # TODO Thoughts
-    # The latter is useful because state has two parts to it. In nodes I really need to go from dag_nodes to multiple things
     #If this is state, then it creates two nodes a source and sink
-    def create_dag_node(self, node_name, num_children, stateful: bool , attrs: tp.List = (), parents=()):
+    def create_dag_node(self, node_name, num_children, stateful: bool, attrs: tp.List = (), parents=()):
         if stateful:
             raise NotImplementedError("TODO")
 
@@ -140,33 +152,11 @@ class Nodes:
             raise ValueError("Cannot have 'iname' in attrs")
 
         attrs += ("iname",)
-        def __init__(self, *args, **kwargs):
-            self.set_children(*args)
-            self.set_kwargs(**kwargs)
-            self._selects = set()
-
-        def set_kwargs(self, **kwargs):
-            if "iname" not in kwargs:
-                kwargs.update({"iname":f"i{id(self)}"})
-
-            assert len(kwargs) == len(attrs), f"{kwargs} != {attrs}"
-            assert all(attr in kwargs for attr in attrs), f"{kwargs} != {attrs}"
-            for attr in attrs:
-                setattr(self, attr, kwargs[attr])
-
-        def copy(self):
-            args = self.children()
-            kwargs = {attr:getattr(self, attr) for attr in attrs}
-            return type(self)(*args, **kwargs)
-
         node = type(node_name, parents + (DagNode,), dict(
-            _attrs_=attrs,
-            __init__=__init__,
-            set_kwargs=set_kwargs,
             num_children=num_children,
-            copy=copy,
             nodes=self,
-            node_name=node_name
+            node_name=node_name,
+            attributes=attrs,
         ))
         return node
 
@@ -181,9 +171,26 @@ Constant = Common.create_dag_node("Constant", 0, False, ("value",))
 class State(object): pass
 class Source(State): pass
 class Sink(State): pass
-#TODO Input/Output should be stateful. Issue is that I want them to be called Input/Output instead of just inheriting from Source/Sink
 Input = Common.create_dag_node("Input", 0, False, (), (Source,))
 Output = Common.create_dag_node("Output", -1, False, (), (Sink,))
+
 #TODO is this needed
 Input.sink_t = Output
 Output.source_t = Input
+
+#This node represents kind of a like a passthrough node in CoreIR.
+#The inputs of this node are specified using the selects tuple
+#selects = (path0, path1, ..., pathn)
+class Binding(DagNode):
+    def __init__(self, *children, selects, adt, iname):
+        super().__init__(*children, selects=selects, adt=adt, iname=iname)
+
+    @property
+    def num_children(self):
+        return len(self.selects)
+
+    @property
+    def attributes(self):
+        return ("selects", "adt", "iname")
+
+    nodes = Common

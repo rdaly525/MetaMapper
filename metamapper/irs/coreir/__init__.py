@@ -11,7 +11,7 @@ def gen_CoreIRNodes(width):
     CoreIRNodes = Nodes("CoreIR")
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
-    for op in ("add", "and_", "or_", "const"):
+    for op in ("mul", "add", "and_", "or_", "const"):
         peak_fc = peak_ir.instructions[op]
         coreir_op = strip_trailing(op)
         cmod = c.get_namespace("coreir").generators[coreir_op](width=width)

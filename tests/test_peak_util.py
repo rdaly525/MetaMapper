@@ -6,17 +6,23 @@ from metamapper import CoreIRContext
 import metamapper.coreir_util as cutil
 from metamapper.irs.coreir import gen_CoreIRNodes
 from peak import Peak, family_closure
+from lassen import PE_fc as lassen_fc
 import pytest
 
-def test_peak_to_node():
+@pytest.mark.parametrize("args", [
+    (gen_ALU(16), 3, "ALU"),
+    (lassen_fc, 10, "PE"),
+])
+def test_peak_to_node(args):
+    CoreIRContext(reset=True)
+    arch_fc, num_children, name = args
     ArchNodes = Nodes("Arch")
-    ALU_fc = gen_ALU(16)
-    dag_name = putil.load_from_peak(ArchNodes, ALU_fc, stateful=False)
-    assert dag_name == "ALU"
+    dag_name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
+    assert dag_name == name
     dag_node = ArchNodes.dag_nodes[dag_name]
-    assert dag_node.num_children == 3
+    assert dag_node.num_children == num_children
     assert dag_node.nodes is ArchNodes
-    assert dag_node.node_name== dag_name
+    assert dag_node.node_name == dag_name
 
 @pytest.mark.skip()
 def test_dag_to_peak():

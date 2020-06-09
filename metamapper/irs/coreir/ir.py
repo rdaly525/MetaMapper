@@ -1,7 +1,7 @@
 from peak.ir import IR
 from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
-from peak import Peak, name_outputs, family_closure
+from peak import Peak, name_outputs, family_closure, Const
 
 def gen_peak_CoreIR(width):
     CoreIR = IR()
@@ -13,8 +13,11 @@ def gen_peak_CoreIR(width):
             value=Data
         class const(Peak):
             @name_outputs(out=Data)
-            def __call__(self, modparams : ConstModParams):
-                return modparams.value
+            def __call__(self, value: Const(Data)):
+                return value
+
+            #def __call__(self, modparams : ConstModParams):
+            #    return modparams.value
         return const
 
     CoreIR.add_instruction("const", const_fc)
