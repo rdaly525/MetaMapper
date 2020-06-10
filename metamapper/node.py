@@ -16,6 +16,9 @@ class DagNode(Visited):
         expected_children = self.num_children
         if expected_children >=0 and len(children) != expected_children:
             raise ValueError(f"len({children}) != {expected_children} for {self}")
+        for i, child in enumerate(children):
+            if not isinstance(child, DagNode):
+                raise ValueError(f"The {i}th child {child} is not a DagNode")
         self._children = children
 
     def set_kwargs(self, **kwargs):
@@ -181,16 +184,16 @@ Output.source_t = Input
 #This node represents kind of a like a passthrough node in CoreIR.
 #The inputs of this node are specified using the selects tuple
 #selects = (path0, path1, ..., pathn)
-class Binding(DagNode):
-    def __init__(self, *children, selects, adt, iname):
-        super().__init__(*children, selects=selects, adt=adt, iname=iname)
+class Combine(DagNode):
+    def __init__(self, *children, iname, type, paths):
+        super().__init__(*children, paths=paths, type=type, iname=iname,)
 
     @property
     def num_children(self):
-        return len(self.selects)
+        return len(self.paths)
 
     @property
     def attributes(self):
-        return ("selects", "adt", "iname")
+        return ("paths", "type", "iname")
 
     nodes = Common

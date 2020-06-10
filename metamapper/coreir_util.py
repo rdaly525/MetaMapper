@@ -1,10 +1,11 @@
 import coreir
 from DagVisitor import Visitor, Transformer
 from collections import OrderedDict
-from .node import DagNode, Dag, Nodes, Input, Binding
+from .node import DagNode, Dag, Nodes, Input, Combine, Constant
 from . import CoreIRContext
 import typing as tp
 from peak import family
+from peak.mapper import Unbound
 from peak.assembler import AssembledADT, Assembler, AssembledADTRecursor
 from .common_passes import print_dag
 from hwtypes.adt import Product, Enum
@@ -16,6 +17,8 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
+        if t.kind is not "Array":
+            raise NotImplementedError()
         if t.is_input():
             inputs[n] = t
         elif t.is_output():
@@ -107,14 +110,14 @@ class Loader:
             child_node = self.add_node(child_inst)
             children.append(child_node.select(port))
 
-        #interface has no modparams
         if inst is self.cmod.definition.interface:
-            modparams = {}
             iname = "self"
         else:
-            modparams = {k: v.value for k, v in inst.config.items()}
+            modargs = [Constant(value=v.value) for k, v in inst.config.items()]
+            #TODO unsafe. Assumes that modargs are specified at the end.
+            children += modargs
             iname = inst.name
-        node = node_t(*children, iname=iname, **modparams)
+        node = node_t(*children, iname=iname)
         if sink_t is None:
             self.node_map[inst] = node
         return node
@@ -158,7 +161,7 @@ def coreir_to_dag(nodes: Nodes, cmod):
 def load_from_json(file, libraries=[]):
     c = CoreIRContext()
     for lib in libraries:
-        c.load_library("lib")
+        c.load_library(lib)
     cmod = c.load_from_file(file)
     return cmod
 
@@ -199,23 +202,24 @@ class ToCoreir(Visitor):
 
     def visit_Constant(self, node):
         bv_val = node.value
+        if bv_val is Unbound:
+            self.node_to_inst[node] = None
+            return
         iname ="c"+str(id(node))
         const_mod = self.coreir_const(width=bv_val.size)
         config = CoreIRContext().new_values(fields=dict(value=bv_val))
         inst = self.def_.add_module_instance(iname, const_mod, config=config)
         self.node_to_inst[node] = inst.select("out")
 
-    def visit_Binding(self, node: Binding):
+    def visit_Combine(self, node: Combine):
         Visitor.generic_visit(self, node)
-        def ptmod_from_adt(adt):
-            if not issubclass(adt, Product):
-                raise NotImplementedError()
-            rtype = adt_to_ctype(adt)
+        def create_pt(cinputs):
+            rtype = CoreIRContext().Record(cinputs)
             assert isinstance(rtype, coreir.Record)
             pt_mod = self.coreir_pt(type=rtype)
             return pt_mod
 
-        pt_mod = ptmod_from_adt(node.adt)
+        pt_mod = create_pt(node.cinputs)
         pt_inst = self.def_.add_module_instance(node.iname, pt_mod)
         for path, child in zip(node.selects, node.children()):
             child_inst = self.node_to_inst[child]
@@ -237,7 +241,8 @@ class ToCoreir(Visitor):
         # Wire all the children (inputs)
         for port, child in zip(inst_inputs, node.children()):
             child_inst = self.node_to_inst[child]
-            self.def_.connect(child_inst, inst.select(port))
+            if child_inst is not None:
+                self.def_.connect(child_inst, inst.select(port))
 
         self.node_to_inst[node] = inst
 
@@ -252,7 +257,8 @@ class ToCoreir(Visitor):
         # Wire all the children (inputs)
         for port, child in zip(outputs.keys(), node.children()):
             child_inst = self.node_to_inst[child]
-            self.def_.connect(child_inst, io.select(port))
+            if child_inst is not None:
+                self.def_.connect(child_inst, io.select(port))
 
 
 class VerifyUniqueIname(Visitor):
@@ -288,7 +294,7 @@ class FixSelects(Transformer):
     def visit_Select(self, node):
         Transformer.generic_visit(self, node)
         child = node.children()[0]
-        if isinstance(child, (Input, Binding)):
+        if isinstance(child, (Input, Combine)):
             return None
         assert type(child) in self.field_map
         replace_field = self.field_map[type(child)][node.field]
@@ -298,11 +304,9 @@ class FixSelects(Transformer):
 
 #This will construct a coreir module from the dag with ref_type
 def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module) -> coreir.ModuleDef:
-    #print_dag(dag)
     VerifyUniqueIname().run(dag)
     print("FIXING SELS")
     FixSelects(nodes).run(dag)
-    #print_dag(dag)
     def_ = ref_mod.new_definition()
     ToCoreir(nodes, def_).run(dag)
     return def_

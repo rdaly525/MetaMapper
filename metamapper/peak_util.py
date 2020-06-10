@@ -87,13 +87,13 @@ def peak_to_node(nodes: Nodes, peak_fc, stateful) -> (DagNode, str):
 
     dag_attrs = ()
     inputs = list(peak_bv.input_t.field_dict.keys())
-    if "modparams" in inputs:
-        inputs.remove("modparams")
-        dag_attrs += tuple(peak_bv.input_t.modparams.field_dict.keys())
+    #if "modparams" in inputs:
+    #    inputs.remove("modparams")
+    #    dag_attrs += tuple(peak_bv.input_t.modparams.field_dict.keys())
 
     outputs = list(peak_bv.output_t.field_dict.keys())
     node_name = peak_bv.__name__
-    return nodes.create_dag_node(node_name, len(inputs), stateful=False, attrs=dag_attrs), node_name
+    return nodes.create_dag_node(node_name, len(inputs), stateful=False), node_name
 
 def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None) -> str:
     if cmod is None:

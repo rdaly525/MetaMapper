@@ -1,6 +1,8 @@
+from collections import OrderedDict
+
 from .common_passes import CheckIfTree, VerifyNodes, print_dag
 import typing as tp
-from .node import Nodes, DagNode, Dag, Constant, Input, Output, Binding
+from .node import Nodes, DagNode, Dag, Constant, Input, Output, Combine
 from .peak_util import peak_to_dag
 from peak.mapper import ArchMapper, Unbound
 from peak.mapper import RewriteRule as PeakRule
@@ -48,6 +50,8 @@ class RewriteTable:
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
         from_bv = rule.ir_fc(family.PyFamily())
+        from_node_name = self.from_.name_from_peak(rule.ir_fc)
+
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -64,21 +68,20 @@ class RewriteTable:
                 return node
             return sel_from(path[1:], node.select(path[0]))
 
-        #TODO THIS DOES NOT WORK WELL> I NEED TO USE LEAFS FOR NON_CONST, BUT ROOTS FOR CONST
         #input -> ibinding node
         ibind_children = []
-        ibind_selects = []
+        ibind_paths = []
+
         for from_b, to_b in rule.ibinding:
             assert isinstance(to_b, tuple)
             if isinstance(from_b, tuple):
                 child = sel_from(from_b, to_input)
-            elif from_b is Unbound:
-                continue
             else:
                 child = Constant(value=from_b)
-            ibind_selects.append(to_b)
+            ibind_paths.append(to_b)
             ibind_children.append(child)
-        ibind = Binding(*ibind_children, selects=ibind_selects, adt=to_bv.input_t, iname="ibind")
+
+        ibind = Combine(*ibind_children, paths=ibind_paths, type=to_bv.input_t, iname="ibind")
 
         #ibinding node -> to_node
         to_children = [ibind.select(field) for field in to_bv.input_t.field_dict]
@@ -86,18 +89,18 @@ class RewriteTable:
 
         #to_node -> obinding_node
         obind_children = []
-        obind_selects = []
+        obind_paths = []
         for from_b, to_b in rule.obinding:
             if from_b is Unbound:
                 continue
             assert isinstance(from_b, tuple)
-            obind_selects.append(from_b)
+            obind_paths.append(from_b)
             if isinstance(to_b, tuple):
                 child = sel_from(to_b, to_node)
             else:
                 raise NotImplementedError()
             obind_children.append(child)
-        obind = Binding(*obind_children, selects=obind_selects, adt=from_bv.output_t, iname="obind")
+        obind = Combine(*obind_children, paths=obind_paths, type=from_bv.output_t, iname="obind")
 
         #obinidng_node -> output
         output_children = [obind.select(field) for field in from_bv.output_t.field_dict]
@@ -115,27 +118,11 @@ class RewriteTable:
         self.add_rule(rr)
         return rr
 
-        #assert all(node is not None for node in to_children)
-
-        #to_output_children = [None for _ in to_bv.output_t.field_dict]
-        #for from_b, to_b in rule.obinding:
-        #    assert isinstance(to_b, tuple), "NYI"
-        #    assert len(to_b) == 1, "NYI"
-        #    to_sel = to_b[0]
-        #    assert isinstance(from_b, tuple)
-        #    assert len(from_b)==1, "NYI"
-        #    from_sel = from_b[0]
-        #    from_idx = list(from_bv.output_t.field_dict.keys()).index(from_sel)
-        #    child = to_node.select(to_sel)
-        #    to_output_children[from_idx] = child
-        #assert all(node is not None for node in to_output_children)
-
     #Discovers and returns a rule if possible
     def discover(self, from_name, to_name, path_constraints={}) -> tp.Union[None, RewriteRule]:
 
         from_fc = self.from_.peak_nodes[from_name]
         to_fc = self.to.peak_nodes[to_name]
-        #Create a rewrite rule for Add
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints)
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
         peak_rr = ir_mapper.solve('z3')

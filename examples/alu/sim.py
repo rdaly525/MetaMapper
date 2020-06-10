@@ -14,7 +14,9 @@ def gen_ALU(width):
                 a = SData(a)
                 b = SData(b)
                 op = inst.op
-                if op == OP.Add:
+                if op == OP.imm:
+                    res = inst.imm
+                elif op == OP.Add:
                     res = a + b
                 elif op == OP.Sub:
                     res = a - b
@@ -22,10 +24,9 @@ def gen_ALU(width):
                     res = a & b
                 elif op == OP.Or:
                     res = a | b
-                elif op == OP.XOr:
+                else: #op == OP.XOr:
                     res = a ^ b
-                else: # op == Op.imm
-                    res = inst.imm
+
                 return res
         return ALU
     return ALU_fc

@@ -9,7 +9,7 @@ def gen_peak_CoreIR(width):
     @family_closure
     def const_fc(family):
         Data = family.BitVector[width]
-        class ConstModParams(Product):
+        class ModParams(Product):
             value=Data
         class const(Peak):
             @name_outputs(out=Data)

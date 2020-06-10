@@ -25,7 +25,7 @@ lassen_constraints = {
     (gen_ALU(16), {}),
     (lassen_fc, lassen_constraints)
 ])
-@pytest.mark.parametrize("op", ["const", "add", "and_", "or_"])
+@pytest.mark.parametrize("op", ["const", "add"])
 def test_discover(arch, op):
     CoreIRContext(reset=True)
     arch_fc, constraints = arch
