@@ -17,7 +17,7 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
-        if t.kind is not "Array":
+        if t.kind not in ("Array", "Bit", "BitIn"):
             raise NotImplementedError()
         if t.is_input():
             inputs[n] = t
@@ -285,11 +285,9 @@ class FixSelects(Transformer):
             assert issubclass(dag_node, DagNode), f"{dag_node}"
             peak_outputs = list(peak_fc(family.PyFamily()).output_t.field_dict.keys())
             if len(peak_outputs) == 1:
-                assert peak_outputs[0] == 0
-                self.field_map[dag_node] = {0: "O"}
+                self.field_map[dag_node] = {peak_outputs[0]: "O"}
             else:
-                assert peak_outputs == list(range(len(peak_outputs)))
-                self.field_map[dag_node] = {i: f"O{i}" for i in peak_outputs}
+                self.field_map[dag_node] = {name: f"O{i}" for i, name in enumerate(peak_outputs)}
 
     def visit_Select(self, node):
         Transformer.generic_visit(self, node)

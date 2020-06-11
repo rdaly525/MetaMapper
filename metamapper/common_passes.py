@@ -14,7 +14,7 @@ class VerifyNodes(Visitor):
     def generic_visit(self, node):
         nodes = type(node).nodes
         if nodes != self.nodes and nodes != Common:
-            raise ValueError(f"{node} is not of type {self.nodes}")
+            raise ValueError(f"Verify Failed: {node} is not of type {self.nodes}")
         Visitor.generic_visit(self, node)
 
 class AddID(Visitor):

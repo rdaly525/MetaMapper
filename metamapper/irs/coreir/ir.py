@@ -9,30 +9,51 @@ def gen_peak_CoreIR(width):
     @family_closure
     def const_fc(family):
         Data = family.BitVector[width]
-        class ModParams(Product):
-            value=Data
         class const(Peak):
             @name_outputs(out=Data)
             def __call__(self, value: Const(Data)):
                 return value
 
-            #def __call__(self, modparams : ConstModParams):
-            #    return modparams.value
         return const
 
-    CoreIR.add_instruction("const", const_fc)
+    CoreIR.add_instruction("coreir.const", const_fc)
+
+    @family_closure
+    def constBit_fc(family):
+        Bit = family.Bit
+        class const(Peak):
+            @name_outputs(out=Bit)
+            def __call__(self, value: Const(Bit)):
+                return value
+        return const
+
+    CoreIR.add_instruction("corebit.const", constBit_fc)
+
+
 
     class UnaryInput(Product):
-        in0=BitVector[width]
+        in0 = BitVector[width]
+
+    class UnaryInputBit(Product):
+        in0=Bit
 
     class BinaryInput(Product):
         in0=BitVector[width]
         in1=BitVector[width]
 
+    class BinaryInputBit(Product):
+        in0=Bit
+        in1=Bit
+
     class TernaryInput(Product):
-        in0=BitVector[width]
-        in1=BitVector[width]
-        sel=Bit
+        in0 = BitVector[width]
+        in1 = BitVector[width]
+        sel = Bit
+
+    class TernaryInputBit(Product):
+        in0 = Bit
+        in1 = Bit
+        sel = Bit
 
     class OutputBV(Product):
         out=BitVector[width]
@@ -43,9 +64,6 @@ def gen_peak_CoreIR(width):
     for name, fun in (
         ("add",  lambda f, x, y: x+y),
         ("sub",  lambda f, x, y: x-y),
-        ("and_", lambda f, x, y: x&y),
-        ("or_",  lambda f, x, y: x|y),
-        ("xor",  lambda f, x, y: x^y),
         ("shl",  lambda f, x, y: x<<y),
         ("lshr", lambda f, x, y: x.bvlshr(y)),
         ("ashr", lambda f, x, y: x.bvashr(y)),
@@ -56,14 +74,23 @@ def gen_peak_CoreIR(width):
         #("srem", lambda x, y: x.bvsrem(y)),
         #("smod", lambda x, y: x.bvsmod(y)),
     ):
-        CoreIR.add_peak_instruction(name, BinaryInput, OutputBV, fun)
+        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, name)
+
+    for name, fun in (
+        ("and_", lambda f, x, y: x&y),
+        ("or_",  lambda f, x, y: x|y),
+        ("xor",  lambda f, x, y: x^y),
+    ):
+        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, name)
+        CoreIR.add_peak_instruction(f"corebit.{name}", BinaryInputBit, OutputBit, fun, name)
 
     for name, fun in (
         ("wire", lambda f, x: x),
         ("not_", lambda f, x: ~x),
         ("neg", lambda f, x: -x)
     ):
-        CoreIR.add_peak_instruction(name, UnaryInput, OutputBV, fun)
+        CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBV, fun, name)
+        CoreIR.add_peak_instruction(f"corebit.{name}", UnaryInputBit, OutputBit, fun, name)
 
     def reduce(fun):
         def _reduce(val):
@@ -78,7 +105,7 @@ def gen_peak_CoreIR(width):
         ("orr", lambda x: reduce(lambda a, b : a|b)(x)),
         ("xorr", lambda x: reduce(lambda a, b : a^b)(x)),
     ):
-        CoreIR.add_peak_instruction(name, UnaryInput, OutputBit, fun)
+        CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBit, fun, name)
 
     for name, fun in (
         ("eq" , lambda x, y: x==y),
@@ -92,10 +119,11 @@ def gen_peak_CoreIR(width):
         ("ugt", lambda x, y: x.bvugt(y)),
         ("uge", lambda x, y: x.bvuge(y)),
     ):
-        CoreIR.add_peak_instruction(name, BinaryInput, OutputBit, fun)
+        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBit, fun, name)
 
     #add mux
-    CoreIR.add_peak_instruction("mux", TernaryInput, OutputBV, lambda in0, in1, sel: sel.ite(in1, in0))
+    CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda in0, in1, sel: sel.ite(in1, in0), "mux")
+    CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda in0, in1, sel: sel.ite(in1, in0), "mux")
 
     return CoreIR
 

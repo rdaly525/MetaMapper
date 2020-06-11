@@ -22,10 +22,10 @@ lassen_constraints = {
 
 #@pytest.mark.parametrize("arch_fc", [gen_ALU(16), lassen_fc])
 @pytest.mark.parametrize("arch", [
-    (gen_ALU(16), {}),
+    #(gen_ALU(16), {}),
     (lassen_fc, lassen_constraints)
 ])
-@pytest.mark.parametrize("op", ["const", "add"])
+@pytest.mark.parametrize("op", ["corebit.const", "coreir.const", "coreir.add", ])
 def test_discover(arch, op):
     CoreIRContext(reset=True)
     arch_fc, constraints = arch

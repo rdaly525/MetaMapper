@@ -16,10 +16,17 @@ class Mapper:
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         if peak_rules is None:
-            #auto discover the rules for CoreIR
-            for op in ("add", "const"):
-                peak_rule = self.table.discover(op, "ALU")
-            assert peak_rule is not None
+            for node_name in ArchNodes._node_names:
+                #auto discover the rules for CoreIR
+                for op in (
+                    "corebit.const",
+                    "coreir.add",
+                    "coreir.mul",
+                    "coreir.const",
+                ):
+                    peak_rule = self.table.discover(op, node_name)
+                    assert peak_rule is not None
+                    print(f"Found RR for {op} -> {node_name}")
         else:
             #load the rules
             for peak_rule in peak_rules:
