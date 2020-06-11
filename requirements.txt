@@ -3,6 +3,7 @@
 -e git+git://github.com/leonardt/fault#egg=fault
 -e git+git://github.com/phanrahan/mantle#egg=mantle
 -e git+git://github.com/rdaly525/DagVisitor#egg=DagVisitor
+-e git://github.com/StanfordAHA/lassen.git#egg=lassen
 cosa
 -e git+git://github.com/leonardt/hwtypes#egg=hwtypes
 pulp
