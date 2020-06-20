@@ -18,4 +18,4 @@ install:
 - pip install python-coveralls
 - pip install -e .
 script:
-- pytest -s tests/
+- pytest -s -x tests/
