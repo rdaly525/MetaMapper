@@ -2,8 +2,10 @@ from examples.alu import gen_ALU, gen_Inst, OP
 from hwtypes import Bit, BitVector as BV
 import magma as m
 from peak import family
+from metamapper import CoreIRContext
 
 def test_alu():
+    CoreIRContext(reset=True)
     width = 8
     ALU_fc = gen_ALU(8)
     Inst_fc = gen_Inst(8)

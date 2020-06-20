@@ -30,6 +30,6 @@ def test_app(arch, app):
     putil.load_from_peak(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     mapper = Mapper(CoreIRNodes, ArchNodes)
-    cmod = cutil.load_from_json(file_name, ["lakelib"])
+    cmod = cutil.load_from_json(file_name)
     mapped_mod = mapper.do_mapping(cmod)
     mapped_mod.save_to_file(f"tests/build/{name}_{app}_mapped.json")
