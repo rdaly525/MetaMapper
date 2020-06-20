@@ -46,7 +46,7 @@ def test_eager_covering():
     name = putil.load_from_peak(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover("add", "ALU")
+    rr = table.discover("coreir.add", "ALU")
     assert rr
 
     cmod = cutil.load_from_json("examples/add4.json")
