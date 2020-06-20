@@ -1,6 +1,7 @@
 import pytest
-
 from examples.alu import gen_ALU
+from lassen import PE_fc as lassen_fc, isa
+#from lassen.mode import Mode_t
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
@@ -11,16 +12,25 @@ from metamapper.instruction_selection import GreedyCovering
 from metamapper.common_passes import AddID, Printer, VerifyNodes
 from metamapper import CoreIRContext
 
-@pytest.mark.parametrize("op", ["add", "and_", "or_", "const"])
-def test_discover(op):
-    if op == "const":
-        pytest.skip()
+lassen_constraints = {
+    ("clk_en",): 1,
+    ("config_addr",): 0,
+    ("config_data",): 0,
+    ("config_en",): 0,
+}
+@pytest.mark.parametrize("arch", [
+    (gen_ALU(16), {}),
+    (lassen_fc, lassen_constraints)
+])
+@pytest.mark.parametrize("op", ["coreir.add", "coreir.const"])
+def test_discover(arch, op):
+    CoreIRContext(reset=True)
+    arch_fc, constraints = arch
     ArchNodes = Nodes("Arch")
-    arch_fc = gen_ALU(16)
-    name = putil.load_from_peak(ArchNodes, arch_fc)
+    name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover(op, name)
+    rr = table.discover(op, name, constraints)
     assert rr is not None
 
 def verify_and_print(nodes, dag):
@@ -36,7 +46,7 @@ def test_eager_covering():
     name = putil.load_from_peak(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)
     table = RewriteTable(CoreIRNodes, ArchNodes)
-    rr = table.discover("add", "ALU")
+    rr = table.discover("coreir.add", "ALU")
     assert rr
 
     cmod = cutil.load_from_json("examples/add4.json")

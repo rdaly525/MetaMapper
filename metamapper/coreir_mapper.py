@@ -1,6 +1,5 @@
-from metamapper.common_passes import VerifyNodes, print_dag
+from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects
 import metamapper.coreir_util as cutil
-import metamapper.peak_util as putil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes
 from metamapper.instruction_selection import GreedyCovering
@@ -8,18 +7,25 @@ from peak.mapper import RewriteRule as PeakRule
 import typing as tp
 import coreir
 
-
-
 class Mapper:
     def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None):
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         if peak_rules is None:
-            #auto discover the rules for CoreIR
-            for op in ("add",):
-                peak_rule = self.table.discover(op, "ALU")
-            assert peak_rule is not None
+            for node_name in ArchNodes._node_names:
+                #auto discover the rules for CoreIR
+                for op in (
+                    "corebit.const",
+                    "coreir.add",
+                    "coreir.mul",
+                    "coreir.const",
+                ):
+                    peak_rule = self.table.discover(op, node_name)
+                    if peak_rule is None:
+                        pass
+                    else:
+                        print(f"Found RR for {op} -> {node_name}")
         else:
             #load the rules
             for peak_rule in peak_rules:
@@ -31,21 +37,11 @@ class Mapper:
         #inline inlines them back in
         pb_dags = cutil.preprocess(self.CoreIRNodes, cmod)
         for inst, dag in pb_dags.items():
-            print_dag(dag)
-            #TODO
-            #pre_mapped_fc = putil.dag_to_peak(dag, self.CoreIRNodes)
-            mapped_dag = self.inst_sel(dag)
-            VerifyNodes(self.ArchNodes).run(mapped_dag)
-            print_dag(mapped_dag)
 
-            #mapped_fc = dag_to_peak(dag, ArchNodes)
-            #counter_example = PeakRule(
-            #    pre_mapped_fc,
-            #    mapped_fc,
-            #    ibinding=[((),())],
-            #    obinding=[((), ())]
-            #).verify()
-            #assert counter_example is None
+            mapped_dag = self.inst_sel(dag)
+            SimplifyCombines().run(mapped_dag)
+            RemoveSelects().run(mapped_dag)
+            VerifyNodes(self.ArchNodes).run(mapped_dag)
 
             #Create a new module representing the mapped_dag
             mapped_def = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module)

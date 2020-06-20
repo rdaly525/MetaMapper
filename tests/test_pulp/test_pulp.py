@@ -23,8 +23,6 @@ print(p.status)
 print(p.variables())
 print(x.name, x.varValue)
 
-
-
 #Lets say I have graph
 #Expr = Add(Mul(a,b),c)
 #

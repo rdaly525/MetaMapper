@@ -47,14 +47,14 @@ def test_visitor():
     assert p.res == '''
 0<Output:self>(1)
 1<Select:out>(2)
-2<add:a1>(3, 8)
+2<coreir.add:a1>(3, 8)
 3<Select:out>(4)
-4<add:a00>(5, 7)
+4<coreir.add:a00>(5, 7)
 5<Select:in0>(6)
 6<Input:self>
 7<Select:in1>(6)
 8<Select:out>(9)
-9<add:a01>(10, 11)
+9<coreir.add:a01>(10, 11)
 10<Select:in2>(6)
 11<Select:in3>(6)
 '''

@@ -11,17 +11,25 @@ def gen_CoreIRNodes(width):
     CoreIRNodes = Nodes("CoreIR")
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
-    for op in ("add", "and_", "or_", "const"):
-        peak_fc = peak_ir.instructions[op]
+    namespace = "coreir"
+    for op in ("mul", "add", "and_", "or_", "const"):
+        name = f"{namespace}.{op}"
+        peak_fc = peak_ir.instructions[name]
         coreir_op = strip_trailing(op)
-        cmod = c.get_namespace("coreir").generators[coreir_op](width=width)
-        # Create CoreIR node if not specified
-        #if op == "const":
-        #    const = CoreIRNodes.create_dag_node("const", [], [0], ("iname", "value",), other_parents=(Constant,))
-        #    const = nodes.create_dag_node(node_name, len(inputs), stateful=False, attrs=dag_attrs), node_name
-        #    CoreIRNodes.add("const", const, peak_fc, cmod)
-        #else:
-        load_from_peak(CoreIRNodes, peak_fc, cmod=cmod)
-    #Deal with coreir.const separately. Have it inheret from Constant
-
+        cmod = c.get_namespace(namespace).generators[coreir_op](width=width)
+        name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name)
+        assert name_ == name
+        assert name in CoreIRNodes.coreir_modules
+        assert CoreIRNodes.name_from_coreir(cmod) == name
+        print(f"Loaded {name}!")
+    namespace = "corebit"
+    for op in ("const",):
+        name = f"{namespace}.{op}"
+        peak_fc = peak_ir.instructions[name]
+        coreir_op = strip_trailing(op)
+        cmod = c.get_namespace(namespace).modules[coreir_op]
+        name = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name)
+        print(f"Loaded {name}!")
+        assert name in CoreIRNodes.coreir_modules
+        assert CoreIRNodes.name_from_coreir(cmod) == name
     return CoreIRNodes

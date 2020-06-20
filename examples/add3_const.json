@@ -13,7 +13,7 @@
           "c1":{
             "genref":"coreir.const",
             "genargs":{"width":["Int",16]},
-            "modargs":{"value":[["BitVector", 16], "16'h1"]}
+            "modargs":{"value":[["BitVector", 16], "16'h55"]}
           },
           "add00":{
             "genref":"coreir.add",
