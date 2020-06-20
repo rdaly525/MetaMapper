@@ -1,14 +1,11 @@
 from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects
 import metamapper.coreir_util as cutil
-import metamapper.peak_util as putil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule
 import typing as tp
 import coreir
-
-
 
 class Mapper:
     def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None):
@@ -25,8 +22,10 @@ class Mapper:
                     "coreir.const",
                 ):
                     peak_rule = self.table.discover(op, node_name)
-                    assert peak_rule is not None
-                    print(f"Found RR for {op} -> {node_name}")
+                    if peak_rule is None:
+                        pass
+                    else:
+                        print(f"Found RR for {op} -> {node_name}")
         else:
             #load the rules
             for peak_rule in peak_rules:

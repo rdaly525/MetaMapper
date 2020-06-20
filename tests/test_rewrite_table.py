@@ -1,6 +1,6 @@
 import pytest
 from examples.alu import gen_ALU
-from lassen import PE_fc as lassen_fc
+from lassen import PE_fc as lassen_fc, isa
 #from lassen.mode import Mode_t
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -17,15 +17,12 @@ lassen_constraints = {
     ("config_addr",): 0,
     ("config_data",): 0,
     ("config_en",): 0,
-    #("inst", "rega",): Mode_t.BYPASS
 }
-
-#@pytest.mark.parametrize("arch_fc", [gen_ALU(16), lassen_fc])
 @pytest.mark.parametrize("arch", [
-    #(gen_ALU(16), {}),
+    (gen_ALU(16), {}),
     (lassen_fc, lassen_constraints)
 ])
-@pytest.mark.parametrize("op", ["corebit.const", "coreir.const", "coreir.add", ])
+@pytest.mark.parametrize("op", ["coreir.add", "coreir.const"])
 def test_discover(arch, op):
     CoreIRContext(reset=True)
     arch_fc, constraints = arch

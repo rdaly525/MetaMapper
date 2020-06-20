@@ -1,5 +1,5 @@
 from examples.alu import gen_ALU
-from lassen import PE_fc as lassen_fc
+from lassen import PE_fc as lassen_fc, isa
 
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -14,14 +14,13 @@ lassen_constraints = {
     ("config_addr",): 0,
     ("config_data",): 0,
     ("config_en",): 0,
-    #("inst", "rega",): Mode_t.BYPASS
 }
 @pytest.mark.parametrize("arch", [
-    #("ALU", gen_ALU(16), {}),
-    ("Lassen", lassen_fc, lassen_constraints)
+    ("Lassen", lassen_fc, lassen_constraints),
+    ("ALU", gen_ALU(16), {}),
 ])
-@pytest.mark.parametrize("app", ["conv_3_3", "add2", "add1_const", "add4", "add3_const"])
-#@pytest.mark.parametrize("app", ["add2", "add1_const", "add4", "add3_const"])
+#@pytest.mark.parametrize("app", ["conv_3_3", "add2", "add1_const", "add4", "add3_const"])
+@pytest.mark.parametrize("app", ["add2", "add1_const", "add4", "add3_const"])
 def test_app(arch, app):
     c = CoreIRContext(reset=True)
     file_name = f"examples/{app}.json"
@@ -34,4 +33,3 @@ def test_app(arch, app):
     cmod = cutil.load_from_json(file_name, ["lakelib"])
     mapped_mod = mapper.do_mapping(cmod)
     mapped_mod.save_to_file(f"tests/build/{name}_{app}_mapped.json")
-    assert 0
