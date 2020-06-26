@@ -1,5 +1,6 @@
-from examples.alu import gen_ALU
-from lassen import PE_fc as lassen_fc, isa
+from examples.PEs.alu_basic import gen_ALU
+from examples.PEs.PE_lut import gen_PE as gen_PE_lut
+from lassen import PE_fc as lassen_fc
 
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -15,17 +16,22 @@ lassen_constraints = {
     ("config_data",): 0,
     ("config_en",): 0,
 }
+
 @pytest.mark.parametrize("arch", [
+    ("PE_lut", gen_PE_lut(16), {}),
     ("Lassen", lassen_fc, lassen_constraints),
     ("ALU", gen_ALU(16), {}),
 ])
 #@pytest.mark.parametrize("app", ["conv_3_3", "add2", "add1_const", "add4", "add3_const"])
-@pytest.mark.parametrize("app", ["add2", "add1_const", "add4", "add3_const"])
+#@pytest.mark.parametrize("app", ["add_or", "add2", "add1_const", "add4", "add3_const"])
+@pytest.mark.parametrize("app", ["add_or", "add2"])
 def test_app(arch, app):
     c = CoreIRContext(reset=True)
-    file_name = f"examples/{app}.json"
+    file_name = f"examples/coreir/{app}.json"
 
     name, arch_fc, constraints = arch
+    if name == "ALU" and app == "add_or":
+        pytest.skip()
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
     CoreIRNodes = gen_CoreIRNodes(16)

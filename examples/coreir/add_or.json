@@ -1,0 +1,39 @@
+{"top":"global.Add_or",
+"namespaces":{
+  "global":{
+    "modules":{
+      "Add_or":{
+        "type":["Record",[
+          ["data", ["Record",[
+            ["in0",["Array",16,"BitIn"]],
+            ["in1",["Array",16,"BitIn"]],
+            ["out",["Array",16,"Bit"]]
+          ]]],
+          ["bit", ["Record",[
+            ["in0","BitIn"],
+            ["in1","BitIn"],
+            ["out","Bit"]
+          ]]]
+        ]],
+        "instances":{
+          "a":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "o":{
+            "modref":"corebit.or"
+          }
+        },
+        "connections":[
+          ["self.data.in0","a.in0"],
+          ["self.data.in1","a.in1"],
+          ["self.data.out","a.out"],
+          ["self.bit.in0","o.in0"],
+          ["self.bit.in1","o.in1"],
+          ["self.bit.out","o.out"]
+        ]
+      }
+    }
+  }
+}
+}
