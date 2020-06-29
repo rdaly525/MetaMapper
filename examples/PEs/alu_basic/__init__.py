@@ -1,2 +1,2 @@
 from .sim import gen_ALU
-from .isa import gen_Inst, OP
+from .isa import gen_isa

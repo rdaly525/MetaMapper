@@ -10,6 +10,8 @@ from peak.assembler import AssembledADT, Assembler, AssembledADTRecursor
 from .common_passes import print_dag
 from hwtypes.adt import Product, Enum
 from peak.family import PyFamily
+import os
+
 
 #returns input objects and output objects
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
@@ -159,6 +161,8 @@ def coreir_to_dag(nodes: Nodes, cmod):
 
 #returns module, and map from instances to dags
 def load_from_json(file, libraries=[]):
+    if not os.path.isfile(file):
+        raise ValueError(f"{file} does not exist")
     c = CoreIRContext()
     for lib in libraries:
         c.load_library(lib)

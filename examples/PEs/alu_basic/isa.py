@@ -1,5 +1,8 @@
+from functools import lru_cache
+
 from peak import family_closure
 from hwtypes import Enum, Product
+from types import SimpleNamespace
 
 class OP(Enum):
     imm = 1
@@ -9,11 +12,14 @@ class OP(Enum):
     And = 5
     XOr = 6
 
-def gen_Inst(width):
+@lru_cache(None)
+def gen_isa(width):
     @family_closure
-    def Inst_fc(family):
+    def isa_fc(family):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
         class Inst(Product):
             op = OP
-            imm = family.BitVector[width]
-        return Inst
-    return Inst_fc
+            imm = Data
+        return SimpleNamespace(**locals(), OP=OP)
+    return isa_fc

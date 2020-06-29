@@ -23,8 +23,7 @@ lassen_constraints = {
     ("ALU", gen_ALU(16), {}),
 ])
 #@pytest.mark.parametrize("app", ["conv_3_3", "add2", "add1_const", "add4", "add3_const"])
-#@pytest.mark.parametrize("app", ["add_or", "add2", "add1_const", "add4", "add3_const"])
-@pytest.mark.parametrize("app", ["add_or", "add2"])
+@pytest.mark.parametrize("app", ["add_or", "add2", "add1_const"])
 def test_app(arch, app):
     c = CoreIRContext(reset=True)
     file_name = f"examples/coreir/{app}.json"
