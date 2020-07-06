@@ -10,11 +10,18 @@ from .node import DagNode
 class VerifyNodes(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
+        self.wrong_nodes = set()
+
+    def verify(self, dag: Dag):
+        self.run(dag)
+        if len(self.wrong_nodes) > 0:
+            return self.wrong_nodes
+        return None
 
     def generic_visit(self, node):
         nodes = type(node).nodes
         if nodes != self.nodes and nodes != Common:
-            raise ValueError(f"Verify Failed: {node} is not of type {self.nodes}")
+            self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
 class AddID(Visitor):

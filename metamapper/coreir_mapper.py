@@ -17,6 +17,9 @@ class Mapper:
                 #auto discover the rules for CoreIR
                 for op in (
                     "corebit.const",
+                    "corebit.or_",
+                    "corebit.and_",
+                    "corebit.xor",
                     "coreir.add",
                     "coreir.mul",
                     "coreir.const",
@@ -41,7 +44,9 @@ class Mapper:
             mapped_dag = self.inst_sel(dag)
             SimplifyCombines().run(mapped_dag)
             RemoveSelects().run(mapped_dag)
-            VerifyNodes(self.ArchNodes).run(mapped_dag)
+            unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
+            if unmapped is not None:
+                raise ValueError(f"Following nodes were unmapped: {unmapped}")
 
             #Create a new module representing the mapped_dag
             mapped_def = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module)

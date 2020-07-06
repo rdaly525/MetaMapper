@@ -23,7 +23,7 @@ def gen_CoreIRNodes(width):
         assert CoreIRNodes.name_from_coreir(cmod) == name
         print(f"Loaded {name}!")
     namespace = "corebit"
-    for op in ("const",):
+    for op in ("const", "or_", "and_", "xor"):
         name = f"{namespace}.{op}"
         peak_fc = peak_ir.instructions[name]
         coreir_op = strip_trailing(op)

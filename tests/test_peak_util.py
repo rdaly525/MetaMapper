@@ -1,7 +1,7 @@
 from peak.mapper import RewriteRule as PeakRule
 import metamapper.peak_util as putil
 from metamapper.node import Nodes
-from examples.alu import gen_ALU
+from examples.PEs.alu_basic import gen_ALU
 from metamapper import CoreIRContext
 import metamapper.coreir_util as cutil
 from metamapper.irs.coreir import gen_CoreIRNodes

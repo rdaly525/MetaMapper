@@ -1,6 +1,8 @@
 import pytest
-from examples.alu import gen_ALU
-from lassen import PE_fc as lassen_fc, isa
+from examples.PEs.alu_basic import gen_ALU
+from examples.PEs.PE_lut import gen_PE as gen_PE_lut
+from lassen import PE_fc as lassen_fc
+
 #from lassen.mode import Mode_t
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -19,13 +21,19 @@ lassen_constraints = {
     ("config_en",): 0,
 }
 @pytest.mark.parametrize("arch", [
-    (gen_ALU(16), {}),
-    (lassen_fc, lassen_constraints)
+    ("PE_lut", gen_PE_lut(16), {}),
+    ("basic_alu", gen_ALU(16), {}),
+    ("lassen", lassen_fc, lassen_constraints)
 ])
-@pytest.mark.parametrize("op", ["coreir.add", "coreir.const"])
+@pytest.mark.parametrize("op", ["coreir.add", "coreir.const", "corebit.or_", "corebit.const"])
 def test_discover(arch, op):
     CoreIRContext(reset=True)
-    arch_fc, constraints = arch
+    name, arch_fc, constraints = arch
+    if name is "basic_alu" and "corebit" in op:
+        return
+    if name is "PE_lut" and op == "corebit.const":
+        return
+
     ArchNodes = Nodes("Arch")
     name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
     CoreIRNodes = gen_CoreIRNodes(16)
@@ -49,7 +57,7 @@ def test_eager_covering():
     rr = table.discover("coreir.add", "ALU")
     assert rr
 
-    cmod = cutil.load_from_json("examples/add4.json")
+    cmod = cutil.load_from_json("examples/coreir/add4.json")
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
     verify_and_print(CoreIRNodes, dag)
 
