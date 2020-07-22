@@ -125,7 +125,7 @@ class RewriteTable:
         to_fc = self.to.peak_nodes[to_name]
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints)
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
-        peak_rr = ir_mapper.solve('z3')
+        peak_rr = ir_mapper.solve('z3', external_loop=True)
         if peak_rr is None:
             return None
         rr = self.add_peak_rule(peak_rr)

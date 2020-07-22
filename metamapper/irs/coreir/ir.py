@@ -2,9 +2,82 @@ from peak.ir import IR
 from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
 from peak import Peak, name_outputs, family_closure, Const
+from peak.family import AbstractFamily
 
 def gen_peak_CoreIR(width):
     CoreIR = IR()
+
+
+    @family_closure
+    def abs_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+        class abs(Peak):
+            def __call__(self, in0: Data) -> Data:
+                in0_s = SData(in0)
+                in0_neg = Data(-in0_s)
+                return (in0_s >=0).ite(in0, in0_neg)
+        return abs
+
+    CoreIR.add_instruction("commonlib.abs", abs_fc)
+
+    @family_closure
+    def absd_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+        class absd(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                d = in0 - in1
+                d_s = SData(d)
+                d_neg = Data(-d_s)
+                return (d_s >=0 ).ite(d, d_neg)
+        return absd
+    CoreIR.add_instruction("commonlib.absd", absd_fc)
+
+    @family_closure
+    def smax_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+        class smax(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return (SData(in0) >= SData(in1)).ite(in0, in1)
+        return smax
+
+    CoreIR.add_instruction("commonlib.smax", smax_fc)
+
+
+    @family_closure
+    def smin_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+        class smin(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return (SData(in0) <= SData(in1)).ite(in0, in1)
+        return smin
+
+    CoreIR.add_instruction("commonlib.smin", smin_fc)
+
+    @family_closure
+    def umax_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        class umax(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return (in0 >= in1).ite(in0, in1)
+        return umax
+
+    CoreIR.add_instruction("commonlib.umax", umax_fc)
+
+
+    @family_closure
+    def umin_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        class umin(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return (in0 <= in1).ite(in0, in1)
+        return umin
+
+    CoreIR.add_instruction("commonlib.umin", umin_fc)
+
 
     @family_closure
     def const_fc(family):
@@ -101,29 +174,28 @@ def gen_peak_CoreIR(width):
         return _reduce
 
     for name, fun in (
-        ("andr", lambda x: reduce(lambda a, b : a&b)(x)),
-        ("orr", lambda x: reduce(lambda a, b : a|b)(x)),
-        ("xorr", lambda x: reduce(lambda a, b : a^b)(x)),
+        ("andr", lambda f, x: reduce(lambda a, b : a&b)(x)),
+        ("orr", lambda f, x: reduce(lambda a, b : a|b)(x)),
+        ("xorr", lambda f, x: reduce(lambda a, b : a^b)(x)),
     ):
         CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBit, fun, name)
 
     for name, fun in (
-        ("eq" , lambda x, y: x==y),
-        ("neq", lambda x, y: x!=y),
-        ("slt", lambda x, y: x.bvslt(y)),
-        ("sle", lambda x, y: x.bvsle(y)),
-        ("sgt", lambda x, y: x.bvsgt(y)),
-        ("sge", lambda x, y: x.bvsge(y)),
-        ("ult", lambda x, y: x.bvult(y)),
-        ("ule", lambda x, y: x.bvule(y)),
-        ("ugt", lambda x, y: x.bvugt(y)),
-        ("uge", lambda x, y: x.bvuge(y)),
+        ("eq" , lambda f, x, y: x==y),
+        ("neq", lambda f, x, y: x!=y),
+        ("slt", lambda f, x, y: x.bvslt(y)),
+        ("sle", lambda f, x, y: x.bvsle(y)),
+        ("sgt", lambda f, x, y: x.bvsgt(y)),
+        ("sge", lambda f, x, y: x.bvsge(y)),
+        ("ult", lambda f, x, y: x.bvult(y)),
+        ("ule", lambda f, x, y: x.bvule(y)),
+        ("ugt", lambda f, x, y: x.bvugt(y)),
+        ("uge", lambda f, x, y: x.bvuge(y)),
     ):
         CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBit, fun, name)
 
-    #add mux
-    CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda in0, in1, sel: sel.ite(in1, in0), "mux")
-    CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda in0, in1, sel: sel.ite(in1, in0), "mux")
+    CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda f, in0, in1, sel: sel.ite(in1, in0), "mux")
+    CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda f, in0, in1, sel: sel.ite(in1, in0), "mux")
 
     return CoreIR
 
