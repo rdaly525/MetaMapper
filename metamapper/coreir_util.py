@@ -176,18 +176,18 @@ def load_from_json(file, libraries=[]):
     return cmod
 
 def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Instance, Dag]:
-    #First inline all commonlib instances (rungenerators for commonlib first)
-    #TODO
 
     c = cmod.context
-    #Run isolate_primitives pass
+    assert cmod.definition
+
+    #Simple optimizations
     c.run_passes(["rungenerators", "deletedeadinstances"])
 
-    assert cmod.definition
+    #First inline all non-findable instances
+    #TODO better mechanism for this
     to_inline = []
     for inst in cmod.definition.instances:
         mod_name = inst.module.name
-        print(mod_name)
         if mod_name in ("counter", "reshape", "absd"):
             to_inline.append(inst)
     assert len(to_inline) > 0
@@ -196,7 +196,8 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Ins
         coreir.inline_instance(inst)
 
     c.run_passes(["isolate_primitives"])
-    #Find all instances of modules which need to be mapped (All the _.*primitives) modules
+
+    #Find all instances of modules which need to be mapped (All the *___primitives) modules
     primitive_blocks = []
     assert cmod.definition
     for inst in cmod.definition.instances:
@@ -206,8 +207,6 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Ins
     assert len(primitive_blocks)==1
     #dagify all the primitive_blocks
     pb_dags = {inst:coreir_to_dag(CoreIRNodes, inst.module) for inst in primitive_blocks}
-    for _, dag in pb_dags.items():
-        print_dag(dag)
     return pb_dags
 
 class ToCoreir(Visitor):
