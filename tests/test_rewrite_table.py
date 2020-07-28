@@ -125,7 +125,7 @@ def test_complex_dag():
                 return (in0 + in1) + (in0 + in1)
         return add2x
 
-    rr = table.discover(add2x_fc, "ALU")
+    rr = table.discover(add2x_fc, "ALU", rr_name="add2x")
     assert rr is not None
 
     cmod = cutil.load_from_json("examples/coreir/dag.json")

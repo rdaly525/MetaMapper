@@ -36,14 +36,17 @@ class ReplaceInputs(Transformer):
 class GreedyReplace(Transformer):
     def __init__(self, rr: RewriteRule):
         self.rr = rr
-
         #Match needs to match all output_selects up to but not including input_selects
         self.output_selects = rr.tile.output.children()
         self.input_selects = set(rr.tile.input.select(field) for field in rr.tile.input._selects)
         self.state_roots = rr.tile.sinks[1:]
         if len(self.output_selects) > 1 or self.state_roots != []:
             raise NotImplementedError("TODO")
+        self.num_replace = 0
 
+    def replace(self, dag: Dag):
+        self.run(dag)
+        return self.num_replace
     def match_node(self, tile_node, dag_node, cur_matches):
         if tile_node in cur_matches:
             if cur_matches[tile_node] is not dag_node:
@@ -76,6 +79,7 @@ class GreedyReplace(Transformer):
         matched = self.match_node(self.output_selects[0], node, {})
         if matched is None:
             return None
+        self.num_replace += 1
         matched_inputs, _ = matched
         #What this is doing is pointing the matched inputs of the dag to the body of the tile.
         #Then replacing the body of the tile to this node
@@ -93,7 +97,8 @@ class GreedyCovering:
         dag = Clone().clone(dag)
         for rr in self.rrt.rules:
             #Will update dag in place
-            GreedyReplace(rr).run(dag)
+            cnt = GreedyReplace(rr).replace(dag)
+            print(f"RR {rr.name} used {cnt} times")
         return dag
 
 

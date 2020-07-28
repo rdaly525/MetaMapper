@@ -18,7 +18,8 @@ class RewriteRule:
         tile: Dag,
         replace: tp.Callable,
         cost: tp.Callable,
-        checker: tp.Callable = None
+        checker: tp.Callable = None,
+        name = None
     ):
 
         pattern_is_tree = CheckIfTree().is_tree(tile)
@@ -30,6 +31,9 @@ class RewriteRule:
         self.replace = replace
         self.cost = cost
         self.checker = cost
+        if name is None:
+            name = "Unnamed"
+        self.name = name
 
 #This will verify that each ir and arch are only of the apporpriate type
 class RewriteTable:
@@ -45,7 +49,7 @@ class RewriteTable:
         VerifyNodes(self.from_).run(rr.tile)
         self.rules.append(rr)
 
-    def add_peak_rule(self, rule: PeakRule):
+    def add_peak_rule(self, rule: PeakRule, name=None):
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
@@ -113,13 +117,14 @@ class RewriteTable:
             tile = from_dag,
             replace = lambda _: to_dag,
             cost = lambda _: 1,
-            checker = lambda match: True
+            checker = lambda match: True,
+            name = name
         )
         self.add_rule(rr)
         return rr
 
     #Discovers and returns a rule if possible
-    def discover(self, from_name, to_name, path_constraints={}) -> tp.Union[None, RewriteRule]:
+    def discover(self, from_name, to_name, path_constraints={}, rr_name=None) -> tp.Union[None, RewriteRule]:
         if isinstance(from_name, str):
             from_fc = self.from_.peak_nodes[from_name]
         else:
@@ -131,6 +136,6 @@ class RewriteTable:
         peak_rr = ir_mapper.solve('z3', external_loop=True)
         if peak_rr is None:
             return None
-        rr = self.add_peak_rule(peak_rr)
+        rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 
