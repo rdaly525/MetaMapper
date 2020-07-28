@@ -4,6 +4,16 @@ from peak import family
 from .node import Nodes, DagNode, Dag, Input, Output
 import coreir
 import magma
+from . import CoreIRContext
+from .coreir_util import coreir_to_dag
+
+def flatten(cmod: coreir.Module):
+    CoreIRContext().run_passes(["rungenerators"])
+    d = cmod.definition
+    #TODO change this to stop at a fixed point
+    for i in range(4):
+        for inst in d.instances:
+            coreir.inline_instance(inst)
 
 def peak_to_dag(nodes: Nodes, peak_fc):
     # Two cases:
@@ -13,9 +23,10 @@ def peak_to_dag(nodes: Nodes, peak_fc):
 
     #case 2
     if node_name is None:
-        raise NotImplementedError
         cmod = peak_to_coreir(peak_fc)
-        return coreir_to_dag(cmod, nodes)
+        flatten(cmod)
+        dag = coreir_to_dag(nodes, cmod)
+        return dag
 
     #case 1
 
@@ -45,7 +56,6 @@ def magma_to_coreir(mod):
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
     peak_m = peak_fc(family.MagmaFamily())
-    assert wrap
     if wrap:
         class HashableDict(dict):
             def __hash__(self):

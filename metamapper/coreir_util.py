@@ -14,13 +14,16 @@ import os
 
 
 #returns input objects and output objects
+#removes clk and reset
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     assert isinstance(rtype, coreir.Record)
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
         if t.kind not in ("Array", "Bit", "BitIn"):
-            raise NotImplementedError()
+            if t.kind == "Named":
+                continue
+            raise NotImplementedError(t.kind)
         if t.is_input():
             inputs[n] = t
         elif t.is_output():

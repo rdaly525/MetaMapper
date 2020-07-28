@@ -116,16 +116,26 @@ class CheckIfTree(Visitor):
         self.parent_cnt = {}
 
     def is_tree(self, dag: Dag):
-        not_tree = len(dag.sinks)!=1
-        not_tree |= len(dag.output.children())!=1
+        not_tree = len(dag.sinks) != 1
+        not_tree |= len(dag.output.children()) != 1
         if not_tree:
             return False
         self.run(dag)
-        return all(cnt <2 for cnt in self.parent_cnt.values())
+        for node, cnt in self.parent_cnt.items():
+            print(node, cnt)
+        return all(cnt < 2 for cnt in self.parent_cnt.values())
 
+    #If it is an input or a select of an input
+    def is_input(self, node: DagNode):
+        if isinstance(node, Input):
+            return True
+        elif isinstance(node, Select):
+            return self.is_input(node.children()[0])
+        else:
+            return False
     def generic_visit(self, node):
         for child in node.children():
-            if isinstance(child, Input):
+            if self.is_input(child):
                 continue
             self.parent_cnt.setdefault(child, 0)
             self.parent_cnt[child] += 1

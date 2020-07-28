@@ -22,8 +22,8 @@ lassen_constraints = {
     ("Lassen", lassen_fc, lassen_constraints),
     #("ALU", gen_ALU(16), {}),
 ])
-@pytest.mark.parametrize("app", ["camera_pipeline"])#, "add2", "add1_const", "add4", "add3_const"])
-#@pytest.mark.parametrize("app", ["conv_3_3"])#, "add2", "add1_const", "add4", "add3_const"])
+#@pytest.mark.parametrize("app", ["camera_pipeline"])#, "add2", "add1_const", "add4", "add3_const"])
+@pytest.mark.parametrize("app", ["conv_3_3"])#, "add2", "add1_const", "add4", "add3_const"])
 #@pytest.mark.parametrize("app", ["add_or"]) #, "add2", "add1_const"])
 def test_app(arch, app):
     c = CoreIRContext(reset=True)
@@ -37,8 +37,7 @@ def test_app(arch, app):
         pytest.skip()
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
-    mapper = Mapper(CoreIRNodes, ArchNodes, conv=False)
+    mapper = Mapper(CoreIRNodes, ArchNodes, conv=True)
     mod = mapper.do_mapping(pb_dags)
-    mapper.do_mapping(pb_dags)
     c.run_passes(["cullgraph"])
     mod.save_to_file(f"tests/build/{name}_{app}_mapped.json")

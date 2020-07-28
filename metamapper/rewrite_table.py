@@ -6,7 +6,7 @@ from .node import Nodes, DagNode, Dag, Constant, Input, Output, Combine
 from .peak_util import peak_to_dag
 from peak.mapper import ArchMapper, Unbound
 from peak.mapper import RewriteRule as PeakRule
-from peak import family
+from peak import family, family_closure
 
 #debug
 from peak.mapper.utils import pretty_print_binding
@@ -120,8 +120,11 @@ class RewriteTable:
 
     #Discovers and returns a rule if possible
     def discover(self, from_name, to_name, path_constraints={}) -> tp.Union[None, RewriteRule]:
-
-        from_fc = self.from_.peak_nodes[from_name]
+        if isinstance(from_name, str):
+            from_fc = self.from_.peak_nodes[from_name]
+        else:
+            from_fc = from_name
+            assert isinstance(from_name, family_closure)
         to_fc = self.to.peak_nodes[to_name]
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints)
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
