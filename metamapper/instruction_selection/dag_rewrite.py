@@ -44,27 +44,37 @@ class GreedyReplace(Transformer):
         if len(self.output_selects) > 1 or self.state_roots != []:
             raise NotImplementedError("TODO")
 
-    def match_node(self, tile_node, dag_node):
+    def match_node(self, tile_node, dag_node, cur_matches):
+        if tile_node in cur_matches:
+            if cur_matches[tile_node] is not dag_node:
+                return None
+            else:
+                return {}, {}
+
+
         if tile_node in self.input_selects:
-            return {tile_node.field:dag_node}
+            return {tile_node.field: dag_node}, {tile_node: dag_node}
 
         # Verify p_node is a_node
         if type(tile_node) != type(dag_node):
             return None
 
-        matches = {}
+        matched_inputs = {}
+        matches = dict(cur_matches)
         for tile_child, dag_child in zip(tile_node.children(), dag_node.children()):
-            child_matched = self.match_node(tile_child, dag_child)
-            if child_matched is None:
+            matched = self.match_node(tile_child, dag_child, matches)
+            if matched is None:
                 return None
-            matches.update(child_matched)
-        return matches
+            child_inputs, child_matches = matched
+            matched_inputs.update(child_inputs)
+            matches.update(child_matches)
+        return matched_inputs, matches
 
     def visit_Select(self, node):
         #visit all children first
         Transformer.generic_visit(self, node)
 
-        matches = self.match_node(self.output_selects[0], node)
+        matches = self.match_node(self.output_selects[0], node, {})
         if matches is None:
             return None
         #What this is doing is pointing the matched inputs of the dag to the body of the tile.

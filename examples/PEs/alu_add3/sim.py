@@ -20,7 +20,8 @@ def gen_ALU(width):
                 elif op == isa.OP.Sub:
                     res = a + b
                 elif op == isa.OP.And:
-                    res = a & b
+                    t = a + b
+                    res = t + t
                 elif op == isa.OP.Or:
                     res = a | b
                 else: #op == OP.XOr:

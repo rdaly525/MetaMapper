@@ -77,6 +77,67 @@ def test_complex():
     print_dag(mapped_dag)
     verify_and_print(ArchNodes, mapped_dag)
 
+def test_complex_dag_bad():
+    CoreIRContext(reset=True)
+    arch_fc = gen_Add3(16)
+    ArchNodes = Nodes("Arch")
+    name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
+    CoreIRNodes = gen_CoreIRNodes(16)
+    table = RewriteTable(CoreIRNodes, ArchNodes)
+
+    @family_closure
+    def add2x_fc(family):
+        Data = family.BitVector[16]
+        SData = family.Signed[16]
+        @family.assemble(locals(), globals())
+        class add2x(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return (in0 + in1) + (in0 + in1)
+        return add2x
+
+    rr = table.discover(add2x_fc, "ALU")
+    assert rr is not None
+
+    cmod = cutil.load_from_json("examples/coreir/add4.json")
+    dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
+    inst_sel = GreedyCovering(table)
+
+    mapped_dag = inst_sel(dag)
+    print_dag(mapped_dag)
+    wrong = VerifyNodes(ArchNodes).verify(mapped_dag)
+    assert wrong is not None
+
+def test_complex_dag():
+    CoreIRContext(reset=True)
+    arch_fc = gen_Add3(16)
+    ArchNodes = Nodes("Arch")
+    name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
+    CoreIRNodes = gen_CoreIRNodes(16)
+    table = RewriteTable(CoreIRNodes, ArchNodes)
+
+    @family_closure
+    def add2x_fc(family):
+        Data = family.BitVector[16]
+        SData = family.Signed[16]
+        @family.assemble(locals(), globals())
+        class add2x(Peak):
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return (in0 + in1) + (in0 + in1)
+        return add2x
+
+    rr = table.discover(add2x_fc, "ALU")
+    assert rr is not None
+
+    cmod = cutil.load_from_json("examples/coreir/dag.json")
+    dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
+    verify_and_print(CoreIRNodes, dag)
+
+    inst_sel = GreedyCovering(table)
+
+    mapped_dag = inst_sel(dag)
+    print_dag(mapped_dag)
+    verify_and_print(ArchNodes, mapped_dag)
+
 def verify_and_print(nodes, dag):
     wrong = VerifyNodes(nodes).verify(dag)
     if wrong is not None:
