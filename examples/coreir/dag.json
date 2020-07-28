@@ -16,6 +16,14 @@
           "a2":{
             "genref":"coreir.add",
             "genargs":{"width":["Int",16]}
+          },
+          "a3":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "a4":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
           }
         },
         "connections":[
@@ -23,7 +31,11 @@
           ["self.in1","a1.in1"],
           ["a1.out","a2.in0"],
           ["a1.out","a2.in1"],
-          ["self.out","a2.out"]
+          ["a2.out","a3.in0"],
+          ["a2.out","a3.in1"],
+          ["a3.out","a4.in0"],
+          ["a3.out","a4.in1"],
+          ["self.out","a4.out"]
         ]
       }
     }

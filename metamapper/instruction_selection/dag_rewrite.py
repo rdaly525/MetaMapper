@@ -51,11 +51,10 @@ class GreedyReplace(Transformer):
             else:
                 return {}, {}
 
-
         if tile_node in self.input_selects:
             return {tile_node.field: dag_node}, {tile_node: dag_node}
 
-        # Verify p_node is a_node
+        # Verify node types are identical
         if type(tile_node) != type(dag_node):
             return None
 
@@ -74,14 +73,15 @@ class GreedyReplace(Transformer):
         #visit all children first
         Transformer.generic_visit(self, node)
 
-        matches = self.match_node(self.output_selects[0], node, {})
-        if matches is None:
+        matched = self.match_node(self.output_selects[0], node, {})
+        if matched is None:
             return None
+        matched_inputs, _ = matched
         #What this is doing is pointing the matched inputs of the dag to the body of the tile.
         #Then replacing the body of the tile to this node
         #TODO verify and call with the matched dag
         replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{node.iname}_")
-        ReplaceInputs(matches).run(replace_dag_copy)
+        ReplaceInputs(matched_inputs).run(replace_dag_copy)
         return replace_dag_copy.output.children()[0]
 
 class GreedyCovering:

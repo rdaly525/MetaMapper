@@ -130,8 +130,7 @@ def test_complex_dag():
 
     cmod = cutil.load_from_json("examples/coreir/dag.json")
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
-    verify_and_print(CoreIRNodes, dag)
-
+    print_dag(dag)
     inst_sel = GreedyCovering(table)
 
     mapped_dag = inst_sel(dag)
