@@ -8,8 +8,7 @@ def gen_ALU(width):
         isa = isa_fc(family)
         @family.assemble(locals(), globals())
         class ALU(Peak):
-            @name_outputs(out=isa.Data)
-            def __call__(self, inst: Const(isa.Inst), a: isa.Data, b: isa.Data, c: isa.Data, d: isa.Data) -> isa.Data:
+            def __call__(self, inst: Const(isa.Inst), a: isa.Data, b: isa.Data, c: isa.Data, d: isa.Data) -> (isa.Data, family.Bit):
                 a = isa.SData(a)
                 b = isa.SData(b)
                 op = inst.op
@@ -27,6 +26,6 @@ def gen_ALU(width):
                 else: #op == OP.XOr:
                     res = a + (b*inst.imm) + (c*inst.imm1) + (d*inst.imm2)
 
-                return res
+                return res, inst.use_imm
         return ALU
     return ALU_fc

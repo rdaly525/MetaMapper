@@ -186,16 +186,14 @@ def test_complex_dag_const2():
         @family.assemble(locals(), globals())
         class rr1(Peak):
             def __call__(self, a: Data, b: Data, c: Data, d: Data, imm: Const(Data), imm1: Const(Data), imm2: Const(Data)) -> Data:
-                return a + (b * imm) + (c * imm1) + (d * imm2)
+                return a + (imm * b) + (imm1 * c) + (imm2 * d)
         return rr1
 
     rr = table.discover(rr1_fc, "ALU", rr_name="amc")
     assert rr is not None
-    rr = table.discover("coreir.add", "ALU", rr_name="add")
+    rr = table.discover("corebit.const", "ALU", rr_name="corebit.const")
     assert rr is not None
-    rr = table.discover("coreir.mul", "ALU", rr_name="mul")
-    assert rr is not None
-    rr = table.discover("coreir.const", "ALU", rr_name="const")
+    rr = table.discover("coreir.const", "ALU", rr_name="coreir.const")
     assert rr is not None
 
     cmod = cutil.load_from_json("examples/coreir/conv_3_3.json", libraries=["lakelib"])

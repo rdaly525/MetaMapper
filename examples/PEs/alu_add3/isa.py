@@ -23,5 +23,6 @@ def gen_isa(width):
             imm = Data
             imm1 = Data
             imm2 = Data
+            use_imm = family.Bit
         return SimpleNamespace(**locals(), OP=OP)
     return isa_fc

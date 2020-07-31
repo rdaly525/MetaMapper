@@ -47,8 +47,11 @@ def peak_to_dag(nodes: Nodes, peak_fc):
         cmod = peak_to_coreir(peak_fc)
         flatten(cmod)
         dag = coreir_to_dag(nodes, cmod)
-        #Compiled CoreIR will not contain constants appropriatly, add them with a pass
+        #print("pre-fix")
+        #print_dag(dag)
         FixConsts(peak_fc, nodes).run(dag)
+        #print("post-fix")
+        #print_dag(dag)
         return dag
 
     #case 1
