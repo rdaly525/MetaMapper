@@ -9,23 +9,23 @@ def gen_ALU(width):
         @family.assemble(locals(), globals())
         class ALU(Peak):
             @name_outputs(out=isa.Data)
-            def __call__(self, inst: Const(isa.Inst), a: isa.Data, b: isa.Data, c: isa.Data) -> isa.Data:
+            def __call__(self, inst: Const(isa.Inst), a: isa.Data, b: isa.Data, c: isa.Data, d: isa.Data) -> isa.Data:
                 a = isa.SData(a)
                 b = isa.SData(b)
                 op = inst.op
                 if op == isa.OP.imm:
                     res = inst.imm
                 elif op == isa.OP.Add:
-                    res = a + b + c
+                    res = a + inst.imm
                 elif op == isa.OP.Sub:
                     res = a + b
                 elif op == isa.OP.And:
                     t = a + b
                     res = t + t
                 elif op == isa.OP.Or:
-                    res = a | b
+                    res = a*b
                 else: #op == OP.XOr:
-                    res = a ^ b
+                    res = a + (b*inst.imm) + (c*inst.imm1) + (d*inst.imm2)
 
                 return res
         return ALU

@@ -1,11 +1,31 @@
 import peak
 from peak.assembler import Assembler
-from peak import family
-from .node import Nodes, DagNode, Dag, Input, Output
+from peak import family, Const
+from .node import Nodes, DagNode, Dag, Input, Output, Select
+from .common_passes import print_dag
 import coreir
 import magma
 from . import CoreIRContext
 from .coreir_util import coreir_to_dag
+from DagVisitor import  Transformer, AbstractDag
+
+# A CoreIR Dag is compiled to remove any notion of constant inputs
+#This will take in a dag compiled from a peak_fc.
+# Will replace any selects of the inputs that should be const with a coreir.const (A little sketch if the constant is not a bitvector)
+class FixConsts(Transformer):
+    def __init__(self, peak_fc, nodes):
+        input_t = peak_fc.Py.input_t
+        self.const_fields = set()
+        for field, T in input_t.field_dict.items():
+            if issubclass(T, Const):
+                self.const_fields.add(field)
+        self.const_node = nodes.dag_nodes["coreir.const"]
+
+    def visit_Select(self, node : Select):
+        Transformer.generic_visit(self, node)
+        if isinstance(node.children()[0], Input) and node.field in self.const_fields:
+            const = self.const_node(node)
+            return const.select("out")
 
 def flatten(cmod: coreir.Module):
     CoreIRContext().run_passes(["rungenerators"])
@@ -14,6 +34,7 @@ def flatten(cmod: coreir.Module):
     for i in range(4):
         for inst in d.instances:
             coreir.inline_instance(inst)
+
 
 def peak_to_dag(nodes: Nodes, peak_fc):
     # Two cases:
@@ -26,6 +47,8 @@ def peak_to_dag(nodes: Nodes, peak_fc):
         cmod = peak_to_coreir(peak_fc)
         flatten(cmod)
         dag = coreir_to_dag(nodes, cmod)
+        #Compiled CoreIR will not contain constants appropriatly, add them with a pass
+        FixConsts(peak_fc, nodes).run(dag)
         return dag
 
     #case 1

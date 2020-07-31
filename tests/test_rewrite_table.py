@@ -3,7 +3,7 @@ from examples.PEs.alu_basic import gen_ALU
 from examples.PEs.alu_add3 import gen_ALU as gen_Add3
 from examples.PEs.PE_lut import gen_PE as gen_PE_lut
 from lassen import PE_fc as lassen_fc
-from peak import family_closure, Peak
+from peak import family_closure, Peak, Const
 from metamapper.common_passes import print_dag
 #from lassen.mode import Mode_t
 from metamapper.irs.coreir import gen_CoreIRNodes
@@ -136,6 +136,80 @@ def test_complex_dag():
     mapped_dag = inst_sel(dag)
     print_dag(mapped_dag)
     verify_and_print(ArchNodes, mapped_dag)
+
+def test_complex_dag_const():
+    CoreIRContext(reset=True)
+    arch_fc = gen_Add3(16)
+    ArchNodes = Nodes("Arch")
+    name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
+    CoreIRNodes = gen_CoreIRNodes(16)
+    table = RewriteTable(CoreIRNodes, ArchNodes)
+
+    @family_closure
+    def add_const_fc(family):
+        Data = family.BitVector[16]
+        SData = family.Signed[16]
+        @family.assemble(locals(), globals())
+        class add_const(Peak):
+            def __call__(self, in0: Data, imm: Const(Data)) -> Data:
+                return in0 + imm
+        return add_const
+
+    rr = table.discover(add_const_fc, "ALU", rr_name="add_const")
+    assert rr is not None
+    #rr = table.discover("coreir.const", "ALU", rr_name="const")
+    #assert rr is not None
+    #rr = table.discover("coreir.add", "ALU", rr_name="add")
+    #assert rr is not None
+
+    cmod = cutil.load_from_json("examples/coreir/dag_const.json")
+    dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
+    print_dag(dag)
+    inst_sel = GreedyCovering(table)
+
+    mapped_dag = inst_sel(dag)
+    print_dag(mapped_dag)
+    verify_and_print(ArchNodes, mapped_dag)
+
+def test_complex_dag_const2():
+    CoreIRContext(reset=True)
+    arch_fc = gen_Add3(16)
+    ArchNodes = Nodes("Arch")
+    name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
+    CoreIRNodes = gen_CoreIRNodes(16)
+    table = RewriteTable(CoreIRNodes, ArchNodes)
+
+    @family_closure
+    def rr1_fc(family):
+        Data = family.BitVector[16]
+        SData = family.Signed[16]
+        @family.assemble(locals(), globals())
+        class rr1(Peak):
+            def __call__(self, a: Data, b: Data, c: Data, d: Data, imm: Const(Data), imm1: Const(Data), imm2: Const(Data)) -> Data:
+                return a + (b * imm) + (c * imm1) + (d * imm2)
+        return rr1
+
+    rr = table.discover(rr1_fc, "ALU", rr_name="amc")
+    assert rr is not None
+    rr = table.discover("coreir.add", "ALU", rr_name="add")
+    assert rr is not None
+    rr = table.discover("coreir.mul", "ALU", rr_name="mul")
+    assert rr is not None
+    rr = table.discover("coreir.const", "ALU", rr_name="const")
+    assert rr is not None
+
+    cmod = cutil.load_from_json("examples/coreir/conv_3_3.json", libraries=["lakelib"])
+    pb_dags = cutil.preprocess(CoreIRNodes, cmod)
+    for dag in pb_dags.values():
+        break
+    print_dag(dag)
+    inst_sel = GreedyCovering(table)
+
+    mapped_dag = inst_sel(dag)
+    print_dag(mapped_dag)
+    verify_and_print(ArchNodes, mapped_dag)
+
+
 
 def verify_and_print(nodes, dag):
     wrong = VerifyNodes(nodes).verify(dag)

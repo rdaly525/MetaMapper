@@ -42,11 +42,12 @@ class GreedyReplace(Transformer):
         self.state_roots = rr.tile.sinks[1:]
         if len(self.output_selects) > 1 or self.state_roots != []:
             raise NotImplementedError("TODO")
-        self.num_replace = 0
 
     def replace(self, dag: Dag):
+        self.num_replace = 0
         self.run(dag)
         return self.num_replace
+
     def match_node(self, tile_node, dag_node, cur_matches):
         if tile_node in cur_matches:
             if cur_matches[tile_node] is not dag_node:
@@ -75,7 +76,6 @@ class GreedyReplace(Transformer):
     def visit_Select(self, node):
         #visit all children first
         Transformer.generic_visit(self, node)
-
         matched = self.match_node(self.output_selects[0], node, {})
         if matched is None:
             return None

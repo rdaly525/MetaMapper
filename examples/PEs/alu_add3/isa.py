@@ -21,5 +21,7 @@ def gen_isa(width):
         class Inst(Product):
             op = OP
             imm = Data
+            imm1 = Data
+            imm2 = Data
         return SimpleNamespace(**locals(), OP=OP)
     return isa_fc
