@@ -100,7 +100,6 @@ class BindsToCombines(Transformer):
 # Consolidates constants into a simpler Bind node
 class SimplifyCombines(Transformer):
     def visit_Combine(self, node: Combine):
-        print("Combining Node ?")
         Transformer.generic_visit(self, node)
         #create the binding
         const_dict = {}
@@ -112,8 +111,6 @@ class SimplifyCombines(Transformer):
             const_dict[field] = child.value
         aadt = AssembledADT[strip_modifiers(node.type), Assembler, PyFamily().BitVector]
         val = aadt.from_fields(**const_dict)
-        print(val)
-        print(val._value_)
         return Constant(value=val._value_)
 
         #new_binding = strip_aadt(SimplifyBinding()(aadt, binding))
