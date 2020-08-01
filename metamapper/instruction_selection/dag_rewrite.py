@@ -36,7 +36,6 @@ class ReplaceInputs(Transformer):
 class GreedyReplace(Transformer):
     def __init__(self, rr: RewriteRule):
         self.rr = rr
-
         #Match needs to match all output_selects up to but not including input_selects
         self.output_selects = rr.tile.output.children()
         self.input_selects = set(rr.tile.input.select(field) for field in rr.tile.input._selects)
@@ -44,34 +43,49 @@ class GreedyReplace(Transformer):
         if len(self.output_selects) > 1 or self.state_roots != []:
             raise NotImplementedError("TODO")
 
-    def match_node(self, tile_node, dag_node):
-        if tile_node in self.input_selects:
-            return {tile_node.field:dag_node}
+    def replace(self, dag: Dag):
+        self.num_replace = 0
+        self.run(dag)
+        return self.num_replace
 
-        # Verify p_node is a_node
+    def match_node(self, tile_node, dag_node, cur_matches):
+        if tile_node in cur_matches:
+            if cur_matches[tile_node] is not dag_node:
+                return None
+            else:
+                return {}, {}
+
+        if tile_node in self.input_selects:
+            return {tile_node.field: dag_node}, {tile_node: dag_node}
+
+        # Verify node types are identical
         if type(tile_node) != type(dag_node):
             return None
 
-        matches = {}
+        matched_inputs = {}
+        matches = dict(cur_matches)
         for tile_child, dag_child in zip(tile_node.children(), dag_node.children()):
-            child_matched = self.match_node(tile_child, dag_child)
-            if child_matched is None:
+            matched = self.match_node(tile_child, dag_child, matches)
+            if matched is None:
                 return None
-            matches.update(child_matched)
-        return matches
+            child_inputs, child_matches = matched
+            matched_inputs.update(child_inputs)
+            matches.update(child_matches)
+        return matched_inputs, matches
 
     def visit_Select(self, node):
         #visit all children first
         Transformer.generic_visit(self, node)
-
-        matches = self.match_node(self.output_selects[0], node)
-        if matches is None:
+        matched = self.match_node(self.output_selects[0], node, {})
+        if matched is None:
             return None
+        self.num_replace += 1
+        matched_inputs, _ = matched
         #What this is doing is pointing the matched inputs of the dag to the body of the tile.
         #Then replacing the body of the tile to this node
         #TODO verify and call with the matched dag
         replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{node.iname}_")
-        ReplaceInputs(matches).run(replace_dag_copy)
+        ReplaceInputs(matched_inputs).run(replace_dag_copy)
         return replace_dag_copy.output.children()[0]
 
 class GreedyCovering:
@@ -83,7 +97,8 @@ class GreedyCovering:
         dag = Clone().clone(dag)
         for rr in self.rrt.rules:
             #Will update dag in place
-            GreedyReplace(rr).run(dag)
+            cnt = GreedyReplace(rr).replace(dag)
+            print(f"RR {rr.name} used {cnt} times")
         return dag
 
 

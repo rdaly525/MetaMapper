@@ -14,13 +14,16 @@ import os
 
 
 #returns input objects and output objects
+#removes clk and reset
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     assert isinstance(rtype, coreir.Record)
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
         if t.kind not in ("Array", "Bit", "BitIn"):
-            raise NotImplementedError()
+            if t.kind == "Named":
+                continue
+            raise NotImplementedError(t.kind)
         if t.is_input():
             inputs[n] = t
         elif t.is_output():
@@ -160,6 +163,12 @@ def coreir_to_dag(nodes: Nodes, cmod):
     return Loader(cmod, nodes).dag
 
 #returns module, and map from instances to dags
+
+def load_libs(libraries=[]):
+    c = CoreIRContext()
+    for lib in libraries:
+        c.load_library(lib)
+
 def load_from_json(file, libraries=[]):
     if not os.path.isfile(file):
         raise ValueError(f"{file} does not exist")
@@ -170,20 +179,34 @@ def load_from_json(file, libraries=[]):
     return cmod
 
 def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Instance, Dag]:
-    #First inline all commonlib instances (rungenerators for commonlib first)
-    #TODO
 
     c = cmod.context
-    #Run isolate_primitives pass
+    assert cmod.definition
+
+    #Simple optimizations
+    c.run_passes(["rungenerators", "deletedeadinstances"])
+
+    #First inline all non-findable instances
+    #TODO better mechanism for this
+    to_inline = []
+    for inst in cmod.definition.instances:
+        mod_name = inst.module.name
+        if mod_name in ("counter", "reshape", "absd"):
+            to_inline.append(inst)
+    for inst in to_inline:
+        print("inlining", inst.name, inst.module.name)
+        coreir.inline_instance(inst)
+
     c.run_passes(["isolate_primitives"])
-    #Find all instances of modules which need to be mapped (All the _.*primitives) modules
+
+    #Find all instances of modules which need to be mapped (All the *___primitives) modules
     primitive_blocks = []
     assert cmod.definition
     for inst in cmod.definition.instances:
-        ns_name = inst.module.namespace.name
-        if ns_name == "_":
+        mod_name = inst.module.name
+        if "___primitives" in mod_name:
             primitive_blocks.append(inst)
-
+    assert len(primitive_blocks)==1
     #dagify all the primitive_blocks
     pb_dags = {inst:coreir_to_dag(CoreIRNodes, inst.module) for inst in primitive_blocks}
     return pb_dags
@@ -216,22 +239,23 @@ class ToCoreir(Visitor):
         self.node_to_inst[node] = inst.select("out")
 
     def visit_Combine(self, node: Combine):
-        Visitor.generic_visit(self, node)
-        def create_pt(cinputs):
-            rtype = CoreIRContext().Record(cinputs)
-            assert isinstance(rtype, coreir.Record)
-            pt_mod = self.coreir_pt(type=rtype)
-            return pt_mod
+        raise NotImplementedError("TODO")
+        #Visitor.generic_visit(self, node)
+        #def create_pt(cinputs):
+        #    rtype = CoreIRContext().Record(cinputs)
+        #    assert isinstance(rtype, coreir.Record)
+        #    pt_mod = self.coreir_pt(type=rtype)
+        #    return pt_mod
 
-        pt_mod = create_pt(node.cinputs)
-        pt_inst = self.def_.add_module_instance(node.iname, pt_mod)
-        for path, child in zip(node.selects, node.children()):
-            child_inst = self.node_to_inst[child]
-            pt_sel = pt_inst.select("in")
-            for field in path:
-                pt_sel = pt_sel.select(field)
-            self.def_.connect(child_inst, pt_sel)
-        self.node_to_inst[node] = pt_inst.select("out")
+        #pt_mod = create_pt(node.cinputs)
+        #pt_inst = self.def_.add_module_instance(node.iname, pt_mod)
+        #for path, child in zip(node.selects, node.children()):
+        #    child_inst = self.node_to_inst[child]
+        #    pt_sel = pt_inst.select("in")
+        #    for field in path:
+        #        pt_sel = pt_sel.select(field)
+        #    self.def_.connect(child_inst, pt_sel)
+        #self.node_to_inst[node] = pt_inst.select("out")
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
@@ -240,13 +264,15 @@ class ToCoreir(Visitor):
         # create new instance
         #TODO what if this has modparams?
         inst = self.def_.add_module_instance(node.iname, cmod_t)
-
-        inst_inputs = list(self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t.field_dict.keys())
+        input_t = self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t
+        inst_inputs = list(input_t.field_dict.keys())
         # Wire all the children (inputs)
         for port, child in zip(inst_inputs, node.children()):
             child_inst = self.node_to_inst[child]
             if child_inst is not None:
                 self.def_.connect(child_inst, inst.select(port))
+            else:
+                coreir.connect_const(inst.select(port), 0)
 
         self.node_to_inst[node] = inst
 
@@ -307,7 +333,6 @@ class FixSelects(Transformer):
 #This will construct a coreir module from the dag with ref_type
 def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
-    print("FIXING SELS")
     FixSelects(nodes).run(dag)
     def_ = ref_mod.new_definition()
     ToCoreir(nodes, def_).run(dag)

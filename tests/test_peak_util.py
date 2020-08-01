@@ -11,7 +11,7 @@ import pytest
 
 @pytest.mark.parametrize("args", [
     (gen_ALU(16), 3, "ALU"),
-    (lassen_fc, 10, "PE"),
+    #(lassen_fc, 10, "PE"),
 ])
 def test_peak_to_node(args):
     CoreIRContext(reset=True)

@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
-from .common_passes import CheckIfTree, VerifyNodes, print_dag
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines
 import typing as tp
-from .node import Nodes, DagNode, Dag, Constant, Input, Output, Combine
+from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
 from peak.mapper import ArchMapper, Unbound
 from peak.mapper import RewriteRule as PeakRule
-from peak import family
+from peak import family, family_closure
 
 #debug
 from peak.mapper.utils import pretty_print_binding
@@ -18,7 +18,8 @@ class RewriteRule:
         tile: Dag,
         replace: tp.Callable,
         cost: tp.Callable,
-        checker: tp.Callable = None
+        checker: tp.Callable = None,
+        name = None
     ):
 
         pattern_is_tree = CheckIfTree().is_tree(tile)
@@ -30,6 +31,9 @@ class RewriteRule:
         self.replace = replace
         self.cost = cost
         self.checker = cost
+        if name is None:
+            name = "Unnamed"
+        self.name = name
 
 #This will verify that each ir and arch are only of the apporpriate type
 class RewriteTable:
@@ -45,7 +49,7 @@ class RewriteTable:
         VerifyNodes(self.from_).run(rr.tile)
         self.rules.append(rr)
 
-    def add_peak_rule(self, rule: PeakRule):
+    def add_peak_rule(self, rule: PeakRule, name=None):
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
@@ -81,7 +85,7 @@ class RewriteTable:
             ibind_paths.append(to_b)
             ibind_children.append(child)
 
-        ibind = Combine(*ibind_children, paths=ibind_paths, type=to_bv.input_t, iname="ibind")
+        ibind = Bind(*ibind_children, paths=ibind_paths, type=to_bv.input_t, iname="ibind")
 
         #ibinding node -> to_node
         to_children = [ibind.select(field) for field in to_bv.input_t.field_dict]
@@ -100,12 +104,14 @@ class RewriteTable:
             else:
                 raise NotImplementedError()
             obind_children.append(child)
-        obind = Combine(*obind_children, paths=obind_paths, type=from_bv.output_t, iname="obind")
+        obind = Bind(*obind_children, paths=obind_paths, type=from_bv.output_t, iname="obind")
 
         #obinidng_node -> output
         output_children = [obind.select(field) for field in from_bv.output_t.field_dict]
         to_output = Output(*output_children, iname="self")
         to_dag = Dag([to_input], [to_output])
+
+        BindsToCombines().run(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
@@ -113,21 +119,25 @@ class RewriteTable:
             tile = from_dag,
             replace = lambda _: to_dag,
             cost = lambda _: 1,
-            checker = lambda match: True
+            checker = lambda match: True,
+            name = name
         )
         self.add_rule(rr)
         return rr
 
     #Discovers and returns a rule if possible
-    def discover(self, from_name, to_name, path_constraints={}) -> tp.Union[None, RewriteRule]:
-
-        from_fc = self.from_.peak_nodes[from_name]
+    def discover(self, from_name, to_name, path_constraints={}, rr_name=None) -> tp.Union[None, RewriteRule]:
+        if isinstance(from_name, str):
+            from_fc = self.from_.peak_nodes[from_name]
+        else:
+            from_fc = from_name
+            assert isinstance(from_name, family_closure)
         to_fc = self.to.peak_nodes[to_name]
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints)
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
-        peak_rr = ir_mapper.solve('z3')
+        peak_rr = ir_mapper.solve('z3', external_loop=True)
         if peak_rr is None:
             return None
-        rr = self.add_peak_rule(peak_rr)
+        rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 

@@ -6,5 +6,8 @@ import DagVisitor
 def CoreIRContext(reset=False) -> coreir.Context:
     if reset:
         magma.frontend.coreir_.ResetCoreIR()
-    return magma.backend.coreir_.CoreIRContextSingleton().get_instance()
+    c = magma.backend.coreir_.CoreIRContextSingleton().get_instance()
+    if reset:
+        c.load_library("commonlib")
+    return c
 
