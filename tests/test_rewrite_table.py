@@ -192,7 +192,7 @@ def test_complex_dag_const2():
     rr = table.discover("coreir.const", "ALU", rr_name="coreir.const")
     assert rr is not None
 
-    cmod = cutil.load_from_json("examples/coreir/conv_3_3.json", libraries=["lakelib"])
+    cmod = cutil.load_from_json("examples/coreir/conv_3_3.json") # libraries=["lakelib"])
     pb_dags = cutil.preprocess(CoreIRNodes, cmod)
     for dag in pb_dags.values():
         break
