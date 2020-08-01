@@ -1,11 +1,8 @@
 import pytest
 from examples.PEs.alu_basic import gen_ALU
 from examples.PEs.alu_add3 import gen_ALU as gen_Add3
-from examples.PEs.PE_lut import gen_PE as gen_PE_lut
-from lassen import PE_fc as lassen_fc
 from peak import family_closure, Peak, Const
 from metamapper.common_passes import print_dag, SimplifyCombines, RemoveSelects
-#from lassen.mode import Mode_t
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
@@ -13,7 +10,7 @@ from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes
 from metamapper.instruction_selection import GreedyCovering
 
-from metamapper.common_passes import AddID, Printer, VerifyNodes
+from metamapper.common_passes import VerifyNodes
 from metamapper import CoreIRContext
 
 lassen_constraints = {

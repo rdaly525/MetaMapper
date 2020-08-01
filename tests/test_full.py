@@ -19,7 +19,7 @@ lassen_constraints = {
 
 @pytest.mark.parametrize("arch", [
     ("PE_lut", gen_PE_lut(16), {}),
-    ("Lassen", lassen_fc, lassen_constraints),
+    #("Lassen", lassen_fc, lassen_constraints),
     ("ALU", gen_ALU(16), {}),
 ])
 #@pytest.mark.parametrize("app", ["camera_pipeline"])#, "add2", "add1_const", "add4", "add3_const"])
