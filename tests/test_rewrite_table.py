@@ -167,6 +167,7 @@ def test_complex_dag_const():
     print_dag(mapped_dag)
     verify_and_print(ArchNodes, mapped_dag)
 
+@pytest.mark.skip
 def test_complex_dag_const2():
     CoreIRContext(reset=True)
     arch_fc = gen_Add3(16)

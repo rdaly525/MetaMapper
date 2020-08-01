@@ -159,8 +159,6 @@ class CheckIfTree(Visitor):
         if not_tree:
             return False
         self.run(dag)
-        for node, cnt in self.parent_cnt.items():
-            print(node, cnt)
         return all(cnt < 2 for cnt in self.parent_cnt.values())
 
     #If it is an input or a select of an input
