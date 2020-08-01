@@ -193,7 +193,6 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Ins
         mod_name = inst.module.name
         if mod_name in ("counter", "reshape", "absd"):
             to_inline.append(inst)
-    assert len(to_inline) > 0
     for inst in to_inline:
         print("inlining", inst.name, inst.module.name)
         coreir.inline_instance(inst)
@@ -240,22 +239,23 @@ class ToCoreir(Visitor):
         self.node_to_inst[node] = inst.select("out")
 
     def visit_Combine(self, node: Combine):
-        Visitor.generic_visit(self, node)
-        def create_pt(cinputs):
-            rtype = CoreIRContext().Record(cinputs)
-            assert isinstance(rtype, coreir.Record)
-            pt_mod = self.coreir_pt(type=rtype)
-            return pt_mod
+        raise NotImplementedError("TODO")
+        #Visitor.generic_visit(self, node)
+        #def create_pt(cinputs):
+        #    rtype = CoreIRContext().Record(cinputs)
+        #    assert isinstance(rtype, coreir.Record)
+        #    pt_mod = self.coreir_pt(type=rtype)
+        #    return pt_mod
 
-        pt_mod = create_pt(node.cinputs)
-        pt_inst = self.def_.add_module_instance(node.iname, pt_mod)
-        for path, child in zip(node.selects, node.children()):
-            child_inst = self.node_to_inst[child]
-            pt_sel = pt_inst.select("in")
-            for field in path:
-                pt_sel = pt_sel.select(field)
-            self.def_.connect(child_inst, pt_sel)
-        self.node_to_inst[node] = pt_inst.select("out")
+        #pt_mod = create_pt(node.cinputs)
+        #pt_inst = self.def_.add_module_instance(node.iname, pt_mod)
+        #for path, child in zip(node.selects, node.children()):
+        #    child_inst = self.node_to_inst[child]
+        #    pt_sel = pt_inst.select("in")
+        #    for field in path:
+        #        pt_sel = pt_sel.select(field)
+        #    self.def_.connect(child_inst, pt_sel)
+        #self.node_to_inst[node] = pt_inst.select("out")
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
@@ -333,7 +333,6 @@ class FixSelects(Transformer):
 #This will construct a coreir module from the dag with ref_type
 def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
-    print("FIXING SELS")
     FixSelects(nodes).run(dag)
     def_ = ref_mod.new_definition()
     ToCoreir(nodes, def_).run(dag)

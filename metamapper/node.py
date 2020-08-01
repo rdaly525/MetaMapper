@@ -177,14 +177,13 @@ class Sink(State): pass
 Input = Common.create_dag_node("Input", 0, False, (), (Source,))
 Output = Common.create_dag_node("Output", -1, False, (), (Sink,))
 
-#TODO is this needed
 Input.sink_t = Output
 Output.source_t = Input
 
 #This node represents kind of a like a passthrough node in CoreIR.
 #The inputs of this node are specified using the selects tuple
 #selects = (path0, path1, ..., pathn)
-class Combine(DagNode):
+class Bind(DagNode):
     def __init__(self, *children, iname, type, paths):
         super().__init__(*children, paths=paths, type=type, iname=iname,)
 
@@ -195,5 +194,23 @@ class Combine(DagNode):
     @property
     def attributes(self):
         return ("paths", "type", "iname")
+
+    nodes = Common
+
+
+#This node represents a way to construct generic types from its fields
+#The inputs of this node are specified using the selects tuple
+#selects = (path0, path1, ..., pathn)
+class Combine(DagNode):
+    def __init__(self, *children, iname, type):
+        super().__init__(*children, type=type, iname=iname,)
+
+    @property
+    def num_children(self):
+        return len(self.type.field_dict)
+
+    @property
+    def attributes(self):
+        return ("type", "iname")
 
     nodes = Common

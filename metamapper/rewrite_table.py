@@ -1,8 +1,8 @@
 from collections import OrderedDict
 
-from .common_passes import CheckIfTree, VerifyNodes, print_dag
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines
 import typing as tp
-from .node import Nodes, DagNode, Dag, Constant, Input, Output, Combine
+from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
 from peak.mapper import ArchMapper, Unbound
 from peak.mapper import RewriteRule as PeakRule
@@ -85,7 +85,7 @@ class RewriteTable:
             ibind_paths.append(to_b)
             ibind_children.append(child)
 
-        ibind = Combine(*ibind_children, paths=ibind_paths, type=to_bv.input_t, iname="ibind")
+        ibind = Bind(*ibind_children, paths=ibind_paths, type=to_bv.input_t, iname="ibind")
 
         #ibinding node -> to_node
         to_children = [ibind.select(field) for field in to_bv.input_t.field_dict]
@@ -104,12 +104,14 @@ class RewriteTable:
             else:
                 raise NotImplementedError()
             obind_children.append(child)
-        obind = Combine(*obind_children, paths=obind_paths, type=from_bv.output_t, iname="obind")
+        obind = Bind(*obind_children, paths=obind_paths, type=from_bv.output_t, iname="obind")
 
         #obinidng_node -> output
         output_children = [obind.select(field) for field in from_bv.output_t.field_dict]
         to_output = Output(*output_children, iname="self")
         to_dag = Dag([to_input], [to_output])
+
+        BindsToCombines().run(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match

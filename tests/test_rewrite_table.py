@@ -4,7 +4,7 @@ from examples.PEs.alu_add3 import gen_ALU as gen_Add3
 from examples.PEs.PE_lut import gen_PE as gen_PE_lut
 from lassen import PE_fc as lassen_fc
 from peak import family_closure, Peak, Const
-from metamapper.common_passes import print_dag
+from metamapper.common_passes import print_dag, SimplifyCombines, RemoveSelects
 #from lassen.mode import Mode_t
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -23,9 +23,9 @@ lassen_constraints = {
     ("config_en",): 0,
 }
 @pytest.mark.parametrize("arch", [
-    ("PE_lut", gen_PE_lut(16), {}),
+#    ("PE_lut", gen_PE_lut(16), {}),
     ("basic_alu", gen_ALU(16), {}),
-    ("lassen", lassen_fc, lassen_constraints)
+#    ("lassen", lassen_fc, lassen_constraints)
 ])
 @pytest.mark.parametrize("op", ["coreir.add", "coreir.const", "corebit.or_", "corebit.const"])
 def test_discover(arch, op):
@@ -36,7 +36,6 @@ def test_discover(arch, op):
     if name is "PE_lut" and op == "corebit.const":
         return
 
-    arch_fc = lassen_fc
     ArchNodes = Nodes("Arch")
     name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False)
     CoreIRNodes = gen_CoreIRNodes(16)
@@ -214,6 +213,7 @@ def verify_and_print(nodes, dag):
     if wrong is not None:
         raise ValueError(f"Unmapped: f{wrong}")
 
+
 def test_eager_covering():
     CoreIRContext(reset=True)
 
@@ -232,6 +232,15 @@ def test_eager_covering():
     inst_sel = GreedyCovering(table)
 
     mapped_dag = inst_sel(dag)
+    print("mapped")
+    print_dag(mapped_dag)
+    SimplifyCombines().run(mapped_dag)
+    print("simplifiedCombineds")
+    print_dag(mapped_dag)
+    RemoveSelects().run(mapped_dag)
+    print("removes selects")
+    print_dag(mapped_dag)
+
     verify_and_print(ArchNodes, mapped_dag)
 
     #mapped_m = mutil.dag_to_magma(cmod, mapped_dag, ArchNodes)

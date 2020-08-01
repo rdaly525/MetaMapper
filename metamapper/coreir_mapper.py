@@ -66,14 +66,20 @@ class Mapper:
         if len(pb_dags) != 1:
             raise ValueError(f"Bad: {len(pb_dags)}")
         for inst, dag in pb_dags.items():
-
+            #print("premapped")
+            #print_dag(dag)
             mapped_dag = self.inst_sel(dag)
+            #print("postmapped")
+            #print_dag(mapped_dag)
             SimplifyCombines().run(mapped_dag)
+            #print("simplifyCombines")
+            #print_dag(mapped_dag)
             RemoveSelects().run(mapped_dag)
+            #print("RemovedSelects")
+            #print_dag(mapped_dag)
             unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
             if unmapped is not None:
                 raise ValueError(f"Following nodes were unmapped: {unmapped}")
-
             #Create a new module representing the mapped_dag
             mapped_def = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module)
             inst.module.definition = mapped_def
