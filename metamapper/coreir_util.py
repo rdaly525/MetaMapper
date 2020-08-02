@@ -39,6 +39,17 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     return inputs, outputs
 
 
+def ctype_to_adt(ctype: coreir.type):
+    if ctype.kind in ("Bit", "BitIn"):
+        return PyFamily().Bit
+    elif ctype.kind == "Array":
+        etype = ctype.element_type
+        if etype.kind not in ("Bit", "BitIn"):
+            raise NotImplementedError(f"Element type of array {etype.kind}")
+        return PyFamily().BitVector[len(ctype)]
+    else:
+        raise NotImplementedError(ctype.kind)
+
 def adt_to_ctype(adt):
     c = CoreIRContext()
     if issubclass(adt, PyFamily().BitVector):
@@ -58,6 +69,9 @@ def adt_to_ctype(adt):
     else:
         raise NotImplementedError(str(adt))
 
+def fields_to_adt(inputs: dict, name):
+    return Product.from_fields(name, {field:ctype_to_adt(CT) for field, CT in inputs.items()})
+
 class Loader:
     def __init__(self, cmod: coreir.Module, nodes: Nodes):
         self.cmod = cmod
@@ -75,33 +89,26 @@ class Loader:
                 raise NotImplementedError("TODO")
 
         inputs, outputs = parse_rtype(cmod.type)
+        input_adt = fields_to_adt(inputs, "Input")
+        output_adt = fields_to_adt(outputs, "Output")
 
-        source_nodes = [Input(iname="self")]
+        source_nodes = [Input(iname="self", type=input_adt)]
         stateful_instances = [cmod.definition.interface]
         # load up node_map with source nodes
         for source, inst in zip(source_nodes, stateful_instances):
             self.node_map[inst] = source
 
-        #for n, t in inputs.items():
-        #    inode = Input(idx=n)
-        #    self.node_map[("self", n)] = inode
-        #    input_nodes.append(inode)
-
-        #for n, t in outputs.items():
-        #    onode = self.add_output(n)
-        #    self.node_map[("self", n)] = onode
-        #    output_nodes.append(onode)
-
         #create all the sinks
         sink_nodes = []
-        for source, inst in zip(source_nodes, stateful_instances):
+        for i, (source, inst) in enumerate(zip(source_nodes, stateful_instances)):
             sink_t = type(source).sink_t
-            sink_node = self.add_node(inst, sink_t=sink_t)
+            sink_adt = output_adt if i == 0 else None
+            sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
         self.dag = Dag(source_nodes, sink_nodes)
 
-    def add_node(self, inst: coreir.Instance, sink_t=None):
+    def add_node(self, inst: coreir.Instance, sink_t=None, sink_adt=None):
         if sink_t is None and inst in self.node_map:
             return self.node_map[inst]
         if sink_t is None:
@@ -118,13 +125,27 @@ class Loader:
         if inst is self.cmod.definition.interface:
             iname = "self"
         else:
-            modargs = [Constant(value=v.value) for k, v in inst.config.items()]
+            def get_adt(inst, k):
+                vtype = inst.module.params[k]
+                if vtype.kind is bool:
+                    return PyFamily().Bit
+                elif vtype.kind is PyFamily().BitVector:
+                    #TODO HACK assuming 16 bit constants always
+                    return PyFamily().BitVector[16]
+                else:
+                    raise NotImplementedError()
+
+            modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
             #TODO unsafe. Assumes that modargs are specified at the end.
             children += modargs
             iname = inst.name
-        node = node_t(*children, iname=iname)
         if sink_t is None:
+            node = node_t(*children, iname=iname)
             self.node_map[inst] = node
+        elif sink_adt is None:
+            node = node_t(*children, iname=iname)
+        else:
+            node = node_t(*children, iname=iname, type=sink_adt)
         return node
 
     def inst_from_name(self, iname):

@@ -5,9 +5,12 @@ import abc
 import typing as tp
 import coreir
 
+from hwtypes.modifiers import is_modified
 #Passes will be run on this
 class DagNode(Visited):
     def __init__(self, *args, **kwargs):
+        if "type" in kwargs:
+            assert not is_modified(kwargs["type"])
         self.set_kwargs(**kwargs)
         self.set_children(*args)
         self._selects = set()
@@ -169,13 +172,13 @@ class Nodes:
 
 Common = Nodes("Common")
 Select = Common.create_dag_node("Select", 1, False, ("field",))
-Constant = Common.create_dag_node("Constant", 0, False, ("value",))
+Constant = Common.create_dag_node("Constant", 0, False, ("value", "type"))
 
 class State(object): pass
 class Source(State): pass
 class Sink(State): pass
-Input = Common.create_dag_node("Input", 0, False, (), (Source,))
-Output = Common.create_dag_node("Output", -1, False, (), (Sink,))
+Input = Common.create_dag_node("Input", 0, False, ("type",), (Source,))
+Output = Common.create_dag_node("Output", -1, False, ("type",), (Sink,))
 
 Input.sink_t = Output
 Output.source_t = Input

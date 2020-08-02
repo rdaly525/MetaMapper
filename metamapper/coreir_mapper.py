@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects
+from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes
@@ -68,6 +68,7 @@ class Mapper:
         for inst, dag in pb_dags.items():
             #print("premapped")
             #print_dag(dag)
+            original_dag = Clone().clone(dag, iname_prefix=f"original_")
             mapped_dag = self.inst_sel(dag)
             #print("postmapped")
             #print_dag(mapped_dag)
@@ -80,6 +81,10 @@ class Mapper:
             unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
             if unmapped is not None:
                 raise ValueError(f"Following nodes were unmapped: {unmapped}")
+            assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
+            counter_example = prove_equal(original_dag, mapped_dag)
+            if counter_example is not None:
+                raise ValueError(f"Mapped is not the same {counter_example}")
             #Create a new module representing the mapped_dag
             mapped_def = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module)
             inst.module.definition = mapped_def

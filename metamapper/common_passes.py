@@ -1,10 +1,9 @@
 from DagVisitor import Visitor, Transformer
-from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant
-from peak.mapper import SimplifyBinding, strip_aadt
-from peak.family import PyFamily
+from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
+from peak.family import PyFamily, SMTFamily
 from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
-from peak.mapper.utils import Unbound, pretty_print_binding
+from peak.mapper.utils import Unbound
 from .node import DagNode
 
 class VerifyNodes(Visitor):
@@ -23,6 +22,93 @@ class VerifyNodes(Visitor):
         if nodes != self.nodes and nodes != Common:
             self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
+
+from peak.mapper.utils import rebind_type, solved_to_bv
+import pysmt.shortcuts as smt
+from pysmt.logics import BV
+
+
+#Returns None if equal, counter example for one input otherwise
+def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
+    if dag0.input.type != dag1.input.type:
+        raise ValueError("Input types are not the same")
+    if dag0.output.type != dag1.output.type:
+        raise ValueError("Output types are not the same")
+    i0, o0 = SMT().get(dag0)
+    i1, o1 = SMT().get(dag1)
+
+    formula = o0.substitute((i0, i1)) != o1
+
+    with smt.Solver(solver_name, logic=BV) as solver:
+        solver.add_assertion(formula.value)
+        verified = not solver.solve()
+        if verified:
+            return None
+        else:
+            return solved_to_bv(i1, solver)
+
+def _get_aadt(T):
+    T = rebind_type(T, SMTFamily())
+    return SMTFamily().get_adt_t(T)
+
+class SMT(Visitor):
+    def __init__(self):
+        pass
+
+    def get(self, dag: Dag):
+        self.values = {}
+        if len(dag.sources) !=1:
+            raise NotImplementedError
+        self.run(dag)
+        return self.values[dag.input]._value_, self.values[dag.output]._value_
+
+    def visit_Input(self, node : Input):
+        aadt = _get_aadt(node.type)
+        val = SMTFamily().BitVector[aadt._assembler_.width]()
+        self.values[node] = aadt(val)
+
+    def visit_Constant(self, node: Constant):
+        aadt = _get_aadt(node.type)
+        if node.value is Unbound:
+            value = 0
+        else:
+            value = node.value
+        from hwtypes import AbstractBitVector, AbstractBit
+        if issubclass(aadt, (AbstractBit, AbstractBitVector)):
+            val = aadt(value)
+        else:
+            val = aadt(SMTFamily().BitVector[aadt._assembler_.width](value))
+        self.values[node] = val
+
+    def visit_Select(self, node: Select):
+        Visitor.generic_visit(self, node)
+        self.values[node] = self.values[node.children()[0]][node.field]
+
+    def visit_Combine(self, node: Combine):
+        Visitor.generic_visit(self, node)
+        vals = {field: self.values[child] for field, child in zip(node.type.field_dict.keys(), node.children())}
+        aadt = _get_aadt(node.type)
+        self.values[node] = aadt.from_fields(**vals)
+
+    def visit_Output(self, node: Output):
+        Visitor.generic_visit(self, node)
+        vals = {field: self.values[child] for field, child in zip(node.type.field_dict.keys(), node.children())}
+        aadt = _get_aadt(node.type)
+        self.values[node] = aadt.from_fields(**vals)
+
+    def generic_visit(self, node: DagNode):
+        Visitor.generic_visit(self, node)
+        peak_fc = node.nodes.peak_nodes[node.node_name]
+        vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
+        outputs = peak_fc.SMT()(**vals)
+        if not isinstance(outputs, tuple):
+            outputs = (outputs,)
+
+        aadt = _get_aadt(peak_fc.Py.output_t)
+        output_val = aadt.from_fields(*outputs)
+        self.values[node] = output_val
+
+
 
 class AddID(Visitor):
     def __init__(self):
@@ -111,24 +197,8 @@ class SimplifyCombines(Transformer):
             const_dict[field] = child.value
         aadt = AssembledADT[strip_modifiers(node.type), Assembler, PyFamily().BitVector]
         val = aadt.from_fields(**const_dict)
-        return Constant(value=val._value_)
+        return Constant(value=val._value_, type=node.type)
 
-        #new_binding = strip_aadt(SimplifyBinding()(aadt, binding))
-        #if len(new_binding) == len(binding):
-        #    return
-        #new_children = []
-        #new_paths = []
-        #for from_, to_ in new_binding:
-        #    if isinstance(from_, tuple):
-        #        assert len(from_) == 1
-        #        child = from_[0]
-        #        assert isinstance(child, DagNode)
-        #    else:
-        #        child = Constant(value=from_)
-        #    new_paths.append(to_)
-        #    new_children.append(child)
-        #new_combine = Bind(*new_children, paths=new_paths, type=node.type, iname=node.iname)
-        #return new_combine
 
 #Finds Opportunities to skip selecting from a Combine node
 class RemoveSelects(Transformer):
@@ -177,3 +247,23 @@ class CheckIfTree(Visitor):
             self.parent_cnt[child] += 1
         Visitor.generic_visit(self, node)
 
+
+class Clone(Visitor):
+    def clone(self, dag: Dag, iname_prefix: str = ""):
+        assert dag is not None
+        self.node_map = {}
+        self.iname_prefix = iname_prefix
+        self.run(dag)
+        dag_copy = Dag(
+            sources=[self.node_map[node] for node in dag.sources],
+            sinks=[self.node_map[node] for node in dag.sinks]
+        )
+        return dag_copy
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        new_node = node.copy()
+        children = (self.node_map[child] for child in node.children())
+        new_node.set_children(*children)
+        new_node.iname = self.iname_prefix + new_node.iname
+        self.node_map[node] = new_node

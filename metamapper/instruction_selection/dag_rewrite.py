@@ -1,27 +1,8 @@
-from DagVisitor import Visitor, Transformer
+from DagVisitor import Transformer
 from ..rewrite_table import RewriteTable, RewriteRule
 from ..node import Input, Dag
-from ..common_passes import VerifyNodes, print_dag
+from ..common_passes import Clone
 
-class Clone(Visitor):
-    def clone(self, dag: Dag, iname_prefix: str = ""):
-        assert dag is not None
-        self.node_map = {}
-        self.iname_prefix = iname_prefix
-        self.run(dag)
-        dag_copy = Dag(
-            sources=[self.node_map[node] for node in dag.sources],
-            sinks=[self.node_map[node] for node in dag.sinks]
-        )
-        return dag_copy
-
-    def generic_visit(self, node):
-        Visitor.generic_visit(self, node)
-        new_node = node.copy()
-        children = (self.node_map[child] for child in node.children())
-        new_node.set_children(*children)
-        new_node.iname = self.iname_prefix + new_node.iname
-        self.node_map[node] = new_node
 
 class ReplaceInputs(Transformer):
     def __init__(self, replacements):
