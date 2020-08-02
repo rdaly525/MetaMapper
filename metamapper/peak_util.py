@@ -8,6 +8,8 @@ import magma
 from . import CoreIRContext
 from .coreir_util import coreir_to_dag
 from DagVisitor import  Transformer, AbstractDag
+from hwtypes.modifiers import strip_modifiers
+
 
 # A CoreIR Dag is compiled to remove any notion of constant inputs
 #This will take in a dag compiled from a peak_fc.
@@ -61,13 +63,13 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     input_fields = list(peak_bv.input_t.field_dict.keys())
     output_fields = list(peak_bv.output_t.field_dict.keys())
 
-    input = Input(iname="self")
+    input = Input(iname="self", type=strip_modifiers(peak_bv.input_t))
     children = [input.select(field) for field in input_fields]
     node_t = nodes.dag_nodes[node_name]
     assert issubclass(node_t, DagNode)
     node = node_t(*children)
     output_children = [node.select(field) for field in output_fields]
-    output = Output(*output_children)
+    output = Output(*output_children, type=peak_fc.Py.output_t)
     dag = Dag([input], [output])
     return dag
 

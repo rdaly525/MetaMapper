@@ -1,5 +1,4 @@
-from collections import OrderedDict
-
+from hwtypes.modifiers import strip_modifiers
 from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
@@ -64,7 +63,7 @@ class RewriteTable:
         to_node_t = self.to.dag_nodes[to_node_name]
         assert issubclass(to_node_t, DagNode)
         to_bv = to_fc(family.PyFamily())
-        to_input = Input(iname="self")
+        to_input = Input(iname="self", type=from_bv.input_t)
 
         def sel_from(path, node: DagNode):
             assert isinstance(path, tuple)
@@ -81,11 +80,15 @@ class RewriteTable:
             if isinstance(from_b, tuple):
                 child = sel_from(from_b, to_input)
             else:
-                child = Constant(value=from_b)
+                path, T = to_b, strip_modifiers(to_bv.input_t)
+                while len(path) > 0:
+                    T = T[path[0]]
+                    path = path[1:]
+                child = Constant(value=from_b, type=T)
             ibind_paths.append(to_b)
             ibind_children.append(child)
 
-        ibind = Bind(*ibind_children, paths=ibind_paths, type=to_bv.input_t, iname="ibind")
+        ibind = Bind(*ibind_children, paths=ibind_paths, type=strip_modifiers(to_bv.input_t), iname="ibind")
 
         #ibinding node -> to_node
         to_children = [ibind.select(field) for field in to_bv.input_t.field_dict]
@@ -108,7 +111,7 @@ class RewriteTable:
 
         #obinidng_node -> output
         output_children = [obind.select(field) for field in from_bv.output_t.field_dict]
-        to_output = Output(*output_children, iname="self")
+        to_output = Output(*output_children, iname="self", type=from_bv.output_t)
         to_dag = Dag([to_input], [to_output])
 
         BindsToCombines().run(to_dag)
