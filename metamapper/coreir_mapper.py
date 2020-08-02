@@ -81,6 +81,7 @@ class Mapper:
             unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
             if unmapped is not None:
                 raise ValueError(f"Following nodes were unmapped: {unmapped}")
+            assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
