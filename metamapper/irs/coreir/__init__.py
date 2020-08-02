@@ -1,6 +1,6 @@
 from .ir import gen_peak_CoreIR
 from ...node import Nodes, Constant
-from ...__init__ import CoreIRContext
+from ... import CoreIRContext
 from ...peak_util import load_from_peak
 
 def strip_trailing(op):

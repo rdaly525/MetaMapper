@@ -351,10 +351,13 @@ class FixSelects(Transformer):
 
         # Create a map from field to coreir field
 
-#This will construct a coreir module from the dag with ref_type
-def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module) -> coreir.ModuleDef:
+#This will construct a new coreir module from the dag with ref_type
+def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module, name: str) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
-    def_ = ref_mod.new_definition()
+    #remove everything from old definition
+    mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
+    def_ = mod.new_definition()
     ToCoreir(nodes, def_).run(dag)
-    return def_
+    mod.definition = def_
+    return mod

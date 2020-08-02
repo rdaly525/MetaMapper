@@ -7,3 +7,4 @@
 cosa
 -e git+git://github.com/leonardt/hwtypes#egg=hwtypes
 pulp
+delegator

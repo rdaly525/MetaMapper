@@ -86,8 +86,7 @@ class Mapper:
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
             #Create a new module representing the mapped_dag
-            mapped_def = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module)
-            inst.module.definition = mapped_def
+            mapped_mod = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module, inst.module.name + "_mapped")
             #coreir.inline_instance(inst)
-            return inst.module
+            return mapped_mod
         #cmod should now contain a mapped coreir module
