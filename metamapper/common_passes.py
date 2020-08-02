@@ -1,6 +1,6 @@
 from DagVisitor import Visitor, Transformer
 from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
-from peak.family import PyFamily, SMTFamily
+from .family import fam
 from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
@@ -48,8 +48,8 @@ def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
             return solved_to_bv(i1, solver)
 
 def _get_aadt(T):
-    T = rebind_type(T, SMTFamily())
-    return SMTFamily().get_adt_t(T)
+    T = rebind_type(T, fam().SMTFamily())
+    return fam().SMTFamily().get_adt_t(T)
 
 class SMT(Visitor):
     def __init__(self):
@@ -64,7 +64,7 @@ class SMT(Visitor):
 
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
-        val = SMTFamily().BitVector[aadt._assembler_.width]()
+        val = fam().SMTFamily().BitVector[aadt._assembler_.width]()
         self.values[node] = aadt(val)
 
     def visit_Constant(self, node: Constant):
@@ -77,7 +77,7 @@ class SMT(Visitor):
         if issubclass(aadt, (AbstractBit, AbstractBitVector)):
             val = aadt(value)
         else:
-            val = aadt(SMTFamily().BitVector[aadt._assembler_.width](value))
+            val = aadt(fam().SMTFamily().BitVector[aadt._assembler_.width](value))
         self.values[node] = val
 
     def visit_Select(self, node: Select):
@@ -195,7 +195,7 @@ class SimplifyCombines(Transformer):
             if child.value is Unbound:
                 return
             const_dict[field] = child.value
-        aadt = AssembledADT[strip_modifiers(node.type), Assembler, PyFamily().BitVector]
+        aadt = AssembledADT[strip_modifiers(node.type), Assembler, fam().PyFamily().BitVector]
         val = aadt.from_fields(**const_dict)
         return Constant(value=val._value_, type=node.type)
 

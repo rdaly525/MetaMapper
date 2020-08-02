@@ -135,12 +135,12 @@ def gen_peak_CoreIR(width):
         out=Bit
 
     for name, fun in (
-        ("add",  lambda f, x, y: x+y),
-        ("sub",  lambda f, x, y: x-y),
-        ("shl",  lambda f, x, y: x<<y),
+        ("add", lambda f, x, y: x+y),
+        ("sub", lambda f, x, y: x-y),
+        ("shl", lambda f, x, y: x<<y),
         ("lshr", lambda f, x, y: x.bvlshr(y)),
         ("ashr", lambda f, x, y: x.bvashr(y)),
-        ("mul",  lambda f, x, y: x*y),
+        ("mul", lambda f, x, y: x*y),
         #("udiv", lambda x, y: x.bvudiv(y)),
         #("urem", lambda x, y: x.bvurem(y)),
         #("sdiv", lambda x, y: x.bvsdiv(y)),
@@ -151,8 +151,8 @@ def gen_peak_CoreIR(width):
 
     for name, fun in (
         ("and_", lambda f, x, y: x&y),
-        ("or_",  lambda f, x, y: x|y),
-        ("xor",  lambda f, x, y: x^y),
+        ("or_", lambda f, x, y: x|y),
+        ("xor", lambda f, x, y: x^y),
     ):
         CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, name)
         CoreIR.add_peak_instruction(f"corebit.{name}", BinaryInputBit, OutputBit, fun, name)

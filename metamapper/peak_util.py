@@ -1,6 +1,7 @@
 import peak
 from peak.assembler import Assembler
-from peak import family, Const
+from peak import Const
+from .family import fam
 from .node import Nodes, DagNode, Dag, Input, Output, Select
 from .common_passes import print_dag
 import coreir
@@ -59,7 +60,7 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     #case 1
 
     #Get input/output names from peak_cls
-    peak_bv = peak_fc(family.PyFamily())
+    peak_bv = peak_fc(fam().PyFamily())
     input_fields = list(peak_bv.input_t.field_dict.keys())
     output_fields = list(peak_bv.output_t.field_dict.keys())
 
@@ -83,7 +84,7 @@ def magma_to_coreir(mod):
     return backend.modules[cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
-    peak_m = peak_fc(family.MagmaFamily())
+    peak_m = peak_fc(fam().MagmaFamily())
     if wrap:
         class HashableDict(dict):
             def __hash__(self):
@@ -92,7 +93,7 @@ def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
         #TODO Better way to get the first port name?
         instr_name = list(peak_m.interface.items())[0][0]
 
-        peak_bv = peak_fc(family.PyFamily())
+        peak_bv = peak_fc(fam().PyFamily())
         instr_type = peak_bv.input_t.field_dict[instr_name]
         asm = Assembler(instr_type)
         instr_magma_type = type(peak_m.interface.ports[instr_name])
@@ -121,7 +122,7 @@ def peak_to_node(nodes: Nodes, peak_fc, stateful, name=None) -> (DagNode, str):
         raise NotImplementedError("TODO")
 
     #Create DagNode
-    peak_bv = peak_fc(family.PyFamily())
+    peak_bv = peak_fc(fam().PyFamily())
 
     inputs = list(peak_bv.input_t.field_dict.keys())
 
@@ -130,8 +131,8 @@ def peak_to_node(nodes: Nodes, peak_fc, stateful, name=None) -> (DagNode, str):
         name = peak_bv.__name__
     return nodes.create_dag_node(name, len(inputs), stateful=False), name
 
-def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None) -> str:
-    if cmod is None:
+def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, wasm=False) -> str:
+    if cmod is None and not wasm:
         cmod = peak_to_coreir(peak_fc, wrap=True)
     dag_node, node_name = peak_to_node(nodes, peak_fc, stateful=stateful, name=name)
     nodes.add(node_name, peak_fc, cmod, dag_node)

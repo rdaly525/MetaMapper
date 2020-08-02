@@ -130,7 +130,8 @@ class Nodes:
 
     #Adds all 3 kinds of nodes under one name
     def add(self, node_name: str, peak_node, cmod: coreir.Module, dag_nodes):
-        assert isinstance(cmod, coreir.Module)
+        if cmod is not None:
+            assert isinstance(cmod, coreir.Module)
         if node_name in self._node_names:
             raise ValueError(f"{node_name} already exists")
         if isinstance(dag_nodes, DagNode):

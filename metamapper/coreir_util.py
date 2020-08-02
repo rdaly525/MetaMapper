@@ -4,12 +4,11 @@ from collections import OrderedDict
 from .node import DagNode, Dag, Nodes, Input, Combine, Constant
 from . import CoreIRContext
 import typing as tp
-from peak import family
+from .family import fam
 from peak.mapper import Unbound
 from peak.assembler import AssembledADT, Assembler, AssembledADTRecursor
 from .common_passes import print_dag
 from hwtypes.adt import Product, Enum
-from peak.family import PyFamily
 import os
 
 
@@ -41,23 +40,23 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
 
 def ctype_to_adt(ctype: coreir.type):
     if ctype.kind in ("Bit", "BitIn"):
-        return PyFamily().Bit
+        return fam().PyFamily().Bit
     elif ctype.kind == "Array":
         etype = ctype.element_type
         if etype.kind not in ("Bit", "BitIn"):
             raise NotImplementedError(f"Element type of array {etype.kind}")
-        return PyFamily().BitVector[len(ctype)]
+        return fam().PyFamily().BitVector[len(ctype)]
     else:
         raise NotImplementedError(ctype.kind)
 
 def adt_to_ctype(adt):
     c = CoreIRContext()
-    if issubclass(adt, PyFamily().BitVector):
+    if issubclass(adt, fam().PyFamily().BitVector):
         return c.Array(adt.size, c.Bit())
-    elif issubclass(adt, PyFamily().Bit):
+    elif issubclass(adt, fam().PyFamily().Bit):
         return c.Bit()
     elif issubclass(adt, Enum):
-        aadt_t = AssembledADT[adt, Assembler, PyFamily().BitVector]
+        aadt_t = AssembledADT[adt, Assembler, fam().PyFamily().BitVector]
         adt_t, assembler_t, _ = aadt_t.fields
         width = assembler_t(adt_t).width
         return c.Array(width, c.Bit())
@@ -128,10 +127,10 @@ class Loader:
             def get_adt(inst, k):
                 vtype = inst.module.params[k]
                 if vtype.kind is bool:
-                    return PyFamily().Bit
-                elif vtype.kind is PyFamily().BitVector:
+                    return fam().PyFamily().Bit
+                elif vtype.kind is fam().PyFamily().BitVector:
                     #TODO HACK assuming 16 bit constants always
-                    return PyFamily().BitVector[16]
+                    return fam().PyFamily().BitVector[16]
                 else:
                     raise NotImplementedError()
 
@@ -285,7 +284,7 @@ class ToCoreir(Visitor):
         # create new instance
         #TODO what if this has modparams?
         inst = self.def_.add_module_instance(node.iname, cmod_t)
-        input_t = self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t
+        input_t = self.nodes.peak_nodes[node.node_name](fam().PyFamily()).input_t
         inst_inputs = list(input_t.field_dict.keys())
         # Wire all the children (inputs)
         for port, child in zip(inst_inputs, node.children()):
@@ -334,7 +333,7 @@ class FixSelects(Transformer):
             peak_fc = nodes.peak_nodes[node_name]
             dag_node = nodes.dag_nodes[node_name]
             assert issubclass(dag_node, DagNode), f"{dag_node}"
-            peak_outputs = list(peak_fc(family.PyFamily()).output_t.field_dict.keys())
+            peak_outputs = list(peak_fc(fam().PyFamily()).output_t.field_dict.keys())
             if len(peak_outputs) == 1:
                 self.field_map[dag_node] = {peak_outputs[0]: "O"}
             else:
