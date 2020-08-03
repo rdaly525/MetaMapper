@@ -27,4 +27,6 @@ def test_app():
     putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
 
     compiler = Compiler(WasmNodes, ArchNodes)
-    mapped_dag = compiler.compile(app)
+    binary = compiler.compile(app)
+    res = binary.run(in0=10, in1=5)
+    assert res == 25
