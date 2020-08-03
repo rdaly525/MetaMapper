@@ -14,6 +14,8 @@ from metamapper.instruction_selection import GreedyCovering
 
 from metamapper.common_passes import VerifyNodes
 from metamapper import CoreIRContext
+from peak.examples import riscv #import sim, isa, family, asm
+from metamapper.family import set_fam, fam
 
 lassen_constraints = {
     ("clk_en",): 1,
@@ -246,8 +248,7 @@ def test_eager_covering():
     #mapped_m = mutil.dag_to_magma(cmod, mapped_dag, ArchNodes)
     #m.compile("tests/build/add4_mapped", mapped_m, output="coreir")
 
-from peak.examples import riscv #import sim, isa, family, asm
-from metamapper.family import set_fam, fam
+
 @pytest.mark.parametrize("op", ["i32.add"]) #, "coreir.const", "corebit.or_", "corebit.const"])
 def test_discover_wasm(op):
     CoreIRContext(reset=True)

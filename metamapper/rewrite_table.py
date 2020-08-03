@@ -1,5 +1,5 @@
 from hwtypes.modifiers import strip_modifiers
-from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
@@ -50,6 +50,7 @@ class RewriteTable:
         self.rules.append(rr)
 
     def add_peak_rule(self, rule: PeakRule, name=None):
+        pretty_print_binding(rule.ibinding)
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
@@ -83,7 +84,7 @@ class RewriteTable:
             else:
                 path, T = to_b, strip_modifiers(to_bv.input_t)
                 while len(path) > 0:
-                    T = T[path[0]]
+                    T = T.field_dict[path[0]]
                     path = path[1:]
                 child = Constant(value=from_b, type=T)
             ibind_paths.append(to_b)
@@ -115,7 +116,17 @@ class RewriteTable:
         to_output = Output(*output_children, iname="self", type=from_bv.output_t)
         to_dag = Dag([to_input], [to_output])
 
+        print("Before combine")
+        print_dag(to_dag)
         BindsToCombines().run(to_dag)
+        print("After combine")
+        print_dag(to_dag)
+        SimplifyCombines().run(to_dag)
+        print("After Simplify")
+        print_dag(to_dag)
+        RemoveSelects().run(to_dag)
+        print("After rmSelects")
+        print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
