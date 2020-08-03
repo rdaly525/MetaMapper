@@ -176,7 +176,33 @@ class Nodes:
 
 Common = Nodes("Common")
 Select = Common.create_dag_node("Select", 1, False, ("field",))
-Constant = Common.create_dag_node("Constant", 0, False, ("value", "type"))
+
+from hwtypes import AbstractBitVector, AbstractBit
+from peak.mapper.utils import rebind_type
+from peak.assembler import AssembledADT, Assembler
+from peak.mapper import Unbound
+from metamapper.family import fam
+class ConstAssemble:
+    def assemble(self, family):
+        if family is fam().SMTFamily():
+            T = rebind_type(self.type, family)
+        else:
+            T = self.type
+        aadt = AssembledADT[T, Assembler, family.BitVector]
+        if self.value is Unbound:
+            value = 0
+        else:
+            value = self.value
+
+        if issubclass(aadt, (AbstractBit, AbstractBitVector)):
+            val = aadt(value)
+        else:
+            val = aadt(family.BitVector[aadt._assembler_.width](value))
+        return val
+
+Constant = Common.create_dag_node("Constant", 0, False, ("value", "type"), (ConstAssemble,))
+
+
 
 class State(object): pass
 class Source(State): pass

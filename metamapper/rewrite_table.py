@@ -116,17 +116,17 @@ class RewriteTable:
         to_output = Output(*output_children, iname="self", type=from_bv.output_t)
         to_dag = Dag([to_input], [to_output])
 
-        print("Before combine")
-        print_dag(to_dag)
+        #print("Before combine")
+        #print_dag(to_dag)
         BindsToCombines().run(to_dag)
-        print("After combine")
-        print_dag(to_dag)
+        #print("After combine")
+        #print_dag(to_dag)
         SimplifyCombines().run(to_dag)
-        print("After Simplify")
-        print_dag(to_dag)
+        #print("After Simplify")
+        #print_dag(to_dag)
         RemoveSelects().run(to_dag)
-        print("After rmSelects")
-        print_dag(to_dag)
+        #print("After rmSelects")
+        #print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match

@@ -1,7 +1,7 @@
 import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
-from metamapper.wasm_compiler import Compiler
+from metamapper.riscv_compiler import Compiler
 from metamapper.irs.wasm import gen_WasmNodes
 from peak.examples import riscv
 from metamapper.family import set_fam, fam

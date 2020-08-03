@@ -68,16 +68,17 @@ class SMT(Visitor):
         self.values[node] = aadt(val)
 
     def visit_Constant(self, node: Constant):
-        aadt = _get_aadt(node.type)
-        if node.value is Unbound:
-            value = 0
-        else:
-            value = node.value
-        from hwtypes import AbstractBitVector, AbstractBit
-        if issubclass(aadt, (AbstractBit, AbstractBitVector)):
-            val = aadt(value)
-        else:
-            val = aadt(fam().SMTFamily().BitVector[aadt._assembler_.width](value))
+        val = node.assemble(fam().SMTFamily())
+        #aadt = _get_aadt(node.type)
+        #if node.value is Unbound:
+        #    value = 0
+        #else:
+        #    value = node.value
+        #from hwtypes import AbstractBitVector, AbstractBit
+        #if issubclass(aadt, (AbstractBit, AbstractBitVector)):
+        #    val = aadt(value)
+        #else:
+        #    val = aadt(fam().SMTFamily().BitVector[aadt._assembler_.width](value))
         self.values[node] = val
 
     def visit_Select(self, node: Select):
@@ -124,6 +125,12 @@ class Printer(Visitor):
         self.res = "\n"
 
     def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        T = node.nodes.peak_nodes[node.node_name].Py.input_t
+        child_ids = ", ".join([str(child._id_) for child in node.children()])
+        self.res += f"{node._id_}<{node.kind()[0]}:{node._id_}, {list(T.field_dict.keys())}>({child_ids})\n"
+
+    def visit_Bind(self, node):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<{node.kind()[0]}:{node._id_}>({child_ids})\n"
@@ -283,3 +290,61 @@ class Clone(Visitor):
         new_node.set_children(*children)
         new_node.iname = self.iname_prefix + new_node.iname
         self.node_map[node] = new_node
+
+class Uses(Visitor):
+    def uses(self, dag: Dag):
+        self.uses = {}
+        self.inputs = set()
+        self.outputs = set()
+        self.insts = {}
+        self.run(dag)
+        return self.uses, self.inputs, self.outputs, self.insts
+
+    def generic_visit(self, node: DagNode):
+        Visitor.generic_visit(self, node)
+        print(node)
+        assert node.num_children == 5
+        inst, _, rs1, rs2, _ = node.children()
+        assert isinstance(inst, Constant)
+        for rs, idx in ((rs1,'rs1'), (rs2,'rs2')):
+            if isinstance(rs, Constant):
+                assert rs.value is Unbound
+                continue
+            self.uses.setdefault(node, {})[idx] = self.uses[rs]
+        self.insts[node] = inst.assemble(fam().PyFamily())
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+        for child in node.children():
+            self.outputs.add(self.uses[child])
+
+    def visit_Select(self, node: Select):
+        Visitor.generic_visit(self, node)
+        child = node.children()[0]
+        if isinstance(child, Input):
+            self.inputs.add(node.field)
+            self.uses[node] = node.field
+            self.uses[node.field] = {}
+        else:
+            assert node.field == "rd"
+            self.uses[node] = child
+
+    def visit_Constant(self, node):
+        pass
+
+    def visit_Combine(self, node: DagNode):
+        raise NotImplementedError()
+
+    def visit_Input(self, node):
+        pass
+
+#This will naively linearize the code
+class Schedule(Visitor):
+    def schedule(self, dag: Dag):
+        self.insts = []
+        self.run(dag)
+        return self.insts
+
+    def visit_R32I_mappable(self, node):
+        Visitor.generic_visit(self, node)
+        self.insts.append(node)
