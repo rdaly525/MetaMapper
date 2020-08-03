@@ -33,7 +33,7 @@ def test_app(arch, app):
     file_name = f"examples/coreir/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cmod = cutil.load_from_json(file_name, libraries=["lakelib"])
+    cmod = cutil.load_from_json(file_name) #, libraries=["lakelib"])
     pb_dags = cutil.preprocess(CoreIRNodes, cmod)
     name, arch_fc, constraints = arch
     if name == "ALU" and app == "add_or":
