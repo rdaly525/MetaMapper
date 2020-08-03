@@ -17,5 +17,6 @@ install:
 - pip install pytest-cov
 - pip install python-coveralls
 - pip install -e .
+- cd src/peak/peak && ln -s ../examples . && cd -
 script:
 - pytest -s -x tests/
