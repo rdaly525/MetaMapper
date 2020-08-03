@@ -1,6 +1,6 @@
 from DagVisitor import Visitor, Transformer
 from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
-from peak.family import PyFamily, SMTFamily
+from .family import fam
 from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
@@ -48,8 +48,8 @@ def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
             return solved_to_bv(i1, solver)
 
 def _get_aadt(T):
-    T = rebind_type(T, SMTFamily())
-    return SMTFamily().get_adt_t(T)
+    T = rebind_type(T, fam().SMTFamily())
+    return fam().SMTFamily().get_adt_t(T)
 
 class SMT(Visitor):
     def __init__(self):
@@ -64,7 +64,7 @@ class SMT(Visitor):
 
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
-        val = SMTFamily().BitVector[aadt._assembler_.width]()
+        val = fam().SMTFamily().BitVector[aadt._assembler_.width]()
         self.values[node] = aadt(val)
 
     def visit_Constant(self, node: Constant):
@@ -77,7 +77,7 @@ class SMT(Visitor):
         if issubclass(aadt, (AbstractBit, AbstractBitVector)):
             val = aadt(value)
         else:
-            val = aadt(SMTFamily().BitVector[aadt._assembler_.width](value))
+            val = aadt(fam().SMTFamily().BitVector[aadt._assembler_.width](value))
         self.values[node] = val
 
     def visit_Select(self, node: Select):
@@ -144,10 +144,10 @@ class Printer(Visitor):
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<Output>({child_ids})\n"
 
-    def visit_Bind(self, node: Bind):
+    def visit_Combine(self, node: Bind):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
-        self.res += f"{node._id_}<Bind:{node.paths}>({child_ids})\n"
+        self.res += f"{node._id_}<Combine:{list(node.type.field_dict.keys())}>({child_ids})\n"
 
 
 class BindsToCombines(Transformer):
@@ -155,9 +155,9 @@ class BindsToCombines(Transformer):
         if len(node.paths) == 1 and len(node.paths[0]) == 0:
             return node.children()[0]
         #print("Trying to Bind {")
-        #print(node.type)
-        #print(node.paths)
-        assert len(node.type.field_dict) <= len(node.paths)
+        #print(f"  type={list(node.type.field_dict.items())}")
+        #print(f"  paths={node.paths}")
+        #assert len(node.type.field_dict) <= len(node.paths)
         #sort paths based off of first field
         field_info = {}
         for path, child in zip(node.paths, node.children()):
@@ -166,37 +166,53 @@ class BindsToCombines(Transformer):
             field_info.setdefault(field, {"paths":[], "children":[]})
             field_info[field]["paths"].append(path[1:])
             field_info[field]["children"].append(child)
-        assert field_info.keys() == node.type.field_dict.keys()
+        #assert field_info.keys() == node.type.field_dict.keys()
         children = []
-        for field, T in node.type.field_dict.items():
+        tu_field = None
+        for field in field_info:
+            T = node.type.field_dict[field]
+            if issubclass(node.type, (TaggedUnion, Sum)):
+                tu_field = field
             sub_paths = field_info[field]["paths"]
             sub_children = field_info[field]["children"]
             sub_bind = Bind(*sub_children, paths=sub_paths, type=T, iname=node.iname + str(field))
             new_child = self.gen_combine(sub_bind)
             children.append(new_child)
-        #print(children)
-        #print(list(node.type.field_dict.items()))
+        #print(f"  children={children}")
         #print("}")
-        return Combine(*children, type=node.type, iname= node.iname)
+        return Combine(*children, type=node.type, iname= node.iname, tu_field=tu_field)
     def visit_Bind(self, node: Bind):
         Transformer.generic_visit(self, node)
         return self.gen_combine(node)
 
-
+from hwtypes.adt import Sum, TaggedUnion, Tuple, Product
 # Consolidates constants into a simpler Bind node
 class SimplifyCombines(Transformer):
     def visit_Combine(self, node: Combine):
         Transformer.generic_visit(self, node)
-        #create the binding
-        const_dict = {}
-        for child, field in zip(node.children(), node.type.field_dict.keys()):
+
+        aadt = AssembledADT[strip_modifiers(node.type), Assembler, fam().PyFamily().BitVector]
+        if issubclass(node.type, (Product, Tuple)):
+            const_dict = {}
+            for child, field in zip(node.children(), node.type.field_dict.keys()):
+                if not isinstance(child, Constant):
+                    return
+                if child.value is Unbound:
+                    return
+                const_dict[field] = child.value
+            val = aadt.from_fields(**const_dict)
+        elif issubclass(node.type, (Sum, TaggedUnion)):
+            child = node.children()[0]
             if not isinstance(child, Constant):
                 return
             if child.value is Unbound:
                 return
-            const_dict[field] = child.value
-        aadt = AssembledADT[strip_modifiers(node.type), Assembler, PyFamily().BitVector]
-        val = aadt.from_fields(**const_dict)
+            if issubclass(node.type, TaggedUnion):
+                val = aadt.from_fields(**{node.tu_field: child.value})
+            else:
+                val = aadt.from_fields(node.tu_field, child.value)
+        else:
+            raise NotImplementedError()
         return Constant(value=val._value_, type=node.type)
 
 

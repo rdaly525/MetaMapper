@@ -6,6 +6,9 @@ import typing as tp
 import coreir
 
 from hwtypes.modifiers import is_modified
+from hwtypes.adt import Product, Tuple, Sum, TaggedUnion
+
+
 #Passes will be run on this
 class DagNode(Visited):
     def __init__(self, *args, **kwargs):
@@ -130,7 +133,8 @@ class Nodes:
 
     #Adds all 3 kinds of nodes under one name
     def add(self, node_name: str, peak_node, cmod: coreir.Module, dag_nodes):
-        assert isinstance(cmod, coreir.Module)
+        if cmod is not None:
+            assert isinstance(cmod, coreir.Module)
         if node_name in self._node_names:
             raise ValueError(f"{node_name} already exists")
         if isinstance(dag_nodes, DagNode):
@@ -150,7 +154,7 @@ class Nodes:
 
     # TODO Thoughts
     #If this is state, then it creates two nodes a source and sink
-    def create_dag_node(self, node_name, num_children, stateful: bool, attrs: tp.List = (), parents=()):
+    def create_dag_node(self, node_name, num_children, stateful: bool, attrs: tp.List = (), parents=()) -> DagNode:
         if stateful:
             raise NotImplementedError("TODO")
 
@@ -200,17 +204,25 @@ class Bind(DagNode):
 
     nodes = Common
 
-
 #This node represents a way to construct generic types from its fields
 #The inputs of this node are specified using the selects tuple
 #selects = (path0, path1, ..., pathn)
 class Combine(DagNode):
-    def __init__(self, *children, iname, type):
+    def __init__(self, *children, iname, type, tu_field=None):
         super().__init__(*children, type=type, iname=iname,)
+        if issubclass(type, (Sum, TaggedUnion)):
+            if tu_field is None:
+                raise ValueError("Combine Tagged union must have a field")
+            if tu_field not in type.field_dict:
+                raise ValueError(f"{tu_field} not in {type}")
+            self.tu_field = tu_field
 
     @property
     def num_children(self):
-        return len(self.type.field_dict)
+        if issubclass(self.type, (Product, Tuple)):
+            return len(self.type.field_dict)
+        elif issubclass(self.type, (Sum, TaggedUnion)):
+            return 1
 
     @property
     def attributes(self):

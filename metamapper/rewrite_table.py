@@ -1,11 +1,12 @@
 from hwtypes.modifiers import strip_modifiers
-from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
 from peak.mapper import ArchMapper, Unbound
 from peak.mapper import RewriteRule as PeakRule
-from peak import family, family_closure
+from peak import family_closure
+from .family import fam
 
 #debug
 from peak.mapper.utils import pretty_print_binding
@@ -49,10 +50,11 @@ class RewriteTable:
         self.rules.append(rr)
 
     def add_peak_rule(self, rule: PeakRule, name=None):
+        pretty_print_binding(rule.ibinding)
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
-        from_bv = rule.ir_fc(family.PyFamily())
+        from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
 
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
@@ -62,7 +64,7 @@ class RewriteTable:
         to_node_name = self.to.name_from_peak(to_fc)
         to_node_t = self.to.dag_nodes[to_node_name]
         assert issubclass(to_node_t, DagNode)
-        to_bv = to_fc(family.PyFamily())
+        to_bv = to_fc(fam().PyFamily())
         to_input = Input(iname="self", type=from_bv.input_t)
 
         def sel_from(path, node: DagNode):
@@ -82,7 +84,7 @@ class RewriteTable:
             else:
                 path, T = to_b, strip_modifiers(to_bv.input_t)
                 while len(path) > 0:
-                    T = T[path[0]]
+                    T = T.field_dict[path[0]]
                     path = path[1:]
                 child = Constant(value=from_b, type=T)
             ibind_paths.append(to_b)
@@ -114,7 +116,17 @@ class RewriteTable:
         to_output = Output(*output_children, iname="self", type=from_bv.output_t)
         to_dag = Dag([to_input], [to_output])
 
+        print("Before combine")
+        print_dag(to_dag)
         BindsToCombines().run(to_dag)
+        print("After combine")
+        print_dag(to_dag)
+        SimplifyCombines().run(to_dag)
+        print("After Simplify")
+        print_dag(to_dag)
+        RemoveSelects().run(to_dag)
+        print("After rmSelects")
+        print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
@@ -136,7 +148,7 @@ class RewriteTable:
             from_fc = from_name
             assert isinstance(from_name, family_closure)
         to_fc = self.to.peak_nodes[to_name]
-        arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints)
+        arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints, family=fam())
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
         peak_rr = ir_mapper.solve('z3', external_loop=True)
         if peak_rr is None:

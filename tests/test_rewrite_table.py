@@ -4,6 +4,8 @@ from examples.PEs.alu_add3 import gen_ALU as gen_Add3
 from peak import family_closure, Peak, Const
 from metamapper.common_passes import print_dag, SimplifyCombines, RemoveSelects
 from metamapper.irs.coreir import gen_CoreIRNodes
+from metamapper.irs.wasm import gen_WasmNodes
+
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
 from metamapper.rewrite_table import RewriteTable
@@ -12,6 +14,8 @@ from metamapper.instruction_selection import GreedyCovering
 
 from metamapper.common_passes import VerifyNodes
 from metamapper import CoreIRContext
+from peak.examples import riscv #import sim, isa, family, asm
+from metamapper.family import set_fam, fam
 
 lassen_constraints = {
     ("clk_en",): 1,
@@ -243,3 +247,16 @@ def test_eager_covering():
 
     #mapped_m = mutil.dag_to_magma(cmod, mapped_dag, ArchNodes)
     #m.compile("tests/build/add4_mapped", mapped_m, output="coreir")
+
+
+@pytest.mark.parametrize("op", ["i32.add"]) #, "coreir.const", "corebit.or_", "corebit.const"])
+def test_discover_wasm(op):
+    CoreIRContext(reset=True)
+    set_fam(riscv.family)
+    arch_fc = riscv.sim.R32I_mappable_fc
+    ArchNodes = Nodes("RiscV")
+    WasmNodes = gen_WasmNodes()
+    name = putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
+    table = RewriteTable(WasmNodes, ArchNodes)
+    rr = table.discover(op, name)
+    assert rr is not None

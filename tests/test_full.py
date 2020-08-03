@@ -21,9 +21,9 @@ lassen_constraints = {
 }
 
 @pytest.mark.parametrize("arch", [
-    #("PE_lut", gen_PE_lut(16), {}),
+    ("PE_lut", gen_PE_lut(16), {}),
     #("Lassen", lassen_fc, lassen_constraints),
-    #("ALU", gen_ALU(16), {}),
+    ("ALU", gen_ALU(16), {}),
 ])
 #@pytest.mark.parametrize("app", ["camera_pipeine"])#, "add2", "add1_const", "add4", "add3_const"])
 #@pytest.mark.parametrize("app", ["conv_3_3"])#, "add2", "add1_const", "add4", "add3_const"])
@@ -33,7 +33,7 @@ def test_app(arch, app):
     file_name = f"examples/coreir/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cmod = cutil.load_from_json(file_name, libraries=["lakelib"])
+    cmod = cutil.load_from_json(file_name) #, libraries=["lakelib"])
     pb_dags = cutil.preprocess(CoreIRNodes, cmod)
     name, arch_fc, constraints = arch
     if name == "ALU" and app == "add_or":
