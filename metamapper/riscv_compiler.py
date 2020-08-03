@@ -78,23 +78,68 @@ class Compiler:
 
         #propogate rd indices to rs1 and rs2 indices
         inst_info = {node:{} for node in node_to_rd}
+        input_info = {} # name to rd
         for node, rd in node_to_rd.items():
             inst_info[node]["rd"] = rd
             if isinstance(node, DagNode):
                 inst_info[node]["inst"] = insts[node]
-            for rname, child in uses[node].items():
-                inst_info[node][rname] = node_to_rd[child]
+                for rname, child in uses[node].items():
+                    inst_info[node][rname] = node_to_rd[child]
+            else:
+                input_info[node] = rd
 
-        for i, node in enumerate(node_list):
-            info = inst_info[node]
-            print(i)
-            for k, v in info.items():
-                print(f"  {k}: {v}")
 
-        #Assemble
-        #inst_list = []
-        #for i, node in enumerate(node_list):
-        #    info = inst_info[node]
-        #        print(inst, type(inst))
-        #        print(asm.get_fields(inst))
+
+        inst_list = []
+        for node in node_list:
+            if node not in inputs:
+                inst_list.append(set_instr(inst_info[node]))
+            #print(node)
+            #for k,v in inst_info[node].items():
+            #    print(f"  {k}: {v}")
+
+        #assume the last instruction returns the final value
+        output_idx = node_to_rd[node_list[-1]]
+        return Binary(inst_list, input_info, output_idx)
+
+def aadt_to_adt(val):
+    aadt = type(val)
+    assembler = aadt.assembler_t(aadt.adt_t)
+    adt_val = assembler.disassemble(val._value_)
+    return adt_val
+
+def set_instr( info):
+    inst = info.pop('inst')
+    aadt = type(inst)
+    adt_val = aadt_to_adt(inst)
+    cur_fields = asm.get_fields(adt_val)
+    for k, v in info.items():
+        assert k in cur_fields
+        cur_fields[k] = v
+    adt_val = asm.set_fields(adt_val, **cur_fields)
+    return aadt(adt_val)
+
+from peak.examples import riscv
+from .family import fam
+class Binary:
+    def __init__(self, insts: tp.List, input_info: dict, output_idx):
+        self.insts = insts
+        self.input_info = input_info
+        self.output_idx = output_idx
+
+    def run(self, **kwargs):
+        if set(kwargs.keys()) != set(self.input_info.keys()):
+            raise ValueError(f"Inputs need to be {self.input_info.keys()}")
+        cpu = riscv.sim.R32I_fc(fam().PyFamily())()
+        isa = riscv.sim.ISA_fc(fam().PyFamily())
+        for input, ridx in self.input_info.items():
+            val = kwargs[input]
+            cpu.register_file.store(isa.Idx(ridx), isa.Word(val))
+
+        for inst in self.insts:
+            inst_adt = aadt_to_adt(inst)
+            cpu(inst_adt, isa.Word(0))
+        return cpu.register_file.load1(isa.Idx(self.output_idx))
+
+
 
