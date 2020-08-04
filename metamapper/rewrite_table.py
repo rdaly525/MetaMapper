@@ -50,7 +50,6 @@ class RewriteTable:
         self.rules.append(rr)
 
     def add_peak_rule(self, rule: PeakRule, name=None):
-        pretty_print_binding(rule.ibinding)
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
