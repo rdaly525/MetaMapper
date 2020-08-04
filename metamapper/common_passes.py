@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from DagVisitor import Visitor, Transformer
 from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
 from .family import fam
@@ -144,7 +146,7 @@ class Printer(Visitor):
         self.res += f"{node._id_}<Input>\n"
 
     def visit_Constant(self, node):
-        self.res += f"{node._id_}<Constant>({node.value})>\n"
+        self.res += f"{node._id_}<Constant>({node.value}{type(node.value)})>\n"
 
     def visit_Output(self, node):
         Visitor.generic_visit(self, node)
@@ -170,14 +172,16 @@ class BindsToCombines(Transformer):
         for path, child in zip(node.paths, node.children()):
             assert len(path) > 0
             field = path[0]
+            assert field in node.type.field_dict
             field_info.setdefault(field, {"paths":[], "children":[]})
             field_info[field]["paths"].append(path[1:])
             field_info[field]["children"].append(child)
         #assert field_info.keys() == node.type.field_dict.keys()
         children = []
         tu_field = None
-        for field in field_info:
-            T = node.type.field_dict[field]
+        for field, T in node.type.field_dict.items():
+            if field not in field_info:
+                continue
             if issubclass(node.type, (TaggedUnion, Sum)):
                 tu_field = field
             sub_paths = field_info[field]["paths"]
@@ -200,14 +204,18 @@ class SimplifyCombines(Transformer):
 
         aadt = AssembledADT[strip_modifiers(node.type), Assembler, fam().PyFamily().BitVector]
         if issubclass(node.type, (Product, Tuple)):
-            const_dict = {}
+            const_dict = OrderedDict()
             for child, field in zip(node.children(), node.type.field_dict.keys()):
                 if not isinstance(child, Constant):
                     return
                 if child.value is Unbound:
                     return
                 const_dict[field] = child.value
-            val = aadt.from_fields(**const_dict)
+            if issubclass(node.type, Product):
+
+                val = aadt.from_fields(**const_dict)
+            else:
+                val = aadt.from_fields(*const_dict.values())
         elif issubclass(node.type, (Sum, TaggedUnion)):
             child = node.children()[0]
             if not isinstance(child, Constant):
@@ -302,7 +310,6 @@ class Uses(Visitor):
 
     def generic_visit(self, node: DagNode):
         Visitor.generic_visit(self, node)
-        print(node)
         assert node.num_children == 5
         inst, _, rs1, rs2, _ = node.children()
         assert isinstance(inst, Constant)
