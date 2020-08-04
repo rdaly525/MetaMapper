@@ -1,3 +1,6 @@
+from ast_tools.passes import loop_unroll, apply_ast_passes
+from ast_tools.macros import unroll
+
 from peak.ir import IR
 from peak import Peak, name_outputs
 from hwtypes import BitVector, Bit
@@ -76,20 +79,40 @@ def gen_WASM(include64=False):
         #    return msbs | lsbs
         #WASM.add_peak_instruction(f"{prefix}.rotr",BinaryInput,Output,rotr)
 
-        #def clz(in0 : Data):
-        #    #TODO
-        #    return Data(0)
-        #WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz)
+        @apply_ast_passes([loop_unroll])
+        def clz(in0 : Data):
+            cnt = Data(0)
+            mask = Data(1)
+            for i in unroll(reversed(range(Data.size))):
+                # shift the bit we are checking down and mask
+                bit = (in0 >> i) & mask
+                # if the bit is set the mask to 0
+                mask = mask ^ bit
+                cnt = cnt + mask
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz)
 
-        #def ctz(in0 : Data):
-        #    #TODO
-        #    return Data(0)
-        #WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz)
+        @apply_ast_passes([loop_unroll])
+        def ctz(in0 : Data):
+            cnt = Data(0)
+            mask = Data(1)
+            for i in unroll(range(Data.size)):
+                # shift the bit we are checking down and mask
+                bit = (in0 >> i) & mask
+                # if the bit is set the mask to 0
+                mask = mask ^ bit
+                cnt = cnt + mask
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz)
 
-        #def popcnt(in0 : Data):
-        #    #TODO
-        #    return Data(0)
-        #WASM.add_peak_instruction(f"{prefix}.popcnt",UnaryInput,Output,popcnt)
+
+        @apply_ast_passes([unroll_for])
+        def popcnt(in0 : Data):
+            cnt = Data(0)
+            for i in unroll(range(Data.size)):
+                cnt = cnt + ((val >> i) & 1)
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.popcnt",UnaryInput,Output,popcnt)
 
         #WASM.add_peak_instruction(f"{prefix}.eqz",UnaryInput,Output32,lambda x : x==Data(0))
 
