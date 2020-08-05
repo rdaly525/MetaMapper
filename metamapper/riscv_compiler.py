@@ -13,6 +13,7 @@ class Compiler:
         self.table = RewriteTable(WasmNodes, ArchNodes)
         ops = (
             "i32.add",
+            "i32.and_",
         )
         if peak_rules is None:
             for node_name in ArchNodes._node_names:

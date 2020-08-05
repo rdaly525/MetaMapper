@@ -750,7 +750,7 @@ class Module:
 
     @classmethod
     def load(cls, name: str) -> 'Module':
-        with open(name, 'rb') as f:
+        with open(name, 'rb', encoding="ISO-8859-1") as f:
             return cls.from_reader(f)
 
     @classmethod

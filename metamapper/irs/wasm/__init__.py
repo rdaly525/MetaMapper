@@ -13,7 +13,7 @@ def strip_trailing(op):
 def gen_WasmNodes(inlcude64=False):
     WasmNodes = Nodes("Wasm")
     wasm_ir = gen_WASM(include64=inlcude64)
-    basic = ("mul", "add", "and_", "or_")
+    basic = ("mul", "add", "and_", "or_", "shr_s")
     other = ()#("ashr", "eq", "lshr", "mux", "slt", "sge", "sub", "ult")
     #TODO handle const
     #bit_ops = ("const", "or_", "and_", "xor")

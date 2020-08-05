@@ -5,6 +5,7 @@ import metamapper.wasm.interp.convention as C
 import metamapper.wasm.interp as interp
 from metamapper.wasm.interp.structure import Instruction
 import typing as tp
+import delegator
 
 WasmNodes = gen_WasmNodes()
 
@@ -55,20 +56,7 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
     for i in range(num_args):
         args.append(input.select(f"in{i}"))
     stack = Stack()
-    exec_expr(args, stack, ilist)
-
-    ret = stack.pop()
-    assert stack.len() == 0
-    output = Output(ret, type=output_t)
-    return Dag(sources=[input], sinks=[output])
-
-
-def exec_expr(
-    locals_ : tp.List[DagNode],
-    stack: Stack,
-    expr_list: tp.List[Instruction],
-):
-    for pc, i in enumerate(expr_list):
+    for pc, i in enumerate(ilist):
         opcode = i.code
         if opcode == C.drop:
             stack.pop()
@@ -79,9 +67,9 @@ def exec_expr(
             raise NotImplementedError()
             #stack.add(SelectNode(cond,in0,in1))
         elif opcode == C.get_local:
-            stack.add(locals_[i.immediate_arguments])
+            stack.add(args[i.immediate_arguments])
         elif opcode == C.i32_const:
-            stack.add(Constant(i.immediate_arguments))
+            stack.add(Constant(value=i.immediate_arguments, type=BV32))
         elif opcode in UnaryOps:
             node_name = UnaryOps[opcode]
             node = WasmNodes.dag_nodes[node_name]
@@ -106,6 +94,12 @@ def exec_expr(
             raise NotImplementedError(C.op_name(opcode))
 
 
+    ret = stack.pop()
+    assert stack.len() == 0
+    output = Output(ret, type=output_t)
+    return Dag(sources=[input], sinks=[output])
+
+
 UnaryOps = {
     C.i32_clz: "i32.clz",
     C.i32_ctz: "i32.ctz",
@@ -121,8 +115,8 @@ BinaryOps = {
     C.i32_div_u: "i32.div_u",
     C.i32_rem_s: "i32.rem_s",
     C.i32_rem_u: "i32.rem_u",
-    C.i32_and: "i32.and",
-    C.i32_or: "i32.or",
+    C.i32_and: "i32.and_",
+    C.i32_or: "i32.or_",
     C.i32_xor: "i32.xor",
     C.i32_shl: "i32.shl",
     C.i32_shr_s: "i32.shr_s",
@@ -144,6 +138,30 @@ CompOps = {
     C.i32_ge_s: "i32.ge_s",
     C.i32_ge_u: "i32.ge_u",
 }
+
+def compile_c_to_wasm(file_name, cpath="./examples/wasm/c/", build_path="./examples/wasm/build", fname=None):
+    if fname is None:
+        fname=f"_{file_name}"
+    cfile = f"{cpath}/{file_name}.c"
+    wasm_file = f"{build_path}/{file_name}.wasm"
+    wat_file = f"{build_path}/{file_name}.wat"
+
+    from sys import platform
+    if platform in ("linux", "linux2"):
+        sed = 'sed -i'
+    elif platform == "darwin":
+        sed = 'sed -i \'\''
+    else:
+        raise NotImplementedError(platform)
+    for cmd in (
+        f'emcc -Os -s EXPORTED_FUNCTIONS="[\'{fname}\']" -o {wasm_file} {cfile}',
+        f'wasm2wat {wasm_file} -o {wat_file}',
+        f'{sed} "s/[(]data.*[)]/)/g" {wat_file}',
+        f'wat2wasm {wat_file} -o {wasm_file}',
+    ):
+        res = delegator.run(cmd)
+        assert not res.return_code, res.out + res.err
+    return wasm_file
 
 #def peak_to_wasm_dag(WasmNodes: Nodes, CoreIRNodes: Nodes, peak_fc) -> Dag:
 #    raise NotImplementedError()
