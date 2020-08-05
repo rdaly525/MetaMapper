@@ -79,7 +79,7 @@ def gen_WASM(include64=False):
         #    return msbs | lsbs
         #WASM.add_peak_instruction(f"{prefix}.rotr",BinaryInput,Output,rotr)
 
-        @apply_ast_passes([loop_unroll])
+        @apply_ast_passes([loop_unroll()])
         def clz(in0 : Data):
             cnt = Data(0)
             mask = Data(1)
@@ -92,7 +92,7 @@ def gen_WASM(include64=False):
             return cnt
         WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz)
 
-        @apply_ast_passes([loop_unroll])
+        @apply_ast_passes([loop_unroll()])
         def ctz(in0 : Data):
             cnt = Data(0)
             mask = Data(1)
@@ -106,7 +106,7 @@ def gen_WASM(include64=False):
         WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz)
 
 
-        @apply_ast_passes([unroll_for])
+        @apply_ast_passes([loop_unroll()])
         def popcnt(in0 : Data):
             cnt = Data(0)
             for i in unroll(range(Data.size)):
