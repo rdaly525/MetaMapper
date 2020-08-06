@@ -26,74 +26,76 @@ import importlib
 import os
 
 
-# for ind, name in enumerate(glob.glob('examples/peak_gen/rewrite_rules/*.json')): 
-#     try:
-#         os.remove(name)
-#         os.remove("examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py")
-#         os.remove("examples/peak_gen/subgraph_arch_merged.json")
-#     except:
-#         pass
+def gen_rules():
+    # for ind, name in enumerate(glob.glob('examples/peak_gen/rewrite_rules/*.json')):
+    #     try:
+    #         os.remove(name)
+    #         os.remove("examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py")
+    #         os.remove("examples/peak_gen/subgraph_arch_merged.json")
+    #     except:
+    #         pass
 
-mapping_funcs = []
+    mapping_funcs = []
 
-# shutil.copyfile("../DSEGraphAnalysis/outputs/subgraph_archs/subgraph_arch_merged.json", "examples/peak_gen/subgraph_arch_merged.json")
-# for ind, name in enumerate(glob.glob('../DSEGraphAnalysis/outputs/subgraph_rewrite_rules/*.json')): 
-#     shutil.copyfile("../DSEGraphAnalysis/outputs/subgraph_rewrite_rules/subgraph_rr_" + str(ind) + ".json", "examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json")
-#     shutil.copyfile("../DSEGraphAnalysis/outputs/peak_eqs/peak_eq_" + str(ind) + ".py", "examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py")
+    # shutil.copyfile("../DSEGraphAnalysis/outputs/subgraph_archs/subgraph_arch_merged.json", "examples/peak_gen/subgraph_arch_merged.json")
+    # for ind, name in enumerate(glob.glob('../DSEGraphAnalysis/outputs/subgraph_rewrite_rules/*.json')):
+    #     shutil.copyfile("../DSEGraphAnalysis/outputs/subgraph_rewrite_rules/subgraph_rr_" + str(ind) + ".json", "examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json")
+    #     shutil.copyfile("../DSEGraphAnalysis/outputs/peak_eqs/peak_eq_" + str(ind) + ".py", "examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py")
 
-#     with open("../DSEGraphAnalysis/outputs/peak_eqs/peak_eq_" + str(ind) + ".py", "r") as file:
-#         with open("examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py", "w") as outfile:
-#             for line in file:
-#                 outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
+    #     with open("../DSEGraphAnalysis/outputs/peak_eqs/peak_eq_" + str(ind) + ".py", "r") as file:
+    #         with open("examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py", "w") as outfile:
+    #             for line in file:
+    #                 outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
 
-#     peak_eq = importlib.import_module("examples.peak_gen.peak_eqs.peak_eq_" + str(ind))
+    #     peak_eq = importlib.import_module("examples.peak_gen.peak_eqs.peak_eq_"     + str(ind))
 
-#     mapping_funcs.append(getattr(peak_eq, "mapping_function_" + str(ind) + "_fc"))
+    #     mapping_funcs.append(getattr(peak_eq, "mapping_function_" + str(ind) + "_fc"))
 
-for ind, name in enumerate(glob.glob('examples/peak_gen/peak_eqs/*.py')): 
-    peak_eq = importlib.import_module("examples.peak_gen.peak_eqs.peak_eq_" + str(ind))
+    for ind, name in enumerate(glob.glob('examples/peak_gen/peak_eqs/*.py')):
+        peak_eq = importlib.import_module("examples.peak_gen.peak_eqs.peak_eq_" + str(ind))
+        #for k,v in sys.modules.items():
+        #    print(f"  {k}, {v}")
+        mapping_funcs.append(getattr(peak_eq, "mapping_function_" + str(ind) + "_fc"))
 
-    mapping_funcs.append(getattr(peak_eq, "mapping_function_" + str(ind) + "_fc"))
+    arch = read_arch("examples/peak_gen/subgraph_arch_merged.json")
+    PE_fc = pe_arch_closure(arch)
 
-arch = read_arch("examples/peak_gen/subgraph_arch_merged.json")
-PE_fc = pe_arch_closure(arch)
+    rrules = []
 
-rrules = []
+    for ind, name in enumerate(glob.glob('examples/peak_gen/rewrite_rules/*.json')):
+        print("examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json")
+        with open("examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json") as json_file:
+            rewrite_rule_in = jsonpickle.decode(json_file.read())
 
-for ind, name in enumerate(glob.glob('examples/peak_gen/rewrite_rules/*.json')): 
-    print("examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json")
-    with open("examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json") as json_file:
-        rewrite_rule_in = jsonpickle.decode(json_file.read())
+        input_binding = []
 
-    input_binding = []
+        input_binding_tmp = rewrite_rule_in["ibinding"]
 
-    input_binding_tmp = rewrite_rule_in["ibinding"]
+        for i in input_binding_tmp:
+            if i[1][0] != "fp_vals":
+                if isinstance(i[0], dict):
+                    u = i[0]
+                    v = i[1]
+                    if u['type'] == "BitVector":
+                        u = (BitVector[u['width']](u['value']))
+                    elif u['type'] == "Bit":
+                        u = (Bit(u['value']))
 
-    for i in input_binding_tmp:
-        if i[1][0] != "fp_vals":
-            if isinstance(i[0], dict):
-                u = i[0]
-                v = i[1]
-                if u['type'] == "BitVector":
-                    u = (BitVector[u['width']](u['value']))
-                elif u['type'] == "Bit":
-                    u = (Bit(u['value']))
+                    input_binding.append(tuple([u, tuple(v) ]))
+                elif i[0] == "unbound":
+                    input_binding.append(tuple( [peak.mapper.utils.Unbound, tuple(i[1])] ))
+                else:
+                    input_binding.append(tuple( [tuple(i[0]), tuple(i[1])] ))
 
-                input_binding.append(tuple([u, tuple(v) ])) 
-            elif i[0] == "unbound":
-                input_binding.append(tuple( [peak.mapper.utils.Unbound, tuple(i[1])] ))
-            else:
-                input_binding.append(tuple( [tuple(i[0]), tuple(i[1])] ))
-            
 
-    output_binding_tmp = rewrite_rule_in["obinding"]
-    output_binding = []
+        output_binding_tmp = rewrite_rule_in["obinding"]
+        output_binding = []
 
-    for o in output_binding_tmp:
-        output_binding.append(tuple( [tuple(o[0]), tuple(o[1])] ))
+        for o in output_binding_tmp:
+            output_binding.append(tuple( [tuple(o[0]), tuple(o[1])] ))
 
-    rrules.append(RewriteRule(input_binding, output_binding, mapping_funcs[ind], PE_fc))
-
+        rrules.append(RewriteRule(input_binding, output_binding, mapping_funcs[ind], PE_fc))
+    return rrules, PE_fc
 
 lassen_constraints = {
     ("clk_en",): 1,
@@ -104,7 +106,8 @@ lassen_constraints = {
 
 @pytest.mark.parametrize("arch", [
     #("PE_lut", gen_PE_lut(16), {}),
-    ("PE", PE_fc, {})
+    #("PE", PE_fc, {})
+    ("PE", None, {})
     # ("Lassen", lassen_fc, lassen_constraints),
     #("ALU", gen_ALU(16), {}),
 ])
@@ -116,29 +119,29 @@ def test_app(arch, app):
     c = CoreIRContext(reset=True)
     file_name = f"examples/coreir/{app}.json"
     cutil.load_libs(["commonlib"])
-    # cutil.load_libs(["lakelib"])
-    CoreIRNodes = gen_CoreIRNodes(16)
     cmod = cutil.load_from_json(file_name, libraries=["lakelib"])
+    CoreIRNodes = gen_CoreIRNodes(16)
     pb_dags = cutil.preprocess(CoreIRNodes, cmod)
     name, arch_fc, constraints = arch
+    rrules, arch_fc = gen_rules()
 
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
+
     mapper = Mapper(CoreIRNodes, ArchNodes, peak_rules=rrules, conv=False)
-    mapper.do_mapping(pb_dags)
-    # mapped_cmod.print_()
-    # c.set_top(mapped_cmod)
-    # c.run_passes(["cullgraph"])
-    # mapped_file = f"tests/build/{name}_{app}_mapped"
-    # mapped_cmod.save_to_file(f"{mapped_file}.json")
+    mapped_cmod = mapper.do_mapping(pb_dags)
 
-    # #Test syntax of serialized json
-    # res = delegator.run(f"coreir -i {mapped_file}.json -l commonlib")
-    # assert not res.return_code, res.out + res.err
+    c.set_top(mapped_cmod)
+    c.run_passes(["cullgraph"])
+    mapped_file = f"tests/build/{name}_{app}_mapped"
+    mapped_cmod.save_to_file(f"{mapped_file}.json")
 
-    # #Test serializing to verilog
-    # res = delegator.run(f'coreir -i {mapped_file}.json -l commonlib -p "wireclocks-clk; wireclocks-arst" -o {mapped_file}.v --inline')
-    # assert not res.return_code, res.out + res.err
+    #Test syntax of serialized json
+    res = delegator.run(f"coreir -i {mapped_file}.json -l commonlib")
+    assert not res.return_code, res.out + res.err
 
-#test_app(("PE_lut", gen_PE_lut(16), {}),"add2")
+    #Test serializing to verilog
+    res = delegator.run(f'coreir -i {mapped_file}.json -l commonlib -p "wireclocks-clk; wireclocks-arst" -o {mapped_file}.v --inline')
+    assert not res.return_code, res.out + res.err
+
 

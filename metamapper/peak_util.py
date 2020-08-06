@@ -31,11 +31,13 @@ class FixConsts(Transformer):
             return const.select("out")
 
 def flatten(cmod: coreir.Module):
-    CoreIRContext().run_passes(["rungenerators"])
+    c = cmod.context
+    c.run_passes(["rungenerators"])
     d = cmod.definition
     #TODO change this to stop at a fixed point
-    for i in range(4):
+    for i in range(5):
         for inst in d.instances:
+            assert inst.context == c
             coreir.inline_instance(inst)
 
 

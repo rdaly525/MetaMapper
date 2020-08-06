@@ -83,7 +83,7 @@ class Loader:
         for inst in cmod.definition.instances:
             node_name = self.nodes.name_from_coreir(inst.module)
             if node_name is None:
-                raise ValueError(f"{inst.module.name} was never loaded into {self.nodes}")
+                raise ValueError(f"{inst.module.namespace.name}.{inst.module.name} was never loaded into {self.nodes}")
             if self.nodes.is_stateful(node_name):
                 raise NotImplementedError("TODO")
 
@@ -199,7 +199,6 @@ def load_from_json(file, libraries=[]):
     return cmod
 
 def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Instance, Dag]:
-
     c = cmod.context
     assert cmod.definition
 

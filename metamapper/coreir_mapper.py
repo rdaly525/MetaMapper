@@ -57,7 +57,7 @@ class Mapper:
         else:
             #load the rules
             for ind, peak_rule in enumerate(peak_rules):
-                print(str(ind))
+                print("ADDING RULE", str(ind))
                 self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
         self.inst_sel = alg(self.table)
 
