@@ -6,6 +6,7 @@ from metamapper.irs.wasm import gen_WasmNodes
 from peak.examples import riscv
 from metamapper.family import set_fam
 import metamapper.wasm_util as wutil
+from peak import family
 
 def test_app():
     CoreIRContext(reset=True)
@@ -25,3 +26,4 @@ def test_app():
 
     res = binary.run(in0=10, in1=5, in2=13)
     assert res == 10 + 5 + 13
+    set_fam(family)
