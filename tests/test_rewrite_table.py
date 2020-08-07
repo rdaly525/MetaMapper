@@ -1,7 +1,7 @@
 import pytest
 from examples.PEs.alu_basic import gen_ALU
 from examples.PEs.alu_add3 import gen_ALU as gen_Add3
-from peak import family_closure, Peak, Const
+from peak import family_closure, Peak, Const, family
 from metamapper.common_passes import print_dag, SimplifyCombines, RemoveSelects
 from metamapper.irs.coreir import gen_CoreIRNodes
 from metamapper.irs.wasm import gen_WasmNodes
@@ -260,3 +260,4 @@ def test_discover_wasm(op):
     table = RewriteTable(WasmNodes, ArchNodes)
     rr = table.discover(op, name)
     assert rr is not None
+    set_fam(family)
