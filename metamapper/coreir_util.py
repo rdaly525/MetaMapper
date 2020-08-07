@@ -360,3 +360,18 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module, name: str)
     ToCoreir(nodes, def_).run(dag)
     mod.definition = def_
     return mod
+
+#This will construct a new coreir module from the dag with ref_type
+def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
+    VerifyUniqueIname().run(dag)
+    FixSelects(nodes).run(dag)
+    c = CoreIRContext()
+    #construct coreir type
+    inputs = {field:c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items()}
+    outputs = {field:adt_to_ctype(T) for field, T in dag.output.type.field_dict.items()}
+    type = CoreIRContext().Record({**inputs, **outputs})
+    mod = CoreIRContext().global_namespace.new_module(name, type)
+    def_ = mod.new_definition()
+    ToCoreir(nodes, def_).run(dag)
+    mod.definition = def_
+    return mod
