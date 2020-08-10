@@ -3,6 +3,7 @@ import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes
 from metamapper.instruction_selection import GreedyCovering
+from metamapper.delay_matching import DelayMatching
 from peak.mapper import RewriteRule as PeakRule
 import typing as tp
 import coreir
@@ -59,8 +60,9 @@ class Mapper:
             for peak_rule in peak_rules:
                 self.table.add_peak_rule(peak_rule)
         self.inst_sel = alg(self.table)
+        self._history_ = []
 
-    def do_mapping(self, pb_dags, convert_unbound=True) -> coreir.Module:
+    def do_mapping(self, pb_dags, convert_unbound=True, node_latencies=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
         if len(pb_dags) != 1:
@@ -82,6 +84,11 @@ class Mapper:
             if unmapped is not None:
                 raise ValueError(f"Following nodes were unmapped: {unmapped}")
             assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
+            # Run delay matching if specified (node latencies given).
+            if node_latencies is not None:
+                RegT = self.CoreIRNodes.dag_nodes["coreir.reg"]
+                DelayMatching(RegT, node_latencies).run(mapped_dag)
+            self._history_.append(mapped_dag)
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
