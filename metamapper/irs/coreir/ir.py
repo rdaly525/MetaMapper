@@ -160,7 +160,8 @@ def gen_peak_CoreIR(width):
     for name, fun in (
         ("wire", lambda f, x: x),
         ("not_", lambda f, x: ~x),
-        ("neg", lambda f, x: -x)
+        ("neg", lambda f, x: -x),
+        ("reg", lambda f, x: x)
     ):
         CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBV, fun, name)
         CoreIR.add_peak_instruction(f"corebit.{name}", UnaryInputBit, OutputBit, fun, name)
