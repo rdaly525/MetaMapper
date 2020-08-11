@@ -31,6 +31,31 @@ import os
 
 
 def gen_rrules():
+
+    # for ind, name in enumerate(glob.glob('examples/peak_gen/rewrite_rules/*.json')): 
+    #     try:
+    #         os.remove(name)
+    #         os.remove("examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py")
+    #         os.remove("examples/peak_gen/subgraph_arch_merged.json")
+    #     except:
+    #         pass
+
+    # mapping_funcs = []
+
+    # shutil.copyfile("../DSEGraphAnalysis/outputs/subgraph_archs/subgraph_arch_merged.json", "examples/peak_gen/subgraph_arch_merged.json")
+    # for ind, name in enumerate(glob.glob('../DSEGraphAnalysis/outputs/subgraph_rewrite_rules/*.json')): 
+    #     shutil.copyfile("../DSEGraphAnalysis/outputs/subgraph_rewrite_rules/subgraph_rr_" + str(ind) + ".json", "examples/peak_gen/rewrite_rules/subgraph_rr_" + str(ind) + ".json")
+    #     shutil.copyfile("../DSEGraphAnalysis/outputs/peak_eqs/peak_eq_" + str(ind) + ".py", "examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py")
+
+    #     with open("../DSEGraphAnalysis/outputs/peak_eqs/peak_eq_" + str(ind) + ".py", "r") as file:
+    #         with open("examples/peak_gen/peak_eqs/peak_eq_" + str(ind) + ".py", "w") as outfile:
+    #             for line in file:
+    #                 outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
+
+    #     peak_eq = importlib.import_module("examples.peak_gen.peak_eqs.peak_eq_" + str(ind))
+
+    #     mapping_funcs.append(getattr(peak_eq, "mapping_function_" + str(ind) + "_fc"))
+
     mapping_funcs = []
     for ind, name in enumerate(glob.glob('examples/peak_gen/peak_eqs/*.py')):
         peak_eq = importlib.import_module("examples.peak_gen.peak_eqs.peak_eq_" + str(ind))
@@ -84,7 +109,7 @@ def gen_rrules():
 
 def test_camera():
     print("STARTING TEST")
-    app = "camera_pipeline"
+    app = "gaussian"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])

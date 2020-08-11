@@ -11,7 +11,7 @@ def mapping_function_4_fc(family: AbstractFamily):
     @family.assemble(locals(), globals())
     class mapping_function_4(Peak):
         def __call__(self, in0 : Data, in1 : Data) -> Data:
-  
-            return (in0 if in0 >= in1 else in1)
+            
+            return Data(in0 + in1)
       
     return mapping_function_4
