@@ -302,16 +302,21 @@ class CheckIfTree(Visitor):
 class Clone(Visitor):
     def clone(self, dag: Dag, iname_prefix: str = ""):
         assert dag is not None
-        self.node_map = {}
+        self.node_map = {node: node.copy() for node in dag.sources}
         self.iname_prefix = iname_prefix
         self.run(dag)
+
         dag_copy = Dag(
             sources=[self.node_map[node] for node in dag.sources],
             sinks=[self.node_map[node] for node in dag.sinks]
         )
         return dag_copy
 
+    def visit_Input(self, node):
+        pass
+
     def generic_visit(self, node):
+        print("Visiting", node)
         Visitor.generic_visit(self, node)
         new_node = node.copy()
         children = (self.node_map[child] for child in node.children())
