@@ -135,7 +135,7 @@ class CountPEs(Visitor):
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
 
-    def visit_PE(self, node):
+    def visit_PE_wrapped(self, node):
         Visitor.generic_visit(self, node)
         self.res += 1
 
