@@ -26,10 +26,13 @@ def gen_WASM(include64=False):
         Data32 = BitVector[32]
 
         #TODO is this a problem declaring a constant outside the scope?
-        def shift_amount(x : Data):
-            #Need to zero out all but the bottom bits
-            mask = Data(width)-Data(1)
-            return x & mask
+        #def shift_amount(x : Data):
+        #    #Need to zero out all but the bottom bits
+        #    mask = Data(width)-Data(1)
+        #    return x & mask
+        def shift_amount(x):
+            return x
+
 
         assert width in (32,64)
 
@@ -43,7 +46,24 @@ def gen_WASM(include64=False):
             in0=Data
             in1=Data
 
-        #Integer Arithmetic Instructions
+
+
+        #Comparison
+        for name, fun in (
+            ("lt_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)<f.Signed[32](y))),
+            ("le_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)<=f.Signed[32](y))),
+            ("gt_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)>f.Signed[32](y))),
+            ("le_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)<=f.Signed[32](y))),
+            ("lt_u", lambda f, x, y: f.BitVector[32](x<y)),
+            ("le_u", lambda f, x, y: f.BitVector[32](x<=y)),
+            ("gt_u", lambda f, x, y: f.BitVector[32](x>y)),
+            ("ge_u", lambda f, x, y: f.BitVector[32](x>=y)),
+            ("eq", lambda f, x, y: f.BitVector[32](x==y)),
+            ("ne", lambda f, x, y: f.BitVector[32](x!=y)),
+        ):
+            WASM.add_peak_instruction(f"{prefix}.{name}", BinaryInput, Output, fun, cls_name=name)
+
+                #Integer Arithmetic Instructions
         for name, fun in (
             ("add", lambda f, x, y: x+y),
             ("sub", lambda f, x, y: x-y),
@@ -55,11 +75,16 @@ def gen_WASM(include64=False):
             ("and_", lambda f, x, y: x & y),
             ("or_", lambda f, x, y: x | y),
             ("xor", lambda f, x, y: x ^ y),
-            ("shl", lambda f, x, y: x << shift_amount(y)),
-            ("shr_s", lambda f, x, y: x.bvashr(shift_amount(y))),
-            ("shr_l", lambda f, x, y: x.bvlshr(shift_amount(y))),
+            ("shl", lambda f, x, y: x << y),
+            ("shr_s", lambda f, x, y: x.bvashr(y)),
+            ("shr_l", lambda f, x, y: x.bvlshr(y)),
         ):
             WASM.add_peak_instruction(f"{prefix}.{name}",BinaryInput,Output,fun, cls_name=name)
+
+
+
+
+
 
         ##Need to test these
         #def rotl(in0 : Data, in1 : Data):
