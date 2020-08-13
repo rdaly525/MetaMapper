@@ -53,6 +53,7 @@ def gen_WASM(include64=False):
 
         #WASM.add_instruction("wasm.zero", zero_fc)
 
+
         @apply_ast_passes([loop_unroll()])
         def clz(f, in0 : Data):
             cnt = f.BitVector[width](0)
