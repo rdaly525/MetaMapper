@@ -97,8 +97,8 @@ for ind, name in enumerate(glob.glob('examples/peak_gen/rewrite_rules/*.json')):
     for o in output_binding_tmp:
         output_binding.append(tuple( [tuple(o[0]), tuple(o[1])] ))
 
-    pretty_print_binding(input_binding)
-    pretty_print_binding(output_binding)
+    # pretty_print_binding(input_binding)
+    # pretty_print_binding(output_binding)
     rrules.append(RewriteRule(input_binding, output_binding, mapping_funcs[ind], PE_fc))
 
 
@@ -122,7 +122,7 @@ lassen_constraints = {
 def test_app(arch, app):
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
-    file_name = f"examples/coreir/{app}.json"
+    file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
     # cutil.load_libs(["lakelib"])
     CoreIRNodes = gen_CoreIRNodes(16)

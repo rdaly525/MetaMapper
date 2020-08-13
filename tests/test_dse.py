@@ -125,10 +125,12 @@ def test_camera():
     putil.load_from_peak(ArchNodes, PE_fc)
     mr = "memory.rom2"
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
-
+    # breakpoint()
     mapper = Mapper(CoreIRNodes, ArchNodes, peak_rules=rrules, conv=False)
     for kname, kmod in kernels.items():
         mapped_mod = mapper.map_module(cmod=kmod, prove=False)
+    c.run_passes(["wireclocks-clk"])
+    c.run_passes(["wireclocks-arst"])
     c.run_passes(["markdirty"])
     output_file= f"examples/dse/{app}_mapped.json"
     c.save_to_file(output_file)

@@ -57,7 +57,7 @@ def gen_CoreIRNodes(width):
         node_name = "memory.rom2"
         num_children = 2
 
-    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=255, width=width)
+    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
 
     CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
     assert "memory.rom2" in CoreIRNodes.dag_nodes
