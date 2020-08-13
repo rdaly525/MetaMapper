@@ -21,7 +21,7 @@ def test_riscv_discovery(i, solver):
     putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
 
     table = RewriteTable(WasmNodes, ArchNodes)
-    with open(f'results/riscv_ext/z3_{i}.txt', 'w') as f:
+    with open(f'results/riscv_ext/{solver}_{i}.txt', 'w') as f:
         for name in WasmNodes.peak_nodes:
             print("Looking for ", name)
             start = timer()
@@ -32,5 +32,5 @@ def test_riscv_discovery(i, solver):
             print(f"{name}: {end-start}: {found}")
 
 
-for i in range(5):
-    test_riscv_discovery(i, solver="z3")
+for i in range(3):
+    test_riscv_discovery(i, solver="cvc4")
