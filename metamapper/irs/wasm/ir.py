@@ -5,6 +5,7 @@ from peak.ir import IR
 from peak import Peak, name_outputs
 from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
+from peak import Peak, name_outputs, family_closure, Const
 import math
 
 def gen_WASM(include64=False):
@@ -28,15 +29,6 @@ def gen_WASM(include64=False):
         Data = BitVector[width]
         Data32 = BitVector[32]
 
-        #TODO is this a problem declaring a constant outside the scope?
-        #def shift_amount(x : Data):
-        #    #Need to zero out all but the bottom bits
-        #    mask = Data(width)-Data(1)
-        #    return x & mask
-        def shift_amount(x):
-            return x
-
-
         assert width in (32,64)
 
         class UnaryInput(Product):
@@ -49,20 +41,67 @@ def gen_WASM(include64=False):
             in0=Data
             in1=Data
 
+        #@family_closure
+        #def zero_fc(family):
+        #    Data = family.BitVector[width]
+
+        #    class zero(Peak):
+        #        def __call__(self) -> Data:
+        #            return Data(0)
+
+        #    return zero
+
+        #WASM.add_instruction("wasm.zero", zero_fc)
+
+        @apply_ast_passes([loop_unroll()])
+        def clz(f, in0 : Data):
+            cnt = f.BitVector[width](0)
+            mask = f.BitVector[width](1)
+            for i in unroll(reversed(range(Data.size))):
+                # shift the bit we are checking down and mask
+                bit = (in0 >> i) & mask
+                # if the bit is set the mask to 0
+                mask = mask ^ bit
+                cnt = cnt + mask
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz, cls_name='clz')
+
+        @apply_ast_passes([loop_unroll()])
+        def ctz(f, in0 : Data):
+            cnt = f.BitVector[width](0)
+            mask = f.BitVector[width](1)
+            for i in unroll(range(Data.size)):
+                # shift the bit we are checking down and mask
+                bit = (in0 >> i) & mask
+                # if the bit is set the mask to 0
+                mask = mask ^ bit
+                cnt = cnt + mask
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz, cls_name='ctz')
+
+
+        @apply_ast_passes([loop_unroll()])
+        def popcnt(f, in0 : Data):
+            cnt = f.BitVector[width](0)
+            for i in unroll(range(Data.size)):
+                cnt = cnt + ((in0 >> i) & 1)
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.popcnt",UnaryInput,Output,popcnt, cls_name='popcnt')
+
 
 
         #Comparison
         for name, fun in (
-            ("lt_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)<f.Signed[32](y))),
-            ("le_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)<=f.Signed[32](y))),
-            ("gt_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)>f.Signed[32](y))),
-            ("le_s", lambda f, x, y: f.BitVector[32](f.Signed[32](x)<=f.Signed[32](y))),
-            ("lt_u", lambda f, x, y: f.BitVector[32](x<y)),
-            ("le_u", lambda f, x, y: f.BitVector[32](x<=y)),
-            ("gt_u", lambda f, x, y: f.BitVector[32](x>y)),
-            ("ge_u", lambda f, x, y: f.BitVector[32](x>=y)),
-            ("eq", lambda f, x, y: f.BitVector[32](x==y)),
-            ("ne", lambda f, x, y: f.BitVector[32](x!=y)),
+            ("lt_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)<f.Signed[width](y))),
+            ("le_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)<=f.Signed[width](y))),
+            ("gt_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)>f.Signed[width](y))),
+            ("ge_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)<=f.Signed[width](y))),
+            ("lt_u", lambda f, x, y: f.BitVector[width](x<y)),
+            ("le_u", lambda f, x, y: f.BitVector[width](x<=y)),
+            ("gt_u", lambda f, x, y: f.BitVector[width](x>y)),
+            ("ge_u", lambda f, x, y: f.BitVector[width](x>=y)),
+            ("eq", lambda f, x, y: f.BitVector[width](x==y)),
+            ("ne", lambda f, x, y: f.BitVector[width](x!=y)),
         ):
             WASM.add_peak_instruction(f"{prefix}.{name}", BinaryInput, Output, fun, cls_name=name)
 
@@ -104,40 +143,7 @@ def gen_WASM(include64=False):
         #    return msbs | lsbs
         #WASM.add_peak_instruction(f"{prefix}.rotr",BinaryInput,Output,rotr)
 
-        @apply_ast_passes([loop_unroll])
-        def clz(in0 : Data):
-            cnt = Data(0)
-            mask = Data(1)
-            for i in unroll(reversed(range(Data.size))):
-                # shift the bit we are checking down and mask
-                bit = (in0 >> i) & mask
-                # if the bit is set the mask to 0
-                mask = mask ^ bit
-                cnt = cnt + mask
-            return cnt
-        WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz)
 
-        @apply_ast_passes([loop_unroll])
-        def ctz(in0 : Data):
-            cnt = Data(0)
-            mask = Data(1)
-            for i in unroll(range(Data.size)):
-                # shift the bit we are checking down and mask
-                bit = (in0 >> i) & mask
-                # if the bit is set the mask to 0
-                mask = mask ^ bit
-                cnt = cnt + mask
-            return cnt
-        WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz)
-
-
-        @apply_ast_passes([unroll_for])
-        def popcnt(in0 : Data):
-            cnt = Data(0)
-            for i in unroll(range(Data.size)):
-                cnt = cnt + ((val >> i) & 1)
-            return cnt
-        WASM.add_peak_instruction(f"{prefix}.popcnt",UnaryInput,Output,popcnt)
 
         #WASM.add_peak_instruction(f"{prefix}.eqz",UnaryInput,Output32,lambda x : x==Data(0))
 

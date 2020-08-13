@@ -140,7 +140,7 @@ class RewriteTable:
         return rr
 
     #Discovers and returns a rule if possible
-    def discover(self, from_name, to_name, path_constraints={}, rr_name=None) -> tp.Union[None, RewriteRule]:
+    def discover(self, from_name, to_name, path_constraints={}, rr_name=None, solver="z3") -> tp.Union[None, RewriteRule]:
         if isinstance(from_name, str):
             from_fc = self.from_.peak_nodes[from_name]
         else:
@@ -149,7 +149,7 @@ class RewriteTable:
         to_fc = self.to.peak_nodes[to_name]
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints, family=fam())
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
-        peak_rr = ir_mapper.solve('z3', external_loop=True)
+        peak_rr = ir_mapper.solve(solver, external_loop=True)
         if peak_rr is None:
             return None
         rr = self.add_peak_rule(peak_rr, name=rr_name)
