@@ -9,7 +9,14 @@ import metamapper.wasm_util as wutil
 from metamapper.rewrite_table import RewriteTable
 from timeit import default_timer as timer
 
-def test_riscv_discovery(i, solver):
+def test_riscv_discovery(i, solver, c):
+    if c:
+        rc = {
+            ("pc",): 0,
+            ("rd",): 0,
+        }
+    else:
+      rc = {}
     print("File", i)
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -20,11 +27,11 @@ def test_riscv_discovery(i, solver):
     putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
 
     table = RewriteTable(WasmNodes, ArchNodes)
-    with open(f'results/riscv/{solver}_{i}.txt', 'w') as f:
+    with open(f'results/riscv/{solver}_{c}_{i}.txt', 'w') as f:
         for name in WasmNodes.peak_nodes:
             print("Looking for ", name)
             start = timer()
-            rr = table.discover(name, "R32I_mappable", solver=solver)
+            rr = table.discover(name, "R32I_mappable", solver=solver, path_constraints=rc)
             end = timer()
             found = "n" if rr is None else "f"
             print(f"{name}: {end-start}: {found}", file=f)
@@ -32,5 +39,4 @@ def test_riscv_discovery(i, solver):
 
 
 for i in range(3):
-    #test_riscv_discovery(i, solver="cvc4")
-    test_riscv_discovery(i, solver="btor")
+    test_riscv_discovery(i, solver="cvc4", c=True)
