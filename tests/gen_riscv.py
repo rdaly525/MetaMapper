@@ -42,12 +42,6 @@ def test_riscv_discovery(i, solver, c):
 
 
 def test_riscv_discovery_multi():
-    rc = {
-        ("pc0",): 0,
-        ("rd0",): 0,
-        ("pc1",): 0,
-        ("rd1",): 0,
-    }
 
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -56,7 +50,7 @@ def test_riscv_discovery_multi():
     def Riscv2_fc(family):
         print("calling with", family)
         Word = family.Word
-        isa = ISA_fc(family)
+        isa = ISA_fc.Py
         RMap = riscv.sim.R32I_mappable_fc(family)
 
         class Inst2(Product):
@@ -66,6 +60,7 @@ def test_riscv_discovery_multi():
 
         @family.assemble(locals(), globals())
         class Riscv2(Peak):
+            print("Creating Peak class with fam", family)
             def __init__(self):
                 self.i0 = RMap()
                 self.i1_0 = RMap()
@@ -78,16 +73,16 @@ def test_riscv_discovery_multi():
                 rs2: Word,
                 rs3: Word,
             ) -> Word:
-                i0_rd = self.i0(inst.i0, Word(0), rs1, rs2, Word(0))
+                _, i0_rd = self.i0(inst.i0, Word(0), rs1, rs2, Word(0))
 
-                i1_0_rd = self.i1_0(inst.i1, Word(0), i0_rd, rs3, Word(0))
-                i1_1_rd = self.i1_1(inst.i1, Word(0), rs3, i0_rd, Word(0))
-                i1_2_rd = self.i1_2(inst.i1, Word(0), i0_rd, i0_rd, Word(0))
+                _, i1_0_rd = self.i1_0(inst.i1, Word(0), i0_rd, rs3, Word(0))
+                _, i1_1_rd = self.i1_1(inst.i1, Word(0), rs3, i0_rd, Word(0))
+                _, i1_2_rd = self.i1_2(inst.i1, Word(0), i0_rd, i0_rd, Word(0))
                 if inst.opt == 0:
                     return i1_0_rd
                 elif inst.opt == 1:
                     return i1_1_rd
-                elif inst.opt == 1:
+                elif inst.opt == 2:
                     return i1_2_rd
                 else:
                     return Word(0)
@@ -102,7 +97,7 @@ def test_riscv_discovery_multi():
     for name in ("i32.ne", "i32.eq"):
         print("Looking for ", name)
         start = timer()
-        rr = table.discover(name, "Riscv2", solver='z3', path_constraints=rc)
+        rr = table.discover(name, "Riscv2", solver='z3', path_constraints={})
         end = timer()
         found = "n" if rr is None else "f"
         print(f"{name}: {end-start}: {found}")
