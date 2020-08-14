@@ -12,7 +12,6 @@ from metamapper.common_passes import print_dag
 
 class _ArchLatency:
     def get(self, node):
-        return 0
         kind = node.kind()[0]
         if kind == "ALU":
             return 1
