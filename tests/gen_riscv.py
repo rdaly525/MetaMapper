@@ -31,9 +31,13 @@ def test_riscv_discovery(i, solver, c):
     table = RewriteTable(WasmNodes, ArchNodes)
     with open(f'results/riscv/{solver}_{c}_{i}.txt', 'w') as f:
         for name in WasmNodes.peak_nodes:
+            if name != "i32.add":
+                continue
             print("Looking for ", name)
             start = timer()
             rr = table.discover(name, "R32I_mappable", solver=solver, path_constraints=rc)
+            assert rr is None
+            rr._rule.
             end = timer()
             found = "n" if rr is None else "f"
             print(f"{name}: {end-start}: {found}", file=f)

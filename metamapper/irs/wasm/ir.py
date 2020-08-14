@@ -41,6 +41,15 @@ def gen_WASM(include64=False):
             in0=Data
             in1=Data
 
+        class BinaryInput(Product):
+            in0 = Data
+            in1 = Data
+
+        class TernaryInput(Product):
+            in0=Data
+            in1=Data
+            pred=Data
+
         #@family_closure
         #def zero_fc(family):
         #    Data = family.BitVector[width]
@@ -80,16 +89,18 @@ def gen_WASM(include64=False):
             return cnt
         WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz, cls_name='ctz')
 
-
         @apply_ast_passes([loop_unroll()])
-        def popcnt(f, in0 : Data):
+        def popcnt(f, in0: Data):
             cnt = f.BitVector[width](0)
             for i in unroll(range(Data.size)):
                 cnt = cnt + ((in0 >> i) & 1)
             return cnt
-        WASM.add_peak_instruction(f"{prefix}.popcnt",UnaryInput,Output,popcnt, cls_name='popcnt')
 
+        WASM.add_peak_instruction(f"{prefix}.popcnt", UnaryInput, Output, popcnt, cls_name='popcnt')
 
+        def select(f, in0 : Data, in1: Data, pred: Data):
+            return (pred!=0).ite(in0, in1)
+        WASM.add_peak_instruction(f"{prefix}.select", TernaryInput, Output, select, cls_name='select')
 
         #Comparison
         for name, fun in (
@@ -120,7 +131,7 @@ def gen_WASM(include64=False):
             ("xor", lambda f, x, y: x ^ y),
             ("shl", lambda f, x, y: x << y),
             ("shr_s", lambda f, x, y: x.bvashr(y)),
-            ("shr_l", lambda f, x, y: x.bvlshr(y)),
+            ("shr_u", lambda f, x, y: x.bvlshr(y)),
         ):
             WASM.add_peak_instruction(f"{prefix}.{name}",BinaryInput,Output,fun, cls_name=name)
 

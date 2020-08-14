@@ -52,9 +52,11 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
     input_t = Product.from_fields("Input", {f"in{i}": BV32 for i in range(num_args)})
     output_t = Product.from_fields("Output", {"out": BV32})
     input = Input(type=input_t)
-    args = []
+    locals = []
     for i in range(num_args):
-        args.append(input.select(f"in{i}"))
+        locals.append(input.select(f"in{i}"))
+    for _ in range(2):
+        locals.append(None)
     stack = Stack()
     for pc, i in enumerate(ilist):
         opcode = i.code
@@ -64,12 +66,14 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
             cond = stack.pop()
             in1 = stack.pop()
             in0 = stack.pop()
-            raise NotImplementedError()
-            #stack.add(SelectNode(cond,in0,in1))
+            node = WasmNodes.dag_nodes["i32.select"]
+            stack.add(node(in0, in1, cond))
         elif opcode == C.get_local:
-            stack.add(args[i.immediate_arguments])
+            if locals[i.immediate_arguments] is None:
+                raise ValueError("Need more locals")
+            stack.add(locals[i.immediate_arguments])
         elif opcode == C.i32_const:
-            stack.add(Constant(value=i.immediate_arguments, type=BV32))
+            stack.add(Constant(value=BV32(i.immediate_arguments), type=BV32))
         elif opcode in UnaryOps:
             node_name = UnaryOps[opcode]
             node = WasmNodes.dag_nodes[node_name]
@@ -90,6 +94,8 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
         elif opcode == C.end:
             #Control flow would pop off the label
             pass
+        elif opcode == C.tee_local:
+            locals[i.immediate_arguments] = stack.top()
         else:
             raise NotImplementedError(C.op_name(opcode))
 

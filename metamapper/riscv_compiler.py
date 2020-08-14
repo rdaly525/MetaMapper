@@ -3,7 +3,6 @@ from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule
-from peak.examples.riscv import asm
 import typing as tp
 
 class Compiler:
@@ -110,6 +109,7 @@ def aadt_to_adt(val):
     return adt_val
 
 def set_instr( info):
+    from peak.examples.riscv import asm
     inst = info.pop('inst')
     aadt = type(inst)
     adt_val = aadt_to_adt(inst)

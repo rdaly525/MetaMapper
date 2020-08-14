@@ -75,7 +75,7 @@ class RewriteTable:
         #input -> ibinding node
         ibind_children = []
         ibind_paths = []
-
+        pretty_print_binding(rule.ibinding)
         for from_b, to_b in rule.ibinding:
             assert isinstance(to_b, tuple)
             if isinstance(from_b, tuple):
@@ -136,6 +136,7 @@ class RewriteTable:
             checker = lambda match: True,
             name = name
         )
+        rr._rule = rule
         self.add_rule(rr)
         return rr
 
