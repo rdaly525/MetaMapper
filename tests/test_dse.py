@@ -109,7 +109,7 @@ def gen_rrules():
 
 def test_camera():
     print("STARTING TEST")
-    app = "gaussian"
+    app = "harris"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
@@ -129,6 +129,8 @@ def test_camera():
     mapper = Mapper(CoreIRNodes, ArchNodes, peak_rules=rrules, conv=False)
     for kname, kmod in kernels.items():
         mapped_mod = mapper.map_module(cmod=kmod, prove=False)
+
+    print("Num PEs used:",  mapper.num_pes)
     c.run_passes(["wireclocks-clk"])
     c.run_passes(["wireclocks-arst"])
     c.run_passes(["markdirty"])

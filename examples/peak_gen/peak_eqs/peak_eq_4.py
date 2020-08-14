@@ -12,6 +12,6 @@ def mapping_function_4_fc(family: AbstractFamily):
     class mapping_function_4(Peak):
         def __call__(self, in0 : Data, in1 : Data) -> Data:
             
-            return Data(in1 + in0)
+            return Data(in0 + in1)
       
     return mapping_function_4

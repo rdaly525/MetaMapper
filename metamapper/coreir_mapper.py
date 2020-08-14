@@ -12,6 +12,7 @@ class Mapper:
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
+        self.num_pes = 0
         conv_ops = (
             "corebit.const",
             "coreir.add",
@@ -86,12 +87,13 @@ class Mapper:
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
-        count_pes(mapped_dag)
+        
         return mapped_dag
 
     def map_module(self, cmod: coreir.Module, prove=True) -> coreir.Module:
         premapped_dag = cutil.preprocess(self.CoreIRNodes, cmod)
         mapped_dag = self.map_dag(premapped_dag, prove=prove)
+        self.num_pes += count_pes(mapped_dag)
         #Create a new module representing the mapped_dag
         mapped_mod = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, cmod, cmod.name + "_mapped")
         return mapped_mod

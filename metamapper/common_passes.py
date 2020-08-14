@@ -268,7 +268,7 @@ def print_dag(dag: Dag):
     print(Printer().run(dag).res)
 
 def count_pes(dag: Dag):
-    print(CountPEs().run(dag).res)
+    return CountPEs().run(dag).res
 
 class CheckIfTree(Visitor):
     def __init__(self):
@@ -316,7 +316,7 @@ class Clone(Visitor):
         pass
 
     def generic_visit(self, node):
-        print("Visiting", node)
+        # print("Visiting", node)
         Visitor.generic_visit(self, node)
         new_node = node.copy()
         children = (self.node_map[child] for child in node.children())
