@@ -31,5 +31,8 @@ def gen_WasmNodes(inlcude64=False):
             assert name_ == name
             print(f"Loaded {name}!")
 
+    #Add Constants
+
+
     return WasmNodes
 

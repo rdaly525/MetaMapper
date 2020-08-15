@@ -3,12 +3,18 @@ from metamapper.rewrite_table import RewriteTable, RewriteRule
 from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule
+import metamapper.peak_util as putil
+from peak.examples import riscv, riscv_m, riscv_hack
+from .family import fam
 import typing as tp
 
 
 #Defining the custom rewrite rules
 
 #i32.const
+
+
+
 
 #RewriteRule
 #def __init__(self,
@@ -23,13 +29,38 @@ import typing as tp
 #    le_u
 
 
-
+# Load rule for -1
+#input_node = Input(type=input_type)
+#in0 = input_node.select("in0")
+#in1 = input_node.select("in1")
+#in2 = input_node.select("in2")
+#fma1 = FMANode(Constant(value=BV16(5), type=BV16), in0, in1)
+#fma2 = FMANode(Constant(value=BV16(2), type=BV16), in2, fma1.select("out"))
+#output_node = Output(fma2.select("out"), type=output_type)
+#dag = Dag(sources=[input_node], sinks=[output_node])
 
 class Compiler:
-    def __init__(self, WasmNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3'):
+    def __init__(self, WasmNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3', m=False):
         self.WasmNodes = WasmNodes
+        ArchNodes = Nodes("RiscV")
         self.ArchNodes = ArchNodes
+        if m:
+            riscv_fc = riscv_m.sim.R32I_mappable_fc
+        else:
+            riscv_fc = riscv.sim.R32I_mappable_fc
+        putil.load_from_peak(ArchNodes, riscv_fc, stateful=False, wasm=True)
+        riscv2_fc = gen_riscv2(m)
+        putil.load_from_peak(ArchNodes, riscv2_fc, stateful=False, wasm=True)
         self.table = RewriteTable(WasmNodes, ArchNodes)
+        map2_set = [
+            "i32.eq",
+            "i32.neq",
+            "i32.le_s",
+            "i32.le_s",
+            "i32.le_s",
+            "i32.le_s",
+        ]
+        map2_set = set(map2_set)
         if ops is None:
             ops = (
                 "i32.add",
@@ -37,20 +68,25 @@ class Compiler:
                 "i32.and_",
             )
         if peak_rules is None:
-            for node_name in ArchNodes._node_names:
-                #auto discover the rules for CoreIR
-                for op in ops:
-                    peak_rule = self.table.discover(op, node_name, solver=solver)
-                    print(f"Searching for {op} -> {node_name}", flush=True)
-                    if peak_rule is None:
-                        print(f"  Not Found :(")
-                        pass
-                    else:
-                        print(f"  Found!")
+            #auto discover the rules for CoreIR
+            for op in ops:
+                if op in map2_set:
+                    node_name = "Riscv2"
+                else:
+                    node_name = "R32I_mappable"
+                peak_rule = self.table.discover(op, node_name, solver=solver)
+                print(f"Searching for {op} -> {node_name}", flush=True)
+                if peak_rule is None:
+                    print(f"  Not Found :(")
+                    pass
+                else:
+                    print(f"  Found!")
         else:
             #load the rules
             for peak_rule in peak_rules:
                 self.table.add_peak_rule(peak_rule)
+
+
         self.inst_sel = alg(self.table)
 
     def compile(self, dag) -> tp.Any:
@@ -70,9 +106,9 @@ class Compiler:
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.WasmNodes).verify(original_dag) is None
-        #counter_example = prove_equal(original_dag, mapped_dag)
-        #if counter_example is not None:
-        #    raise ValueError(f"Mapped is not the same {counter_example}")
+        counter_example = prove_equal(original_dag, mapped_dag)
+        if counter_example is not None:
+            raise ValueError(f"Mapped is not the same {counter_example}")
 
 
         #Very simple Register Allication
@@ -142,8 +178,7 @@ def set_instr( info):
     adt_val = asm.set_fields(adt_val, **cur_fields)
     return aadt(adt_val)
 
-from peak.examples import riscv
-from .family import fam
+
 class Binary:
     def __init__(self, insts: tp.List, input_info: dict, output_idx):
         self.insts = insts
@@ -165,4 +200,41 @@ class Binary:
         return cpu.register_file.load1(isa.Idx(self.output_idx))
 
 
+from peak import family_closure, Peak, Const
+from hwtypes.adt import Product
+def gen_riscv2(m):
 
+    if m:
+        r = riscv_m
+    else:
+        r = riscv
+
+    ISA_fc = r.isa.ISA_fc
+    @family_closure(r.family)
+    def Riscv2_fc(family):
+        Word = family.Word
+        isa = ISA_fc.Py
+        RMap = r.sim.R32I_mappable_fc(family)
+
+        class Inst2(Product):
+            i0 = isa.Inst
+            i1 = isa.Inst
+
+        @family.assemble(locals(), globals())
+        class Riscv2(Peak):
+            print("Creating Peak class with fam", family)
+            def __init__(self):
+                self.i0 = RMap()
+                self.i1 = RMap()
+
+            def __call__(self,
+                inst: Const(Inst2),
+                rs1: Word,
+                rs2: Word,
+            ) -> Word:
+                _, i0_rd = self.i0(inst.i0, Word(0), rs1, rs2, Word(0))
+
+                _, i1_rd = self.i1_0(inst.i1, Word(0), i0_rd, i0_rd, Word(0))
+                return i1_rd
+        return Riscv2
+    return Riscv2_fc
