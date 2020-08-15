@@ -9,6 +9,26 @@ from peak.mapper.utils import Unbound
 from .node import DagNode
 
 
+
+class TypeLegalize(Transformer):
+    def __init__(self, WasmNodes:Nodes):
+        self.WasmNodes = WasmNodes
+    def visit_Constant(self, node):
+        value = node.value
+        BV32 = fam().PyFamily().BitVector[32]
+        assert isinstance(value, BV32)
+        if value == BV32(0):
+            const0 = self.WasmNodes.dag_nodes["const0"]
+            return const0(Constant(value=Unbound,type=BV32)).select("out")
+        elif value == BV32(1):
+            const1 = self.WasmNodes.dag_nodes["const1"]
+            return const1(Constant(value=Unbound,type=BV32)).select("out")
+        elif value == BV32(-1):
+            constn1 = self.WasmNodes.dag_nodes["constn1"]
+            return constn1(Constant(value=Unbound,type=BV32)).select("out")
+        else:
+            raise NotImplementedError(value)
+
 class ExtractNames(Visitor):
     def __init__(self, nodes):
         self.nodes = nodes
@@ -325,15 +345,17 @@ class Uses(Visitor):
         return self.uses, self.inputs, self.outputs, self.insts
 
     def generic_visit(self, node: DagNode):
+        print("visit", node)
         Visitor.generic_visit(self, node)
         assert node.num_children == 5
         inst, _, rs1, rs2, _ = node.children()
         assert isinstance(inst, Constant)
+        self.uses.setdefault(node, {})
         for rs, idx in ((rs1,'rs1'), (rs2,'rs2')):
             if isinstance(rs, Constant):
                 assert rs.value is Unbound
                 continue
-            self.uses.setdefault(node, {})[idx] = self.uses[rs]
+            self.uses[node][idx] = self.uses[rs]
         self.insts[node] = inst.assemble(fam().PyFamily())
 
     def visit_Output(self, node):

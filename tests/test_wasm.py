@@ -16,16 +16,27 @@ def test_app():
     wasm_file = './examples/wasm/wasm/add3.wasm'
     app = wutil.wasm_to_dag(wasm_file, "add3")
 
-    arch_fc = riscv.sim.R32I_mappable_fc
-    ArchNodes = Nodes("RiscV")
-    putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
-
-    compiler = Compiler(WasmNodes, ArchNodes)
-    binary = compiler.compile(app)
+    compiler = Compiler(WasmNodes)
+    binary = compiler.compile(app, prove=False)
 
     res = binary.run(in0=10, in1=5, in2=13)
     assert res == 10 + 5 + 13
 
+
+def test_prove():
+
+    CoreIRContext(reset=True)
+    set_fam(riscv.family)
+    WasmNodes = gen_WasmNodes()
+
+    #Compile the c file to wasm
+    wasm_file = wutil.compile_c_to_wasm("nop")
+    app = wutil.wasm_to_dag(wasm_file, "nop")
+
+    compiler = Compiler(WasmNodes)
+    binary = compiler.compile(app)
+
+    assert binary.run(in0=10) == 10
 
 def test_c():
 
@@ -37,11 +48,7 @@ def test_c():
     wasm_file = wutil.compile_c_to_wasm("foo")
     app = wutil.wasm_to_dag(wasm_file, "foo")
 
-    arch_fc = riscv.sim.R32I_mappable_fc
-    ArchNodes = Nodes("RiscV")
-    putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
-
-    compiler = Compiler(WasmNodes, ArchNodes)
+    compiler = Compiler(WasmNodes)
     binary = compiler.compile(app)
 
     res = binary.run(in0=10, in1=5, in2=2)

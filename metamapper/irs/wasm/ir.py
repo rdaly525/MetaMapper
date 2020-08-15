@@ -50,17 +50,38 @@ def gen_WASM(include64=False):
             in1=Data
             pred=Data
 
-        #@family_closure
-        #def zero_fc(family):
-        #    Data = family.BitVector[width]
+        @family_closure
+        def const0_fc(family):
+            Data = family.BitVector[width]
 
-        #    class zero(Peak):
-        #        def __call__(self) -> Data:
-        #            return Data(0)
+            @name_outputs(out=Data)
+            class const0(Peak):
+                def __call__(self, in0:Data) -> Data:
+                    return Data(0)
+            return const0
+        WASM.add_instruction("const0", const0_fc)
 
-        #    return zero
+        @family_closure
+        def const1_fc(family):
+            Data = family.BitVector[width]
 
-        #WASM.add_instruction("wasm.zero", zero_fc)
+            @name_outputs(out=Data)
+            class const1(Peak):
+                def __call__(self, in0:Data) -> Data:
+                    return Data(1)
+            return const1
+        WASM.add_instruction("const1", const1_fc)
+
+        @family_closure
+        def constn1_fc(family):
+            Data = family.BitVector[width]
+
+            @name_outputs(out=Data)
+            class constn1(Peak):
+                def __call__(self, in0:Data) -> Data:
+                    return Data(-1)
+            return constn1
+        WASM.add_instruction("constn1", constn1_fc)
 
 
         @apply_ast_passes([loop_unroll()])

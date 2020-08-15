@@ -31,7 +31,14 @@ def gen_WasmNodes(inlcude64=False):
             assert name_ == name
             print(f"Loaded {name}!")
 
-    #Add Constants
+    #Const1 = WasmNodes.create_dag_node("Const1", 1, stateful=False, attrs=())
+
+    #rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=255, width=width)
+
+    #CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
+    #assert "memory.rom2" in CoreIRNodes.dag_nodes
+    #assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
+    #return CoreIRNodes
 
 
     return WasmNodes

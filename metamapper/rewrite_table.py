@@ -57,8 +57,8 @@ class RewriteTable:
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-        print("from_dag")
-        print_dag(from_dag)
+        #print("from_dag")
+        #print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -130,8 +130,8 @@ class RewriteTable:
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
         #print_dag(to_dag)
-        print("to_dag")
-        print_dag(to_dag)
+        #print("to_dag")
+        #print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
@@ -148,6 +148,8 @@ class RewriteTable:
 
     #Discovers and returns a rule if possible
     def discover(self, from_name, to_name, path_constraints={}, rr_name=None, solver="z3") -> tp.Union[None, RewriteRule]:
+        if rr_name is None:
+            rr_name = from_name
         if isinstance(from_name, str):
             from_fc = self.from_.peak_nodes[from_name]
         else:

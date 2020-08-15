@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule
+from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule, TypeLegalize
 from metamapper.rewrite_table import RewriteTable, RewriteRule
 from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
@@ -30,6 +30,9 @@ import typing as tp
 
 
 # Load rule for -1
+
+#input_type = Product.from_fields("Input", {"in0": BV16, "in1": BV16, "in2": BV16})
+#output_type = Product.from_fields("Output", {"out": BV16})
 #input_node = Input(type=input_type)
 #in0 = input_node.select("in0")
 #in1 = input_node.select("in1")
@@ -69,6 +72,7 @@ class Compiler:
             )
         if peak_rules is None:
             #auto discover the rules for CoreIR
+            print("Discovering", ops)
             for op in ops:
                 if op in map2_set:
                     node_name = "Riscv2"
@@ -89,10 +93,11 @@ class Compiler:
 
         self.inst_sel = alg(self.table)
 
-    def compile(self, dag) -> tp.Any:
+    def compile(self, dag, prove=True) -> tp.Any:
         #print("premapped")
         #print_dag(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
+
         mapped_dag = self.inst_sel(dag)
         #print("postmapped")
         #print_dag(mapped_dag)
@@ -106,14 +111,21 @@ class Compiler:
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.WasmNodes).verify(original_dag) is None
-        counter_example = prove_equal(original_dag, mapped_dag)
-        if counter_example is not None:
-            raise ValueError(f"Mapped is not the same {counter_example}")
+        if prove:
+            counter_example = prove_equal(original_dag, mapped_dag)
+            if counter_example is not None:
+                raise ValueError(f"Mapped is not the same {counter_example}")
 
 
         #Very simple Register Allication
         uses, inputs, outputs, insts = Uses().uses(mapped_dag)
+        print("u")
+        for k, v in uses.items():
+            print("  ", k, v)
         node_list = list(inputs) + Schedule().schedule(mapped_dag)
+        print("nl")
+        for n in node_list:
+            print("  ", n)
         reaching = {i:i for i in range(len(node_list))} #idx to worst idx
         for i, node in enumerate(node_list):
             if not isinstance(node, DagNode):
@@ -152,9 +164,9 @@ class Compiler:
         for node in node_list:
             if node not in inputs:
                 inst_list.append(set_instr(inst_info[node]))
-            #print(node)
-            #for k,v in inst_info[node].items():
-            #    print(f"  {k}: {v}")
+            print(node)
+            for k,v in inst_info[node].items():
+                print(f"  {k}: {v}")
 
         #assume the last instruction returns the final value
         output_idx = node_to_rd[node_list[-1]]
@@ -194,9 +206,15 @@ class Binary:
             val = kwargs[input]
             cpu.register_file.store(isa.Idx(ridx), isa.Word(val))
 
+        def pr():
+            print("RF")
+            for k, v in cpu.register_file.rf.items():
+                print ("  ",k, v)
+        #pr()
         for inst in self.insts:
             inst_adt = aadt_to_adt(inst)
             cpu(inst_adt, isa.Word(0))
+            #pr()
         return cpu.register_file.load1(isa.Idx(self.output_idx))
 
 
