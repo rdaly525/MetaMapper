@@ -78,19 +78,19 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
             node_name = UnaryOps[opcode]
             node = WasmNodes.dag_nodes[node_name]
             in0 = stack.pop()
-            stack.add(node(in0).select(0))
+            stack.add(node(in0).select("out"))
         elif opcode in BinaryOps:
             node_name = BinaryOps[opcode]
             node = WasmNodes.dag_nodes[node_name]
             in1 = stack.pop()
             in0 = stack.pop()
-            stack.add(node(in0, in1).select(0))
+            stack.add(node(in0, in1).select("out"))
         elif opcode in CompOps:
             node_name = CompOps[opcode]
             node = WasmNodes.dag_nodes[node_name]
             in1 = stack.pop()
             in0 = stack.pop()
-            stack.add(node(in0, in1).select(0))
+            stack.add(node(in0, in1).select("out"))
         elif opcode == C.end:
             #Control flow would pop off the label
             pass

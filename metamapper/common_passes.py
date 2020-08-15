@@ -9,25 +9,65 @@ from peak.mapper.utils import Unbound
 from .node import DagNode
 
 
+class Riscv2_Riscv(Transformer):
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+    def visit_Riscv2(self, node):
+        Transformer.generic_visit(self, node)
+        assert node.num_children == 3
+        inst2, rs1, rs2, = node.children()
+        assert isinstance(inst2, Constant)
+        riscv_node = self.nodes.dag_nodes["R32I_mappable"]
+        BV32 = fam().Pyfamily().BitVector[32]
+        inst, _, rs1, rs2, _ = node.children()
+        i0 = Constant(type=type(inst2.type.i0), value=inst2.value.i0)
+        i1 = Constant(type=type(inst2.type.i1), value=inst2.value.i1)
+        n0 = riscv_node(i0, Constant(type=BV32,value=Unbound), rs1, rs2, Constant(type=BV32,value=Unbound))
+        n1 = riscv_node(i1, Constant(type=BV32,value=Unbound), n0.select("rd"), n0.select("rd"), Constant(type=BV32,value=Unbound))
+        return n1
 
 class TypeLegalize(Transformer):
     def __init__(self, WasmNodes:Nodes):
         self.WasmNodes = WasmNodes
+        self.BV = fam().PyFamily().BitVector
+
+    def const0(self, value):
+        if value == self.BV[32](0):
+            const0 = self.WasmNodes.dag_nodes["const0"]
+            return const0(Constant(value=Unbound, type=self.BV[32])).select("out")
+
+    def const1(self, value):
+        if value == self.BV[32](1):
+            const1 = self.WasmNodes.dag_nodes["const1"]
+            return const1(Constant(value=Unbound, type=self.BV[32])).select("out")
+
+    def constn1(self, value):
+        if value == self.BV[32](-1):
+            constn1 = self.WasmNodes.dag_nodes["constn1"]
+            return constn1(Constant(value=Unbound,type=self.BV[32])).select("out")
+
+    def const12(self, value):
+        if value[:12].sext(20) == value:
+            const12 = self.WasmNodes.dag_nodes["const12"]
+            c = Constant(value=value[:12], type=self.BV[12])
+            return const12(c).select("out")
+
+
     def visit_Constant(self, node):
         value = node.value
-        BV32 = fam().PyFamily().BitVector[32]
-        assert isinstance(value, BV32)
-        if value == BV32(0):
-            const0 = self.WasmNodes.dag_nodes["const0"]
-            return const0(Constant(value=Unbound,type=BV32)).select("out")
-        elif value == BV32(1):
-            const1 = self.WasmNodes.dag_nodes["const1"]
-            return const1(Constant(value=Unbound,type=BV32)).select("out")
-        elif value == BV32(-1):
-            constn1 = self.WasmNodes.dag_nodes["constn1"]
-            return constn1(Constant(value=Unbound,type=BV32)).select("out")
-        else:
-            raise NotImplementedError(value)
+        assert isinstance(value, self.BV[32])
+        for f in (
+            self.const0,
+            self.const1,
+            self.constn1,
+            self.const12,
+        ):
+            new = f(value)
+            if new is not None:
+                return new
+        raise NotImplementedError()
+
 
 class ExtractNames(Visitor):
     def __init__(self, nodes):
@@ -121,7 +161,8 @@ class SMT(Visitor):
 
     def visit_Select(self, node: Select):
         Visitor.generic_visit(self, node)
-        self.values[node] = self.values[node.children()[0]][node.field]
+        val =self.values[node.children()[0]]
+        self.values[node] = val[node.field]
 
     def visit_Combine(self, node: Combine):
         Visitor.generic_visit(self, node)
@@ -345,7 +386,6 @@ class Uses(Visitor):
         return self.uses, self.inputs, self.outputs, self.insts
 
     def generic_visit(self, node: DagNode):
-        print("visit", node)
         Visitor.generic_visit(self, node)
         assert node.num_children == 5
         inst, _, rs1, rs2, _ = node.children()

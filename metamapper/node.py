@@ -57,6 +57,9 @@ class DagNode(Visited):
     def copy(self):
         args = self.children()
         kwargs = {attr:getattr(self, attr) for attr in self.attributes}
+        print(0, type(self))
+        print(1, args)
+        print(2, kwargs)
         return type(self)(*args, **kwargs)
 
 
@@ -252,6 +255,9 @@ class Combine(DagNode):
 
     @property
     def attributes(self):
-        return ("type", "iname")
+        attrs = ("type", "iname")
+        if hasattr(self, "tu_field"):
+            attrs = (*attrs, "tu_field")
+        return attrs
 
     nodes = Common

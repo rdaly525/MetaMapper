@@ -47,10 +47,29 @@ def compile_c(i):
     #res = binary.run(in0=10, in1=5, in2=2)
     #assert res == (10*5) & 2
 
+
+from metamapper.rewrite_table import RewriteTable
+def test_single():
+    op = "const12"
+    print("Looking for Op", op)
+    CoreIRContext(reset=True)
+    set_fam(riscv.family)
+    WasmNodes = gen_WasmNodes()
+
+    arch_fc = riscv.sim.R32I_mappable_fc
+    ArchNodes = Nodes("RiscV")
+    putil.load_from_peak(ArchNodes, arch_fc, stateful=False, wasm=True)
+
+    table = RewriteTable(WasmNodes, ArchNodes)
+    rr = table.discover(op, "R32I_mappable")
+    assert rr is not None
+
+
+
 from metamapper.common_passes import print_dag, ExtractNames
 #@pytest.mark.parametrize("i", range(1, 26))
 #@pytest.mark.parametrize("i", range(10, 11))
-@pytest.mark.parametrize("i", range(2, 3))
+@pytest.mark.parametrize("i", range(10,26))
 def test_load(i):
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -68,13 +87,21 @@ def test_load(i):
 
     op_cnt = ExtractNames(WasmNodes).extract(app)
 
+    mset = [
+        "i32.mul",
+        "i32.div_s",
+        "i32.div_u",
+        "i32.rem_s",
+        "i32.rem_u",
+    ]
+    m = any(op in mset for op in op_cnt)
+    if m:
+        print(f"HERE {i} in mset")
+        assert 0
+
     print("Need to search for", op_cnt.keys())
     compiler = Compiler(WasmNodes, ops=op_cnt.keys(), solver='z3')
-    binary = compiler.compile(app, prove=False)
-
-    for i in range(10):
-        print(i)
-        print(binary.run(in0=i))
+    binary = compiler.compile(app, prove=True)
 
     #assert binary.run(in0=8) == 1
     #assert binary.run(in0=7) == 0

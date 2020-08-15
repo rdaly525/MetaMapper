@@ -22,7 +22,7 @@ def test_app():
     res = binary.run(in0=10, in1=5, in2=13)
     assert res == 10 + 5 + 13
 
-
+from metamapper.common_passes import ExtractNames
 def test_prove():
 
     CoreIRContext(reset=True)
@@ -33,7 +33,8 @@ def test_prove():
     wasm_file = wutil.compile_c_to_wasm("nop")
     app = wutil.wasm_to_dag(wasm_file, "nop")
 
-    compiler = Compiler(WasmNodes)
+    op_cnt = ExtractNames(WasmNodes).extract(app)
+    compiler = Compiler(WasmNodes, ops=op_cnt.keys())
     binary = compiler.compile(app)
 
     assert binary.run(in0=10) == 10

@@ -1,3 +1,3 @@
 int nop(int a) {
-    return a;
+    return -a;
 }

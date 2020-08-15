@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule, TypeLegalize
+from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule, TypeLegalize, Riscv2_Riscv
 from metamapper.rewrite_table import RewriteTable, RewriteRule
 from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
@@ -44,6 +44,7 @@ import typing as tp
 
 class Compiler:
     def __init__(self, WasmNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3', m=False):
+        assert ops is not None
         self.WasmNodes = WasmNodes
         ArchNodes = Nodes("RiscV")
         self.ArchNodes = ArchNodes
@@ -52,34 +53,31 @@ class Compiler:
         else:
             riscv_fc = riscv.sim.R32I_mappable_fc
         putil.load_from_peak(ArchNodes, riscv_fc, stateful=False, wasm=True)
-        riscv2_fc = gen_riscv2(m)
+        riscv2_fc, Inst2 = gen_riscv2(m)
+        self.Inst2 = Inst2
         putil.load_from_peak(ArchNodes, riscv2_fc, stateful=False, wasm=True)
         self.table = RewriteTable(WasmNodes, ArchNodes)
         map2_set = [
             "i32.eq",
             "i32.neq",
             "i32.le_s",
-            "i32.le_s",
-            "i32.le_s",
-            "i32.le_s",
+            "i32.le_u",
+            "i32.ge_s",
+            "i32.ge_u",
         ]
+
         map2_set = set(map2_set)
-        if ops is None:
-            ops = (
-                "i32.add",
-                "i32.xor",
-                "i32.and_",
-            )
         if peak_rules is None:
             #auto discover the rules for CoreIR
             print("Discovering", ops)
             for op in ops:
                 if op in map2_set:
+                    assert 0
                     node_name = "Riscv2"
                 else:
                     node_name = "R32I_mappable"
-                peak_rule = self.table.discover(op, node_name, solver=solver)
                 print(f"Searching for {op} -> {node_name}", flush=True)
+                peak_rule = self.table.discover(op, node_name, solver=solver)
                 if peak_rule is None:
                     print(f"  Not Found :(")
                     pass
@@ -94,8 +92,8 @@ class Compiler:
         self.inst_sel = alg(self.table)
 
     def compile(self, dag, prove=True) -> tp.Any:
-        #print("premapped")
-        #print_dag(dag)
+        print("premapped")
+        print_dag(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
 
         mapped_dag = self.inst_sel(dag)
@@ -105,6 +103,9 @@ class Compiler:
         #print("simplifyCombines")
         #print_dag(mapped_dag)
         RemoveSelects().run(mapped_dag)
+
+        #Riscv2_Riscv(self.ArchNodes).run(mapped_dag)
+
         print("RemovedSelects")
         print_dag(mapped_dag)
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
@@ -119,13 +120,13 @@ class Compiler:
 
         #Very simple Register Allication
         uses, inputs, outputs, insts = Uses().uses(mapped_dag)
-        print("u")
-        for k, v in uses.items():
-            print("  ", k, v)
+        #print("u")
+        #for k, v in uses.items():
+        #    print("  ", k, v)
         node_list = list(inputs) + Schedule().schedule(mapped_dag)
-        print("nl")
-        for n in node_list:
-            print("  ", n)
+        #print("nl")
+        #for n in node_list:
+        #    print("  ", n)
         reaching = {i:i for i in range(len(node_list))} #idx to worst idx
         for i, node in enumerate(node_list):
             if not isinstance(node, DagNode):
@@ -218,7 +219,7 @@ class Binary:
         return cpu.register_file.load1(isa.Idx(self.output_idx))
 
 
-from peak import family_closure, Peak, Const
+from peak import family_closure, Peak, Const, name_outputs
 from hwtypes.adt import Product
 def gen_riscv2(m):
 
@@ -228,31 +229,35 @@ def gen_riscv2(m):
         r = riscv
 
     ISA_fc = r.isa.ISA_fc
+
+    isa = ISA_fc.Py
+    class Inst2(Product):
+        i0 = isa.Inst
+        i1 = isa.Inst
+
     @family_closure(r.family)
     def Riscv2_fc(family):
         Word = family.Word
-        isa = ISA_fc.Py
         RMap = r.sim.R32I_mappable_fc(family)
+        PyWord = fam().PyFamily().Word
 
-        class Inst2(Product):
-            i0 = isa.Inst
-            i1 = isa.Inst
 
         @family.assemble(locals(), globals())
         class Riscv2(Peak):
             print("Creating Peak class with fam", family)
             def __init__(self):
-                self.i0 = RMap()
-                self.i1 = RMap()
+                self.i0: RMap = RMap()
+                self.i1: RMap = RMap()
 
+            @name_outputs(out=PyWord)
             def __call__(self,
                 inst: Const(Inst2),
-                rs1: Word,
-                rs2: Word,
-            ) -> Word:
+                rs1: PyWord,
+                rs2: PyWord,
+            ) -> PyWord:
                 _, i0_rd = self.i0(inst.i0, Word(0), rs1, rs2, Word(0))
 
-                _, i1_rd = self.i1_0(inst.i1, Word(0), i0_rd, i0_rd, Word(0))
+                _, i1_rd = self.i1(inst.i1, Word(0), i0_rd, i0_rd, Word(0))
                 return i1_rd
         return Riscv2
-    return Riscv2_fc
+    return Riscv2_fc, Inst2

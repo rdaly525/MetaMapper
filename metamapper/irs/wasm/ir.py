@@ -3,14 +3,16 @@ from ast_tools.macros import unroll
 
 from peak.ir import IR
 from peak import Peak, name_outputs
-from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
 from peak import Peak, name_outputs, family_closure, Const
 import math
+from ...family import fam
 
 def gen_WASM(include64=False):
     WASM = IR()
 
+    BV = fam().PyFamily().BitVector
+    BitVector = BV
     class Output32(Product):
         out=BitVector[32]
 
@@ -50,38 +52,52 @@ def gen_WASM(include64=False):
             in1=Data
             pred=Data
 
-        @family_closure
+        @family_closure(fam())
         def const0_fc(family):
-            Data = family.BitVector[width]
-
-            @name_outputs(out=Data)
+            Data = BV[width]
+            family.assemble(locals(), globals())
             class const0(Peak):
+                @name_outputs(out=Data)
                 def __call__(self, in0:Data) -> Data:
                     return Data(0)
             return const0
         WASM.add_instruction("const0", const0_fc)
 
-        @family_closure
+        @family_closure(fam())
         def const1_fc(family):
-            Data = family.BitVector[width]
+            Data = BV[width]
 
-            @name_outputs(out=Data)
+            family.assemble(locals(), globals())
             class const1(Peak):
+                @name_outputs(out=Data)
                 def __call__(self, in0:Data) -> Data:
                     return Data(1)
             return const1
         WASM.add_instruction("const1", const1_fc)
 
-        @family_closure
+        @family_closure(fam())
         def constn1_fc(family):
-            Data = family.BitVector[width]
+            Data = BV[width]
 
-            @name_outputs(out=Data)
+            family.assemble(locals(), globals())
             class constn1(Peak):
+                @name_outputs(out=Data)
                 def __call__(self, in0:Data) -> Data:
                     return Data(-1)
             return constn1
         WASM.add_instruction("constn1", constn1_fc)
+
+        @family_closure(fam())
+        def const12_fc(family):
+            Data12 = BV[12]
+            Data = BV[width]
+            family.assemble(locals(), globals())
+            class const12(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, imm: Const(Data12)) -> Data:
+                    return imm.sext(20)
+            return const12
+        WASM.add_instruction("const12", const12_fc)
 
 
         @apply_ast_passes([loop_unroll()])
@@ -95,7 +111,7 @@ def gen_WASM(include64=False):
                 mask = mask ^ bit
                 cnt = cnt + mask
             return cnt
-        WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz, cls_name='clz')
+        WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz, family=fam(), cls_name='clz')
 
         @apply_ast_passes([loop_unroll()])
         def ctz(f, in0 : Data):
@@ -108,7 +124,7 @@ def gen_WASM(include64=False):
                 mask = mask ^ bit
                 cnt = cnt + mask
             return cnt
-        WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz, cls_name='ctz')
+        WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz, family=fam(), cls_name='ctz')
 
         @apply_ast_passes([loop_unroll()])
         def popcnt(f, in0: Data):
@@ -117,11 +133,11 @@ def gen_WASM(include64=False):
                 cnt = cnt + ((in0 >> i) & 1)
             return cnt
 
-        WASM.add_peak_instruction(f"{prefix}.popcnt", UnaryInput, Output, popcnt, cls_name='popcnt')
+        WASM.add_peak_instruction(f"{prefix}.popcnt", UnaryInput, Output, popcnt, family=fam(), cls_name='popcnt')
 
         def select(f, in0 : Data, in1: Data, pred: Data):
             return (pred!=0).ite(in0, in1)
-        WASM.add_peak_instruction(f"{prefix}.select", TernaryInput, Output, select, cls_name='select')
+        WASM.add_peak_instruction(f"{prefix}.select", TernaryInput, Output, select, family=fam(), cls_name='select')
 
         #Comparison
         for name, fun in (
@@ -136,7 +152,7 @@ def gen_WASM(include64=False):
             ("eq", lambda f, x, y: f.BitVector[width](x==y)),
             ("ne", lambda f, x, y: f.BitVector[width](x!=y)),
         ):
-            WASM.add_peak_instruction(f"{prefix}.{name}", BinaryInput, Output, fun, cls_name=name)
+            WASM.add_peak_instruction(f"{prefix}.{name}", BinaryInput, Output, fun, family=fam(), cls_name=name)
 
                 #Integer Arithmetic Instructions
         for name, fun in (
@@ -154,7 +170,7 @@ def gen_WASM(include64=False):
             ("shr_s", lambda f, x, y: x.bvashr(y)),
             ("shr_u", lambda f, x, y: x.bvlshr(y)),
         ):
-            WASM.add_peak_instruction(f"{prefix}.{name}",BinaryInput,Output,fun, cls_name=name)
+            WASM.add_peak_instruction(f"{prefix}.{name}",BinaryInput,Output,fun, family=fam(), cls_name=name)
 
 
 

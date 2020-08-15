@@ -37,11 +37,12 @@ def test_riscv_discovery(i, solver, c):
             start = timer()
             rr = table.discover(name, "R32I_mappable", solver=solver, path_constraints=rc)
             assert rr is None
-            rr._rule.
             end = timer()
             found = "n" if rr is None else "f"
             print(f"{name}: {end-start}: {found}", file=f)
             print(f"{name}: {end-start}: {found}")
+
+
 
 
 
