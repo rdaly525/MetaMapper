@@ -12,6 +12,9 @@ from .family import fam
 from peak.mapper.utils import pretty_print_binding
 
 
+#Rewrite Rule for i32.const
+
+
 #TODO possibly make from peak_rule directly 
 class RewriteRule:
     def __init__(self,
@@ -55,7 +58,8 @@ class RewriteTable:
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-
+        print("from_dag")
+        print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -115,6 +119,7 @@ class RewriteTable:
         to_output = Output(*output_children, iname="self", type=from_bv.output_t)
         to_dag = Dag([to_input], [to_output])
 
+
         #print("Before combine")
         #print_dag(to_dag)
         BindsToCombines().run(to_dag)
@@ -126,6 +131,8 @@ class RewriteTable:
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
         #print_dag(to_dag)
+        print("to_dag")
+        print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match

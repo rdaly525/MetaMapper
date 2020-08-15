@@ -1,25 +1,47 @@
 from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule
-from metamapper.rewrite_table import RewriteTable
+from metamapper.rewrite_table import RewriteTable, RewriteRule
 from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule
 import typing as tp
 
+
+#Defining the custom rewrite rules
+
+#i32.const
+
+#RewriteRule
+#def __init__(self,
+#             tile: Dag,
+#             replace: tp.Callable,
+#             cost: tp.Callable,
+#             checker: tp.Callable = None,
+#             name=None
+#             ):
+
+#Rewrite Rule for
+#    le_u
+
+
+
+
 class Compiler:
-    def __init__(self, WasmNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None):
+    def __init__(self, WasmNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3'):
         self.WasmNodes = WasmNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(WasmNodes, ArchNodes)
-        ops = (
-            "i32.add",
-            "i32.and_",
-        )
+        if ops is None:
+            ops = (
+                "i32.add",
+                "i32.xor",
+                "i32.and_",
+            )
         if peak_rules is None:
             for node_name in ArchNodes._node_names:
                 #auto discover the rules for CoreIR
                 for op in ops:
-                    peak_rule = self.table.discover(op, node_name)
-                    print(f"Searching for {op} -> {node_name}")
+                    peak_rule = self.table.discover(op, node_name, solver=solver)
+                    print(f"Searching for {op} -> {node_name}", flush=True)
                     if peak_rule is None:
                         print(f"  Not Found :(")
                         pass

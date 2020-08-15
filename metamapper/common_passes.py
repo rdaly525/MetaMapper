@@ -8,6 +8,22 @@ from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
 from .node import DagNode
 
+
+class ExtractNames(Visitor):
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+    def extract(self, dag: Dag):
+        self.ops = {}
+        self.run(dag)
+        return self.ops
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        if node.nodes == self.nodes:
+            self.ops.setdefault(node.node_name, 0)
+            self.ops[node.node_name] +=1
+
 class VerifyNodes(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
