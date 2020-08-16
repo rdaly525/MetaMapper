@@ -64,8 +64,8 @@ def test_single():
 
 from metamapper.common_passes import print_dag, ExtractNames
 #@pytest.mark.parametrize("i", range(1, 26))
-#@pytest.mark.parametrize("i", range(10, 11))
-@pytest.mark.parametrize("i", range(16, 17))
+@pytest.mark.parametrize("i", range(10, 11))
+#@pytest.mark.parametrize("i", range(1,10))
 def test_load(i):
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -94,7 +94,7 @@ def test_load(i):
     if m:
         print(f"HERE {i} in mset")
     print("Need to search for", op_cnt.keys())
-    compiler = Compiler(WasmNodes, ops=op_cnt.keys(), solver='z3', m=m)
+    compiler = Compiler(WasmNodes, ops=op_cnt.keys(), solver='btor', m=m)
     binary = compiler.compile(app, prove=True)
 
     ce = binary.prove()

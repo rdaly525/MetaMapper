@@ -10,8 +10,10 @@ from .node import DagNode
 
 
 class Riscv2_Riscv(Transformer):
-    def __init__(self, nodes):
+    def __init__(self, nodes, rv, Inst2):
         self.nodes = nodes
+        self.rv = rv
+        self.Inst2 = Inst2
 
     def visit_Riscv2(self, node):
         Transformer.generic_visit(self, node)
@@ -19,12 +21,12 @@ class Riscv2_Riscv(Transformer):
         inst2, rs1, rs2, = node.children()
         assert isinstance(inst2, Constant)
         riscv_node = self.nodes.dag_nodes["R32I_mappable"]
-        BV32 = fam().Pyfamily().BitVector[32]
-        inst, _, rs1, rs2, _ = node.children()
-        i0 = Constant(type=type(inst2.type.i0), value=inst2.value.i0)
-        i1 = Constant(type=type(inst2.type.i1), value=inst2.value.i1)
-        n0 = riscv_node(i0, Constant(type=BV32,value=Unbound), rs1, rs2, Constant(type=BV32,value=Unbound))
-        n1 = riscv_node(i1, Constant(type=BV32,value=Unbound), n0.select("rd"), n0.select("rd"), Constant(type=BV32,value=Unbound))
+        BV= fam().PyFamily().BitVector
+        Inst = self.rv.isa.ISA_fc.Py.Inst
+        i0 = Constant(type=Inst, value=inst2.value[:30])
+        i1 = Constant(type=Inst, value=inst2.value[30:])
+        n0 = riscv_node(i0, Constant(type=BV[32],value=Unbound), rs1, rs2, Constant(type=BV[32],value=Unbound))
+        n1 = riscv_node(i1, Constant(type=BV[32],value=Unbound), n0.select("rd"), n0.select("rd"), Constant(type=BV[32],value=Unbound))
         return n1
 
 class TypeLegalize(Transformer):
@@ -236,7 +238,7 @@ class Printer(Visitor):
         self.res += f"{node._id_}<Input>\n"
 
     def visit_Constant(self, node):
-        self.res += f"{node._id_}<Constant>({node.value}{type(node.value)})>\n"
+        self.res += f"{node._id_}<Constant>({node.value}{type(node.value)}, {node.type})>\n"
 
     def visit_Output(self, node):
         Visitor.generic_visit(self, node)

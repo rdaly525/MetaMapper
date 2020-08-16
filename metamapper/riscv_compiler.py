@@ -32,6 +32,8 @@ class Compiler:
             "i32.le_u",
             "i32.ge_s",
             "i32.ge_u",
+            "const20_12_u",
+            "const20_12_s",
         ]
 
         map2_set = set(map2_set)
@@ -40,7 +42,6 @@ class Compiler:
             print("Discovering", ops)
             for op in ops:
                 if op in map2_set:
-                    assert 0
                     node_name = "Riscv2"
                 else:
                     node_name = "R32I_mappable"
@@ -65,10 +66,23 @@ class Compiler:
         aadt = type(inst)
         adt_val = aadt_to_adt(inst)
         cur_fields = asm.get_fields(adt_val)
+        print(cur_fields)
+        for idx in ("rd", "rs1", "rs2"):
+            assert idx in cur_fields
+            if cur_fields[idx] is not None:
+                cur_fields[idx] = 0
         for k, v in info.items():
             assert k in cur_fields
             cur_fields[k] = v
         adt_val = asm.set_fields(adt_val, **cur_fields)
+
+        #Verify
+        check_fields = asm.get_fields(adt_val)
+        for k, v in cur_fields.items():
+            if check_fields[k] != v:
+                raise ValueError(f"{k} should be {v}, but is {check_fields[k]}")
+
+
         return aadt(adt_val)
 
     def compile(self, dag, prove=True) -> tp.Any:
@@ -83,11 +97,13 @@ class Compiler:
         #print("simplifyCombines")
         #print_dag(mapped_dag)
         RemoveSelects().run(mapped_dag)
-
-        #Riscv2_Riscv(self.ArchNodes).run(mapped_dag)
-
         print("RemovedSelects")
         print_dag(mapped_dag)
+
+        Riscv2_Riscv(self.ArchNodes, self.rv, self.Inst2).run(mapped_dag)
+        print("After Riscv2_conversion")
+        print_dag(mapped_dag)
+
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
@@ -256,7 +272,7 @@ def gen_riscv2(m):
                 self.i0: RMap = RMap()
                 self.i1: RMap = RMap()
 
-            @name_outputs(out=PyWord)
+            @name_outputs(rd=PyWord)
             def __call__(self,
                 inst: Const(Inst2),
                 rs1: PyWord,
