@@ -37,7 +37,9 @@ def test_prove():
     compiler = Compiler(WasmNodes, ops=op_cnt.keys())
     binary = compiler.compile(app)
 
-    assert binary.run(in0=10) == 10
+    #assert binary.run(in0=10) == -10
+    ce = binary.prove()
+    assert ce is None
 
 def test_c():
 

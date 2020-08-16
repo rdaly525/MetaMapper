@@ -15,10 +15,6 @@ from peak.family import PyFamily
 from metamapper.node import Dag
 import pytest
 
-
-
-
-
 @pytest.mark.skip
 @pytest.mark.parametrize("i", range(1,26))
 def compile_c(i):
@@ -69,7 +65,7 @@ def test_single():
 from metamapper.common_passes import print_dag, ExtractNames
 #@pytest.mark.parametrize("i", range(1, 26))
 #@pytest.mark.parametrize("i", range(10, 11))
-@pytest.mark.parametrize("i", range(10,26))
+@pytest.mark.parametrize("i", range(16, 17))
 def test_load(i):
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -97,12 +93,14 @@ def test_load(i):
     m = any(op in mset for op in op_cnt)
     if m:
         print(f"HERE {i} in mset")
-        assert 0
-
     print("Need to search for", op_cnt.keys())
-    compiler = Compiler(WasmNodes, ops=op_cnt.keys(), solver='z3')
+    compiler = Compiler(WasmNodes, ops=op_cnt.keys(), solver='z3', m=m)
     binary = compiler.compile(app, prove=True)
 
+    ce = binary.prove()
+    if ce is not None:
+        print(ce)
+        assert 0
     #assert binary.run(in0=8) == 1
     #assert binary.run(in0=7) == 0
     #assert binary.run(in0=16) == 0

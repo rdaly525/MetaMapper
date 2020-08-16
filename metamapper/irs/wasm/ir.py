@@ -92,12 +92,40 @@ def gen_WASM(include64=False):
             Data12 = BV[12]
             Data = BV[width]
             family.assemble(locals(), globals())
+
             class const12(Peak):
                 @name_outputs(out=Data)
                 def __call__(self, imm: Const(Data12)) -> Data:
                     return imm.sext(20)
+
             return const12
+
         WASM.add_instruction("const12", const12_fc)
+
+        @family_closure(fam())
+        def const20_12_s_fc(family):
+            Data = BV[width]
+            family.assemble(locals(), globals())
+
+            class const20_12_s(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, imm20: Const(BV[20]), imm11: Const(BV[11])) -> Data:
+                    return imm11.concat(BV[1](1)).concat(imm20)
+
+            return const20_12_s
+
+        WASM.add_instruction("const20_12_s", const20_12_s_fc)
+
+        @family_closure(fam())
+        def const20_12_u_fc(family):
+            Data = BV[width]
+            family.assemble(locals(), globals())
+            class const20_12_u(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, imm20: Const(BV[20]), imm11: Const(BV[11])) -> Data:
+                    return imm11.concat(BV[1](0)).concat(imm20)
+            return const20_12_u
+        WASM.add_instruction("const20_12_u", const20_12_u_fc)
 
 
         @apply_ast_passes([loop_unroll()])

@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule, TypeLegalize, Riscv2_Riscv
+from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, Uses, Schedule, TypeLegalize, Riscv2_Riscv, SMT, prove_formula
 from metamapper.rewrite_table import RewriteTable, RewriteRule
 from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
@@ -8,40 +8,6 @@ from peak.examples import riscv, riscv_m, riscv_hack
 from .family import fam
 import typing as tp
 
-
-#Defining the custom rewrite rules
-
-#i32.const
-
-
-
-
-#RewriteRule
-#def __init__(self,
-#             tile: Dag,
-#             replace: tp.Callable,
-#             cost: tp.Callable,
-#             checker: tp.Callable = None,
-#             name=None
-#             ):
-
-#Rewrite Rule for
-#    le_u
-
-
-# Load rule for -1
-
-#input_type = Product.from_fields("Input", {"in0": BV16, "in1": BV16, "in2": BV16})
-#output_type = Product.from_fields("Output", {"out": BV16})
-#input_node = Input(type=input_type)
-#in0 = input_node.select("in0")
-#in1 = input_node.select("in1")
-#in2 = input_node.select("in2")
-#fma1 = FMANode(Constant(value=BV16(5), type=BV16), in0, in1)
-#fma2 = FMANode(Constant(value=BV16(2), type=BV16), in2, fma1.select("out"))
-#output_node = Output(fma2.select("out"), type=output_type)
-#dag = Dag(sources=[input_node], sinks=[output_node])
-
 class Compiler:
     def __init__(self, WasmNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3', m=False):
         assert ops is not None
@@ -49,8 +15,10 @@ class Compiler:
         ArchNodes = Nodes("RiscV")
         self.ArchNodes = ArchNodes
         if m:
+            self.rv = riscv_m
             riscv_fc = riscv_m.sim.R32I_mappable_fc
         else:
+            self.rv = riscv
             riscv_fc = riscv.sim.R32I_mappable_fc
         putil.load_from_peak(ArchNodes, riscv_fc, stateful=False, wasm=True)
         riscv2_fc, Inst2 = gen_riscv2(m)
@@ -90,6 +58,18 @@ class Compiler:
 
 
         self.inst_sel = alg(self.table)
+
+    def set_instr(self, info):
+        asm = self.rv.asm
+        inst = info.pop('inst')
+        aadt = type(inst)
+        adt_val = aadt_to_adt(inst)
+        cur_fields = asm.get_fields(adt_val)
+        for k, v in info.items():
+            assert k in cur_fields
+            cur_fields[k] = v
+        adt_val = asm.set_fields(adt_val, **cur_fields)
+        return aadt(adt_val)
 
     def compile(self, dag, prove=True) -> tp.Any:
         print("premapped")
@@ -164,14 +144,18 @@ class Compiler:
         inst_list = []
         for node in node_list:
             if node not in inputs:
-                inst_list.append(set_instr(inst_info[node]))
-            print(node)
+                inst_list.append(self.set_instr(inst_info[node]))
+            if "inst" in inst_info[node]:
+                print(inst_info[node]["inst"])
+            else:
+                print(node)
             for k,v in inst_info[node].items():
                 print(f"  {k}: {v}")
 
         #assume the last instruction returns the final value
         output_idx = node_to_rd[node_list[-1]]
-        return Binary(inst_list, input_info, output_idx)
+        print("out", output_idx)
+        return Binary(inst_list, input_info, output_idx, orig_dag=original_dag, rv=self.rv)
 
 def aadt_to_adt(val):
     aadt = type(val)
@@ -179,30 +163,21 @@ def aadt_to_adt(val):
     adt_val = assembler.disassemble(val._value_)
     return adt_val
 
-def set_instr( info):
-    from peak.examples.riscv import asm
-    inst = info.pop('inst')
-    aadt = type(inst)
-    adt_val = aadt_to_adt(inst)
-    cur_fields = asm.get_fields(adt_val)
-    for k, v in info.items():
-        assert k in cur_fields
-        cur_fields[k] = v
-    adt_val = asm.set_fields(adt_val, **cur_fields)
-    return aadt(adt_val)
 
-
+from peak.assembler import Assembler
 class Binary:
-    def __init__(self, insts: tp.List, input_info: dict, output_idx):
+    def __init__(self, insts: tp.List, input_info: dict, output_idx, orig_dag, rv):
         self.insts = insts
         self.input_info = input_info
         self.output_idx = output_idx
+        self.orig_dag = orig_dag
+        self.rv = rv
 
     def run(self, **kwargs):
         if set(kwargs.keys()) != set(self.input_info.keys()):
             raise ValueError(f"Inputs need to be {self.input_info.keys()}")
-        cpu = riscv.sim.R32I_fc(fam().PyFamily())()
-        isa = riscv.sim.ISA_fc(fam().PyFamily())
+        cpu = self.rv.sim.R32I_fc(fam().PyFamily())()
+        isa = self.rv.sim.ISA_fc(fam().PyFamily())
         for input, ridx in self.input_info.items():
             val = kwargs[input]
             cpu.register_file.store(isa.Idx(ridx), isa.Word(val))
@@ -211,12 +186,44 @@ class Binary:
             print("RF")
             for k, v in cpu.register_file.rf.items():
                 print ("  ",k, v)
-        #pr()
+        pr()
         for inst in self.insts:
             inst_adt = aadt_to_adt(inst)
             cpu(inst_adt, isa.Word(0))
-            #pr()
+            pr()
         return cpu.register_file.load1(isa.Idx(self.output_idx))
+
+    #returns None if Proven
+    def prove(self, solver="z3"):
+        i0, o0 = SMT().get(self.orig_dag)
+        oval = o0["out"]
+
+        isa = riscv_hack.isa.ISA_fc.Py
+        smt_isa = riscv_hack.isa.ISA_fc.SMT
+        R32I = riscv_hack.sim.R32I_fc.Py
+        cpu = R32I()
+        initial_values = [smt_isa.Word(name=f'r{i}') for i in range(32)]
+        for i in range(5):
+            cpu.register_file.store(isa.Idx(i), initial_values[i])
+        for input, ridx in self.input_info.items():
+            cpu.register_file.store(isa.Idx(ridx), i0[input])
+
+        asmh = Assembler(riscv_hack.isa.ISA_fc.Py.Inst)
+        def inst_to_hack(inst):
+            return asmh.disassemble(inst._value_)
+
+        def pr():
+            print("RF")
+            for k, v in cpu.register_file.rf.items():
+                print ("  ",k, v)
+        #Execute the instructions
+        pr()
+        for i, inst in enumerate(self.insts):
+            inst_hack = inst_to_hack(inst)
+            cpu(inst_hack, smt_isa.Word(i))
+            pr()
+        cpu_out = cpu.register_file.load1(isa.Idx(self.output_idx))
+        return prove_formula(cpu_out != oval, solver, i0)
 
 
 from peak import family_closure, Peak, Const, name_outputs

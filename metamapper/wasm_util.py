@@ -47,8 +47,12 @@ def wasm_file_to_ilist(file, fun_name):
 
 from hwtypes import Product
 from .family import fam
+
+
 def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
     BV32 = fam().PyFamily().BitVector[32]
+    def make_const(val):
+        return Constant(value=BV32(val), type=BV32)
     input_t = Product.from_fields("Input", {f"in{i}": BV32 for i in range(num_args)})
     output_t = Product.from_fields("Output", {"out": BV32})
     input = Input(type=input_t)
@@ -63,11 +67,17 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
         if opcode == C.drop:
             stack.pop()
         elif opcode == C.select:
-            cond = stack.pop()
+            pred = stack.pop()
             in1 = stack.pop()
             in0 = stack.pop()
-            node = WasmNodes.dag_nodes["i32.select"]
-            stack.add(node(in0, in1, cond))
+
+            gt0 = WasmNodes.dag_nodes["i32.gt_u"](pred, make_const(0)).select("out")
+            mask = WasmNodes.dag_nodes["i32.sub"](make_const(0), gt0).select("out")
+            mask_n = WasmNodes.dag_nodes["i32.xor"](make_const(-1), mask).select("out")
+            in1_mask = WasmNodes.dag_nodes["i32.and_"](mask, in1).select("out")
+            in0_mask = WasmNodes.dag_nodes["i32.and_"](mask_n, in0).select("out")
+            res = WasmNodes.dag_nodes["i32.or_"](in1_mask, in0_mask).select("out")
+            stack.add(res)
         elif opcode == C.get_local:
             if locals[i.immediate_arguments] is None:
                 raise ValueError("Need more locals")
