@@ -13,7 +13,7 @@ def test_app():
     WasmNodes = gen_WasmNodes()
 
     #Define a simple add3 program
-    wasm_file = './examples/wasm/wasm/add3.wasm'
+    wasm_file = './examples/wasm/wasm/add_const.wasm'
     app = wutil.wasm_to_dag(wasm_file, "add3")
 
     compiler = Compiler(WasmNodes)

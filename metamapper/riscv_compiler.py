@@ -4,7 +4,7 @@ from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule
 import metamapper.peak_util as putil
-from peak.examples import riscv, riscv_m, riscv_hack
+from peak.examples import riscv, riscv_m, riscv_hack, riscv_m_hack
 from .family import fam
 import typing as tp
 
@@ -16,9 +16,11 @@ class Compiler:
         self.ArchNodes = ArchNodes
         if m:
             self.rv = riscv_m
+            self.rv_hack = riscv_m_hack
             riscv_fc = riscv_m.sim.R32I_mappable_fc
         else:
             self.rv = riscv
+            self.rv_hack = riscv_hack
             riscv_fc = riscv.sim.R32I_mappable_fc
         putil.load_from_peak(ArchNodes, riscv_fc, stateful=False, wasm=True)
         riscv2_fc, Inst2 = gen_riscv2(m)
@@ -32,8 +34,7 @@ class Compiler:
             "i32.le_u",
             "i32.ge_s",
             "i32.ge_u",
-            "const20_12_u",
-            "const20_12_s",
+            "const20",
         ]
 
         map2_set = set(map2_set)
@@ -66,14 +67,22 @@ class Compiler:
         aadt = type(inst)
         adt_val = aadt_to_adt(inst)
         cur_fields = asm.get_fields(adt_val)
-        print(cur_fields)
+        #print("Trying to set instr {")
+        #print("  info", info)
+        #print("  cf", cur_fields)
+        #print(cur_fields)
         for idx in ("rd", "rs1", "rs2"):
             assert idx in cur_fields
             if cur_fields[idx] is not None:
                 cur_fields[idx] = 0
+            else: # only happens for multi-case
+                info[idx] = None
+        #print("  mf", cur_fields)
         for k, v in info.items():
             assert k in cur_fields
             cur_fields[k] = v
+
+        #print("  nf", cur_fields)
         adt_val = asm.set_fields(adt_val, **cur_fields)
 
         #Verify
@@ -133,7 +142,7 @@ class Compiler:
 
         #Determine rd indices
         node_to_rd = {}
-        free = set(range(1, 16))
+        free = set(range(1, 32))
         to_free = {}
         for node_idx, node in enumerate(node_list):
             if node_idx in to_free:
@@ -171,7 +180,7 @@ class Compiler:
         #assume the last instruction returns the final value
         output_idx = node_to_rd[node_list[-1]]
         print("out", output_idx)
-        return Binary(inst_list, input_info, output_idx, orig_dag=original_dag, rv=self.rv)
+        return Binary(inst_list, input_info, output_idx, orig_dag=original_dag, rv=self.rv, rv_hack=self.rv_hack)
 
 def aadt_to_adt(val):
     aadt = type(val)
@@ -182,12 +191,13 @@ def aadt_to_adt(val):
 
 from peak.assembler import Assembler
 class Binary:
-    def __init__(self, insts: tp.List, input_info: dict, output_idx, orig_dag, rv):
+    def __init__(self, insts: tp.List, input_info: dict, output_idx, orig_dag, rv, rv_hack):
         self.insts = insts
         self.input_info = input_info
         self.output_idx = output_idx
         self.orig_dag = orig_dag
         self.rv = rv
+        self.rv_hack = rv_hack
 
     def run(self, **kwargs):
         if set(kwargs.keys()) != set(self.input_info.keys()):
@@ -214,9 +224,9 @@ class Binary:
         i0, o0 = SMT().get(self.orig_dag)
         oval = o0["out"]
 
-        isa = riscv_hack.isa.ISA_fc.Py
-        smt_isa = riscv_hack.isa.ISA_fc.SMT
-        R32I = riscv_hack.sim.R32I_fc.Py
+        isa = self.rv_hack.isa.ISA_fc.Py
+        smt_isa = self.rv_hack.isa.ISA_fc.SMT
+        R32I = self.rv_hack.sim.R32I_fc.Py
         cpu = R32I()
         initial_values = [smt_isa.Word(name=f'r{i}') for i in range(32)]
         for i in range(5):
@@ -224,7 +234,7 @@ class Binary:
         for input, ridx in self.input_info.items():
             cpu.register_file.store(isa.Idx(ridx), i0[input])
 
-        asmh = Assembler(riscv_hack.isa.ISA_fc.Py.Inst)
+        asmh = Assembler(self.rv_hack.isa.ISA_fc.Py.Inst)
         def inst_to_hack(inst):
             return asmh.disassemble(inst._value_)
 

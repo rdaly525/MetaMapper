@@ -14,6 +14,7 @@ from hwtypes import Product
 from peak.family import PyFamily
 from metamapper.node import Dag
 import pytest
+from timeit import default_timer as timer
 
 @pytest.mark.skip
 @pytest.mark.parametrize("i", range(1,26))
@@ -46,7 +47,7 @@ def compile_c(i):
 
 from metamapper.rewrite_table import RewriteTable
 def test_single():
-    op = "const12"
+    op = "const20"
     print("Looking for Op", op)
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -64,14 +65,20 @@ def test_single():
 
 from metamapper.common_passes import print_dag, ExtractNames
 #@pytest.mark.parametrize("i", range(1, 26))
-@pytest.mark.parametrize("i", range(10, 11))
-#@pytest.mark.parametrize("i", range(1,10))
+#@pytest.mark.parametrize("i", range(1, 26))
+@pytest.mark.parametrize("i", range(20, 21))
+#@pytest.mark.parametrize("i", (18, 20, 22, 23, 25))
+#@pytest.mark.parametrize("i", range(1,25))
 def test_load(i):
     CoreIRContext(reset=True)
     set_fam(riscv.family)
     WasmNodes = gen_WasmNodes()
+    if i == 18:
+        pytest.skip()
+
 
     p = f"p{i}"
+    print("DOING", p)
     wasm_file = f"results/hd_results/{p}.wasm"
     app = wutil.wasm_to_dag(wasm_file, p)
     print_dag(app)
@@ -94,13 +101,18 @@ def test_load(i):
     if m:
         print(f"HERE {i} in mset")
     print("Need to search for", op_cnt.keys())
+
+    start = timer()
     compiler = Compiler(WasmNodes, ops=op_cnt.keys(), solver='btor', m=m)
     binary = compiler.compile(app, prove=True)
 
     ce = binary.prove()
+    end = timer()
     if ce is not None:
         print(ce)
-        assert 0
+    with open("results/pcnt.txt", "a") as f:
+      print(f"{i}:m{int(m)}:{len(binary.insts)}:p{int(ce is None)}:{end-start}",file=f)
+
     #assert binary.run(in0=8) == 1
     #assert binary.run(in0=7) == 0
     #assert binary.run(in0=16) == 0

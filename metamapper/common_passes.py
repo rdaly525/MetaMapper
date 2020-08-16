@@ -55,16 +55,22 @@ class TypeLegalize(Transformer):
             c = Constant(value=value[:12], type=self.BV[12])
             return const12(c).select("out")
 
-    def const20_12(self, value):
-        if value[11:12] == self.BV[1](1):
-            const20_12 = self.WasmNodes.dag_nodes["const20_12_s"]
-        elif value[11:12] == self.BV[1](0):
-            const20_12 = self.WasmNodes.dag_nodes["const20_12_u"]
-        else:
-            raise ValueError()
-        c20 = Constant(value=value[12:32], type=self.BV[20])
-        c12 = Constant(value=value[:11], type=self.BV[11])
-        return const20_12(c20, c12).select("out")
+    def const20(self, value):
+        if value[:20].zext(12) == value:
+            const20 = self.WasmNodes.dag_nodes["const20"]
+            c = Constant(value=value[:20], type=self.BV[20])
+            return const20(c).select("out")
+        
+
+    def constOther(self, value):
+        lsb = self.const20(value[:16].zext(16))
+        msb = self.const20(value[16:].zext(16))
+        assert lsb is not None
+        assert msb is not None
+        shl = self.WasmNodes.dag_nodes["i32.shl"]
+        or_ = self.WasmNodes.dag_nodes["i32.or_"]
+        msb_shift = shl(msb, Constant(type=self.BV[32],value=self.BV[32](16))).select("out")
+        return or_(lsb, msb_shift).select("out")
 
     def visit_Constant(self, node):
         value = node.value
@@ -74,7 +80,8 @@ class TypeLegalize(Transformer):
             self.const1,
             self.constn1,
             self.const12,
-            self.const20_12,
+            self.const20,
+            self.constOther
         ):
             new = f(value)
             if new is not None:

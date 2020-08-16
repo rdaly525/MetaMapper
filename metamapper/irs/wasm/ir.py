@@ -103,30 +103,46 @@ def gen_WASM(include64=False):
         WASM.add_instruction("const12", const12_fc)
 
         @family_closure(fam())
-        def const20_12_s_fc(family):
+        def const20_fc(family):
+            Data20 = BV[20]
             Data = BV[width]
             family.assemble(locals(), globals())
 
-            class const20_12_s(Peak):
+            class const20(Peak):
                 @name_outputs(out=Data)
-                def __call__(self, imm20: Const(BV[20]), imm11: Const(BV[11])) -> Data:
-                    return imm11.concat(BV[1](1)).concat(imm20)
+                def __call__(self, imm: Const(Data20)) -> Data:
+                    return imm.zext(12)
 
-            return const20_12_s
+            return const20
 
-        WASM.add_instruction("const20_12_s", const20_12_s_fc)
+        WASM.add_instruction("const20", const20_fc)
 
-        @family_closure(fam())
-        def const20_12_u_fc(family):
-            Data = BV[width]
-            family.assemble(locals(), globals())
-            class const20_12_u(Peak):
-                @name_outputs(out=Data)
-                def __call__(self, imm20: Const(BV[20]), imm11: Const(BV[11])) -> Data:
-                    return imm11.concat(BV[1](0)).concat(imm20)
-            return const20_12_u
-        WASM.add_instruction("const20_12_u", const20_12_u_fc)
+        #@family_closure(fam())
+        #def const20_12_s_fc(family):
+        #    Data = BV[width]
+        #    family.assemble(locals(), globals())
+        #    B1 = family.BitVector[1]
+        #    class const20_12_s(Peak):
+        #        @name_outputs(out=Data)
+        #        def __call__(self, imm20: Const(BV[20]), imm12: Const(BV[12])) -> Data:
+        #          #return (imm12[:11].concat(B1(1))).concat(imm20)
+        #          return imm12.concat(imm20)
 
+        #    return const20_12_s
+
+        #WASM.add_instruction("const20_12_s", const20_12_s_fc)
+
+        #@family_closure(fam())
+        #def const20_12_u_fc(family):
+        #    Data = BV[width]
+        #    family.assemble(locals(), globals())
+        #    B1 = family.BitVector[1]
+        #    class const20_12_u(Peak):
+        #        @name_outputs(out=Data)
+        #        def __call__(self, imm20: Const(BV[20]), imm12: Const(BV[12])) -> Data:
+        #          return imm12[:11].concat(B1(0)).concat(imm20)
+        #    return const20_12_u
+        #WASM.add_instruction("const20_12_u", const20_12_u_fc)
 
         @apply_ast_passes([loop_unroll()])
         def clz(f, in0 : Data):

@@ -163,6 +163,7 @@ class RewriteTable:
         print("rr", peak_rr)
         if peak_rr is None:
             return None
+        print(peak_rr, rr_name)
         rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 
