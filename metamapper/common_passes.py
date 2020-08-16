@@ -69,7 +69,7 @@ class TypeLegalize(Transformer):
         assert msb is not None
         shl = self.WasmNodes.dag_nodes["i32.shl"]
         or_ = self.WasmNodes.dag_nodes["i32.or_"]
-        msb_shift = shl(msb, Constant(type=self.BV[32],value=self.BV[32](16))).select("out")
+        msb_shift = shl(msb, self.const12(value=self.BV[32](16))).select("out")
         return or_(lsb, msb_shift).select("out")
 
     def visit_Constant(self, node):
