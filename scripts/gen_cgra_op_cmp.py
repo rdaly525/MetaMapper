@@ -53,7 +53,7 @@ def gen():
         axs[pei].set_ylabel("Time (s)")
         axs[pei].set_title(f"PE {pe}")
     plt.xticks(x_pos, names, rotation=75)
-    plt.savefig(f"results/figs/cgra_op_cmp.png")
+    plt.savefig(f"results/figs/cgra-op-cmp.png", bbox_inches='tight')
     plt.show()
 
 parse()
