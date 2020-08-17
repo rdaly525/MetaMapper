@@ -10,7 +10,7 @@ def mapping_function_9_fc(family: AbstractFamily):
     Bit = family.Bit
     @family.assemble(locals(), globals())
     class mapping_function_9(Peak):
-        def __call__(self, bit_in2 : Bit, bit_in1 : Bit, bit_in0 : Bit) -> Bit:
+        def __call__(self, bit_in1 : Bit, bit_in0 : Bit) -> Bit:
             
             return Bit(bit_in0 & bit_in1)
       
