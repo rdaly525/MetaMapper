@@ -40,21 +40,48 @@ class Mapper:
             "commonlib.umax",
             "commonlib.umin",
         )
+
+        camera_harris_conv_ops = (
+"commonlib.umax",
+"commonlib.umin",
+"commonlib.smin",
+"commonlib.smax",
+"coreir.const",
+"corebit.and_",
+"coreir.add",
+"coreir.sub",
+"coreir.mux",
+"coreir.ashr",
+"coreir.and_",
+"coreir.eq",
+"coreir.mul",
+"coreir.sle",
+"corebit.const",
+"coreir.ult",
+"coreir.lshr",
+"coreir.slt",
+"coreir.sge",
+"coreir.ule",
+"coreir.uge",
+        )
         if peak_rules is None:
             for node_name in ArchNodes._node_names:
                 #auto discover the rules for CoreIR
+                peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["other.const_mul0"], node_name, rr_name="const_mul0")
+                peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["other.const_mul1"], node_name, rr_name="const_mul1")
                 if conv:
                     ops = conv_ops
                 else:
-                    ops = camera_ops
+                    ops = camera_harris_conv_ops
                 for op in ops:
-                    peak_rule = self.table.discover(op, node_name)
+                    peak_rule = self.table.discover(op, node_name, rr_name=op)
                     print(f"Searching for {op} -> {node_name}")
                     if peak_rule is None:
                         print(f"  Not Found :(")
                         pass
                     else:
                         print(f"  Found!")
+
         else:
             #load the rules
             for ind, peak_rule in enumerate(peak_rules):

@@ -7,7 +7,7 @@ from peak.mapper import ArchMapper, Unbound
 from peak.mapper import RewriteRule as PeakRule
 from peak import family_closure, family
 from .family import fam
-
+from timeit import default_timer as timer
 #debug
 from peak.mapper.utils import pretty_print_binding
 
@@ -54,7 +54,7 @@ class RewriteTable:
         from_bv = rule.ir_fc(family.PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
 
-        #print_dag(from_dag)
+        print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -117,13 +117,13 @@ class RewriteTable:
         #print_dag(to_dag)
         BindsToCombines().run(to_dag)
         #print("After combine")
-        #print_dag(to_dag)
+        # print_dag(to_dag)
         SimplifyCombines().run(to_dag)
         #print("After Simplify")
-        #print_dag(to_dag)
+        # print_dag(to_dag)
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
-        #print_dag(to_dag)
+        print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
@@ -147,7 +147,10 @@ class RewriteTable:
         to_fc = self.to.peak_nodes[to_name]
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints, family=fam())
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
-        peak_rr = ir_mapper.solve('z3', external_loop=True)
+        start = timer()
+        peak_rr = ir_mapper.solve('btor', external_loop=True)
+        end = timer()
+        print(f"{end-start}")
         if peak_rr is None:
             return None
         rr = self.add_peak_rule(peak_rr, name=rr_name)
