@@ -22,6 +22,35 @@ def gen_peak_CoreIR(width):
     CoreIR.add_instruction("memory.rom2", rom_fc)
 
     @family_closure
+    def const_mul0_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+        @family.assemble(locals(),globals())
+        class const_mul0(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, imm: Const(Data), in0: Data) -> Data:
+                return imm*in0
+
+        return const_mul0
+
+    CoreIR.add_instruction("other.const_mul0", const_mul0_fc)
+
+    @family_closure
+    def const_mul1_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        SData = family.Signed[width]
+
+        @family.assemble(locals(),globals())
+        class const_mul1(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data, imm: Const(Data)) -> Data:
+                return in0*imm
+
+        return const_mul1
+
+    CoreIR.add_instruction("other.const_mul1", const_mul1_fc)
+
+    @family_closure
     def abs_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         SData = family.Signed[width]

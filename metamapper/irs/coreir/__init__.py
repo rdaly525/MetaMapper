@@ -20,22 +20,31 @@ def gen_CoreIRNodes(width):
     for namespace, ops, is_module in (
         ("coreir", basic + other, False),
         ("corebit", bit_ops, True),
-        ("commonlib", commonlib_ops, False)
+        ("commonlib", commonlib_ops, False),
+        ('other', ("const_mul0", "const_mul1"), False)
     ):
         for op in ops:
-            assert c.get_namespace(namespace) is c.get_namespace(namespace)
             name = f"{namespace}.{op}"
             peak_fc = peak_ir.instructions[name]
             coreir_op = strip_trailing(op)
-            if is_module:
+            if namespace == "other":
+                cmod = None
+            elif is_module:
+                assert c.get_namespace(namespace) is c.get_namespace(namespace)
                 cmod = c.get_namespace(namespace).modules[coreir_op]
             else:
+                assert c.get_namespace(namespace) is c.get_namespace(namespace)
                 gen = c.get_namespace(namespace).generators[coreir_op]
                 cmod = gen(width=width)
-            name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name)
+            if cmod is None:
+                wasm = True
+            else:
+                wasm=True
+            name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name, wasm=wasm)
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
-            assert CoreIRNodes.name_from_coreir(cmod) == name
+            if cmod is not None:
+                assert CoreIRNodes.name_from_coreir(cmod) == name
             print(f"Loaded {name}!")
 
 
