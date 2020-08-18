@@ -4,12 +4,12 @@ from metamapper.node import Nodes, DagNode
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule
 import metamapper.peak_util as putil
-from peak.examples import riscv, riscv_m, riscv_hack, riscv_m_hack
+from peak.examples import riscv, riscv_m, riscv_hack, riscv_m_hack, riscv_ext
 from .family import fam
 import typing as tp
 
 class Compiler:
-    def __init__(self, WasmNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3', m=False):
+    def __init__(self, WasmNodes: Nodes, alg=GreedyCovering, peak_rules: tp.List[PeakRule]=None, ops=None, solver='z3', m=False, e=False):
         assert ops is not None
         self.WasmNodes = WasmNodes
         ArchNodes = Nodes("RiscV")
@@ -18,10 +18,15 @@ class Compiler:
             self.rv = riscv_m
             self.rv_hack = riscv_m_hack
             riscv_fc = riscv_m.sim.R32I_mappable_fc
+        elif e:
+            self.rv = riscv_ext
+            self.rv_hack = riscv_hack
+            riscv_fc = riscv_ext.sim.R32I_mappable_fc
         else:
             self.rv = riscv
             self.rv_hack = riscv_hack
             riscv_fc = riscv.sim.R32I_mappable_fc
+        
         putil.load_from_peak(ArchNodes, riscv_fc, stateful=False, wasm=True)
         riscv2_fc, Inst2 = gen_riscv2(m)
         self.Inst2 = Inst2
@@ -29,7 +34,7 @@ class Compiler:
         self.table = RewriteTable(WasmNodes, ArchNodes)
         map2_set = [
             "i32.eq",
-            "i32.neq",
+            "i32.ne",
             "i32.le_s",
             "i32.le_u",
             "i32.ge_s",
@@ -254,10 +259,12 @@ class Binary:
 
 from peak import family_closure, Peak, Const, name_outputs
 from hwtypes.adt import Product
-def gen_riscv2(m):
+def gen_riscv2(m, e=False):
 
     if m:
         r = riscv_m
+    elif e:
+        r = riscv_ext
     else:
         r = riscv
 
