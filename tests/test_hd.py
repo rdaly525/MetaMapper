@@ -16,9 +16,11 @@ from metamapper.node import Dag
 import pytest
 from timeit import default_timer as timer
 
-@pytest.mark.skip
+#@pytest.mark.skip
 @pytest.mark.parametrize("i", range(1,26))
-def compile_c(i):
+def test_compile_c(i):
+    if i != 18:
+        pytest.skip()
 
     CoreIRContext(reset=True)
     set_fam(riscv.family)
@@ -28,7 +30,8 @@ def compile_c(i):
 
     #Compile the c file to wasm
     cpath = "results/hd"
-    build_path= "results/hd_results"
+    #build_path= "results/hd_results"
+    build_path= "."
     wasm_file = wutil.compile_c_to_wasm(p, cpath=cpath, build_path=build_path)
     print(wasm_file)
 

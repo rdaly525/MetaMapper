@@ -48,20 +48,18 @@ def gen():
         col = ["blue" if len(set(f)) != 1 else ("green" if f[0] else "red") for f in fdata.values()]
         names = list(tdata.keys())
         ax = axs
+        legend_handles = [
+            mp.Patch(color="green", label="SAT"),
+        ]
         #axs[ri].bar(
         ax.bar(
             x_pos,
             mean_time,
             color = col,
-            yerr= [min_time, max_time],
-            capsize=3.0,
         )
-        #if ri==0:
-        #    green_p = mp.Patch(color="green", label="1 Instruction")
-        #    red_p = mp.Patch(color="red", label="Impossible in 1 or 2")
-        #    axs[ri].legend(handles=[green_p, red_p], loc="upper right")
         ax.set_ylabel("Time (min)")
-        ax.set_title("Synthesis of 2 RiscV Instructions")
+        #ax.set_ylim(0,2)
+        plt.legend(handles=legend_handles, loc="upper left")
     plt.xticks(x_pos, names, rotation=75)
     plt.savefig(f"results/figs/riscv2-op-cmp.png", bbox_inches='tight')
     plt.show()
