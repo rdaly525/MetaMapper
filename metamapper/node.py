@@ -53,12 +53,22 @@ class DagNode(Visited):
     @lru_cache(None)
     def select(self, field):
         self._selects.add(field)
-        return Select(self, field=field)
+        T = msel(field, self.type)
+        return Select(self, field=field, type=T)
 
     def copy(self):
         args = self.children()
         kwargs = {attr:getattr(self, attr) for attr in self.attributes}
         return type(self)(*args, **kwargs)
+
+def msel(field, T):
+    #print(f"Selecting {field} from {T}, {list(T.field_dict.items())}")
+    if field =="O0":
+        return list(T.field_dict.items())[0][1]
+    if field =="O1":
+        return list(T.field_dict.items())[1][1]
+
+    return T[field]
 
 
 #This holds a single RTL dag. The first source/sink pair represents the interface whereas the rest represent instances with state
@@ -161,7 +171,7 @@ class Nodes:
 
     # TODO Thoughts
     #If this is state, then it creates two nodes a source and sink
-    def create_dag_node(self, node_name, num_children, stateful: bool, attrs: tp.List = (), parents=()) -> DagNode:
+    def create_dag_node(self, node_name, num_children, stateful: bool, attrs: tp.List = (), parents=(), _type=None) -> DagNode:
         if stateful:
             raise NotImplementedError("TODO")
 
@@ -169,12 +179,24 @@ class Nodes:
             raise ValueError("Cannot have 'iname' in attrs")
 
         attrs += ("iname",)
-        node = type(node_name, parents + (DagNode,), dict(
-            num_children=num_children,
-            nodes=self,
-            node_name=node_name,
-            attributes=attrs,
-        ))
+        if _type is None:
+            if "type" not in attrs:
+                attrs += ("type",)
+            node = type(node_name, parents + (DagNode,), dict(
+                num_children=num_children,
+                nodes=self,
+                node_name=node_name,
+                attributes=attrs,
+            ))
+        else:
+            node = type(node_name, parents + (DagNode,), dict(
+                num_children=num_children,
+                nodes=self,
+                node_name=node_name,
+                attributes=attrs,
+                type=_type
+            ))
+
         return node
 
 #Select gotes 1 ->1
@@ -182,7 +204,7 @@ class Nodes:
 #Output goes N->0
 
 Common = Nodes("Common")
-Select = Common.create_dag_node("Select", 1, False, ("field",))
+Select = Common.create_dag_node("Select", 1, False, ("field","type"))
 
 from hwtypes import AbstractBitVector, AbstractBit
 from peak.mapper.utils import rebind_type
@@ -259,6 +281,9 @@ class Combine(DagNode):
 
     @property
     def attributes(self):
-        return ("type", "iname")
+        attrs = ("type", "iname")
+        if hasattr(self, "tu_field"):
+            attrs = (*attrs, "tu_field")
+        return attrs
 
     nodes = Common

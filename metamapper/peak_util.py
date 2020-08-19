@@ -137,7 +137,7 @@ def peak_to_node(nodes: Nodes, peak_fc, stateful, name=None) -> (DagNode, str):
     outputs = list(peak_bv.output_t.field_dict.keys())
     if name is None:
         name = peak_bv.__name__
-    return nodes.create_dag_node(name, len(inputs), stateful=False), name
+    return nodes.create_dag_node(name, len(inputs), stateful=False, _type=strip_modifiers(peak_bv.output_t)), name
 
 def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, wasm=False) -> str:
     if cmod is None and not wasm:

@@ -74,7 +74,12 @@ def adt_to_ctype(adt):
         raise NotImplementedError(str(adt))
 
 def fields_to_adt(inputs: dict, name):
+    if len(inputs)==0:
+        return Product.from_fields(name, {"fake":fam().PyFamily().BitVector[16]})
     return Product.from_fields(name, {field:ctype_to_adt(CT) for field, CT in inputs.items()})
+
+def is_int(v:str):
+    return v.isdigit()
 
 class Loader:
     def __init__(self, cmod: coreir.Module, nodes: Nodes):
@@ -126,6 +131,8 @@ class Loader:
             child_node = self.add_node(child_inst)
             child_output = child_node
             for port in port_path:
+                if is_int(port):
+                    port = int(port)
                 child_output = child_output.select(port)
             children.append(child_output)
 
@@ -253,7 +260,7 @@ class ToCoreir(Visitor):
     def visit_Select(self, node):
         Visitor.generic_visit(self, node)
         child_inst = self.node_to_inst[node.children()[0]]
-        self.node_to_inst[node] = child_inst.select(node.field)
+        self.node_to_inst[node] = child_inst.select(str(node.field))
 
     def visit_Input(self, node):
         self.node_to_inst[node] = self.def_.interface

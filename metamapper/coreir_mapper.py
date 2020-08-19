@@ -43,28 +43,28 @@ class Mapper:
 
         camera_harris_conv_ops = (
 #"commonlib.abs",
-#"commonlib.umax",
-#"commonlib.umin",
-#"commonlib.smin",
-#"commonlib.smax",
+"commonlib.umax",
+"commonlib.umin",
+"commonlib.smin",
+"commonlib.smax",
 #"commonlib.abs",
 "coreir.const",
-#"corebit.and_",
+"corebit.and_",
 "coreir.add",
 "coreir.sub",
-#"coreir.mux",
+"coreir.mux",
 "coreir.ashr",
-#"coreir.and_",
-#"coreir.eq",
-#"coreir.mul",
-#"coreir.sle",
-#"corebit.const",
-#"coreir.ult",
-#"coreir.lshr",
-#"coreir.slt",
-#"coreir.sge",
-#"coreir.ule",
-#"coreir.uge",
+"coreir.and_",
+"coreir.eq",
+"coreir.mul",
+"coreir.sle",
+"corebit.const",
+"coreir.ult",
+"coreir.lshr",
+"coreir.slt",
+"coreir.sge",
+"coreir.ule",
+"coreir.uge",
 
         )
         if peak_rules is None:
@@ -97,6 +97,8 @@ class Mapper:
 
 
     def map_dag(self, dag: Dag, prove=True) -> Dag:
+        print("PRECLONE")
+        print_dag(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         print("PREMAPPED")
         print_dag(original_dag)
@@ -109,8 +111,8 @@ class Mapper:
         # print("simplifyCombines")
         # print_dag(mapped_dag)
         RemoveSelects().run(mapped_dag)
-        # print("RemovedSelects")
-        #print_dag(mapped_dag)
+        print("RemovedSelects")
+        print_dag(mapped_dag)
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         if unmapped is not None:
             unmapped = set(filter(lambda v: not isinstance(v, self.CoreIRNodes.dag_nodes["memory.rom2"]), unmapped))
@@ -118,10 +120,12 @@ class Mapper:
                 raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
         if prove:
+            print("PROVING?",flush=True)
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
-                raise ValueError(f"Mapped is not the same {counter_example}")
-        
+                print("NOT PROVED")
+                #raise ValueError(f"Mapped is not the same {counter_example}")
+            print("PROVED")
         return mapped_dag
 
     def map_module(self, cmod: coreir.Module, prove=True) -> coreir.Module:

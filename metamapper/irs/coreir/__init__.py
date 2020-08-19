@@ -3,6 +3,7 @@ from ...node import Nodes, DagNode, Select
 from ... import CoreIRContext
 from ...peak_util import load_from_peak
 import coreir
+from hwtypes import BitVector, Product
 
 def strip_trailing(op):
     if op[-1] == "_":
@@ -61,11 +62,12 @@ def gen_CoreIRNodes(width):
         #Hack to get correct port name
         def select(self, field):
             self._selects.add("rdata")
-            return Select(self, field="rdata")
+            return Select(self, field="rdata",type=BitVector[16])
 
         nodes = CoreIRNodes
         node_name = "memory.rom2"
         num_children = 2
+        type = Product.from_fields("Output",{"rdata":BitVector[16]})
 
     rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
 

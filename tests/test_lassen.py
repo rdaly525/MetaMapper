@@ -34,7 +34,7 @@ def test_camera():
     print("STARTING TEST")
     #app = "camera"
     app = "harris"
-    app = "camera_pipeline"
+    #app = "camera_pipeline"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])

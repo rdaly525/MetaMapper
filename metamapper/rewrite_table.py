@@ -10,6 +10,8 @@ from .family import fam
 from timeit import default_timer as timer
 #debug
 from peak.mapper.utils import pretty_print_binding
+from hwtypes.modifiers import strip_modifiers
+
 
 class RewriteRule:
     def __init__(self,
@@ -63,7 +65,7 @@ class RewriteTable:
         to_node_t = self.to.dag_nodes[to_node_name]
         assert issubclass(to_node_t, DagNode)
         to_bv = to_fc(fam().PyFamily())
-        to_input = Input(iname="self", type=from_bv.input_t)
+        to_input = Input(iname="self", type=strip_modifiers(from_bv.input_t))
 
         def sel_from(path, node: DagNode):
             assert isinstance(path, tuple)
@@ -74,7 +76,8 @@ class RewriteTable:
         #input -> ibinding node
         ibind_children = []
         ibind_paths = []
-
+        pretty_print_binding(rule.ibinding)
+        pretty_print_binding(rule.obinding)
         for from_b, to_b in rule.ibinding:
             assert isinstance(to_b, tuple)
             if isinstance(from_b, tuple):
@@ -126,6 +129,8 @@ class RewriteTable:
 
         #print(name, "to")
         #print_dag(to_dag)
+        #print("to_dag")
+        #print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
@@ -136,11 +141,14 @@ class RewriteTable:
             checker = lambda match: True,
             name = name
         )
+        rr._rule = rule
         self.add_rule(rr)
         return rr
 
     #Discovers and returns a rule if possible
-    def discover(self, from_name, to_name, path_constraints={}, rr_name=None) -> tp.Union[None, RewriteRule]:
+    def discover(self, from_name, to_name, path_constraints={}, rr_name=None, solver="z3") -> tp.Union[None, RewriteRule]:
+        if rr_name is None:
+            rr_name = from_name
         if isinstance(from_name, str):
             from_fc = self.from_.peak_nodes[from_name]
         else:
@@ -155,6 +163,7 @@ class RewriteTable:
         print(f"{end-start}")
         if peak_rr is None:
             return None
+        print(peak_rr, rr_name)
         rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 
