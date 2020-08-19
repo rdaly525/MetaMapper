@@ -42,6 +42,7 @@ class Mapper:
         )
 
         camera_harris_conv_ops = (
+"commonlib.abs",
 "commonlib.umax",
 "commonlib.umin",
 "commonlib.smin",
@@ -74,8 +75,8 @@ class Mapper:
                 else:
                     ops = camera_harris_conv_ops
                 for op in ops:
-                    peak_rule = self.table.discover(op, node_name, rr_name=op)
                     print(f"Searching for {op} -> {node_name}")
+                    peak_rule = self.table.discover(op, node_name, rr_name=op)
                     if peak_rule is None:
                         print(f"  Not Found :(")
                         pass

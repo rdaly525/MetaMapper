@@ -32,6 +32,7 @@ from lassen.sim import PE_fc
 
 def test_camera():
     print("STARTING TEST")
+    app = "camera"
     app = "harris"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
