@@ -54,11 +54,13 @@ def gen_peak_CoreIR(width):
     def abs_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         SData = family.Signed[width]
+        @family.assemble(locals(),globals())
         class abs(Peak):
             def __call__(self, in0: Data) -> Data:
                 in0_s = SData(in0)
-                in0_neg = Data(-in0_s)
-                return (in0_s >=0).ite(in0, in0_neg)
+                is_pos = (in0_s >=0)
+                in0_n = SData(-1)* in0_s
+                return is_pos.ite(Data(in0), Data(in0_n))
         return abs
 
     CoreIR.add_instruction("commonlib.abs", abs_fc)

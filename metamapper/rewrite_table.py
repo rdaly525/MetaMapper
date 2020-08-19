@@ -53,7 +53,7 @@ class RewriteTable:
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
         from_bv = rule.ir_fc(family.PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-
+        print(name, "from")
         print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
@@ -123,7 +123,9 @@ class RewriteTable:
         # print_dag(to_dag)
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
-        print_dag(to_dag)
+
+        #print(name, "to")
+        #print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match

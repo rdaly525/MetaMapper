@@ -13,10 +13,11 @@ def gen_CoreIRNodes(width):
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
     CoreIRNodes._peakir_ = peak_ir
-    basic = ("mul", "add", "const", "and_", "or_")
+    basic = ("mul", "add", "const", "and_", "or_", "neg")
     other = ("ashr", "eq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge")
     bit_ops = ("const", "or_", "and_", "xor", "not_")
-    commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
+    #commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
+    commonlib_ops = ("smax", "smin", "umin", "umax")
     for namespace, ops, is_module in (
         ("coreir", basic + other, False),
         ("corebit", bit_ops, True),

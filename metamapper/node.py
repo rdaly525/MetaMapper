@@ -125,7 +125,7 @@ class Nodes:
         if len(names) == 1:
             return names[0]
 
-        breakpoint()
+        #breakpoint()
         return None
 
     #returns Node name from coreir module name or None if not found

@@ -156,11 +156,11 @@ class Printer(Visitor):
 
     def visit_Select(self, node):
         Visitor.generic_visit(self, node)
-        self.res += f"{node._id_}<Select:{node.field}>({node.children()[0]._id_})\n"
+        self.res += f"{node._id_}<Select:{node.field}, {node.type}>({node.children()[0]._id_})\n"
 
     def visit_Input(self, node):
         Visitor.generic_visit(self, node)
-        self.res += f"{node._id_}<Input>\n"
+        self.res += f"{node._id_}, {node.type}<Input>\n"
 
     def visit_Constant(self, node):
         self.res += f"{node._id_}<Constant>({node.value}{type(node.value)})>\n"

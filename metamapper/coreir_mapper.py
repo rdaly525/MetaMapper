@@ -34,7 +34,7 @@ class Mapper:
             "coreir.slt",
             "coreir.sub",
             "coreir.ult",
-            "commonlib.abs",
+            #"commonlib.abs",
             "commonlib.smax",
             "commonlib.smin",
             "commonlib.umax",
@@ -42,34 +42,37 @@ class Mapper:
         )
 
         camera_harris_conv_ops = (
-"commonlib.abs",
-"commonlib.umax",
-"commonlib.umin",
-"commonlib.smin",
-"commonlib.smax",
-"commonlib.abs",
+#"commonlib.abs",
+#"commonlib.umax",
+#"commonlib.umin",
+#"commonlib.smin",
+#"commonlib.smax",
+#"commonlib.abs",
 "coreir.const",
-"corebit.and_",
+#"corebit.and_",
 "coreir.add",
 "coreir.sub",
-"coreir.mux",
+#"coreir.mux",
 "coreir.ashr",
-"coreir.and_",
-"coreir.eq",
-"coreir.mul",
-"coreir.sle",
-"corebit.const",
-"coreir.ult",
-"coreir.lshr",
-"coreir.slt",
-"coreir.sge",
-"coreir.ule",
-"coreir.uge",
+#"coreir.and_",
+#"coreir.eq",
+#"coreir.mul",
+#"coreir.sle",
+#"corebit.const",
+#"coreir.ult",
+#"coreir.lshr",
+#"coreir.slt",
+#"coreir.sge",
+#"coreir.ule",
+#"coreir.uge",
 
         )
         if peak_rules is None:
             for node_name in ArchNodes._node_names:
+                if node_name != "PE":
+                    continue
                 #auto discover the rules for CoreIR
+                peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["commonlib.abs"], node_name, rr_name="abs")
                 peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["other.const_mul0"], node_name, rr_name="const_mul0")
                 peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["other.const_mul1"], node_name, rr_name="const_mul1")
                 if conv:
@@ -77,13 +80,13 @@ class Mapper:
                 else:
                     ops = camera_harris_conv_ops
                 for op in ops:
-                    print(f"Searching for {op} -> {node_name}")
+                    print(f"Searching for {op} -> {node_name}", flush=True)
                     peak_rule = self.table.discover(op, node_name, rr_name=op)
                     if peak_rule is None:
-                        print(f"  Not Found :(")
+                        print(f"  Not Found :(",flush=True)
                         pass
                     else:
-                        print(f"  Found!")
+                        print(f"  Found!",flush=True)
 
         else:
             #load the rules
@@ -95,7 +98,8 @@ class Mapper:
 
     def map_dag(self, dag: Dag, prove=True) -> Dag:
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
-        #print_dag(original_dag)
+        print("PREMAPPED")
+        print_dag(original_dag)
         mapped_dag = self.inst_sel(dag)
 
         UnboundTo0().run(mapped_dag)
@@ -121,6 +125,7 @@ class Mapper:
         return mapped_dag
 
     def map_module(self, cmod: coreir.Module, prove=True) -> coreir.Module:
+        print("Mapping", cmod.name)
         premapped_dag = cutil.preprocess(self.CoreIRNodes, cmod)
         mapped_dag = self.map_dag(premapped_dag, prove=prove)
         self.num_pes += count_pes(mapped_dag)

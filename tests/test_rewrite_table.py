@@ -16,6 +16,7 @@ from metamapper.common_passes import VerifyNodes
 from metamapper import CoreIRContext
 from peak.examples import riscv #import sim, isa, family, asm
 from metamapper.family import set_fam, fam
+from lassen import PE_fc as lassen_fc
 
 lassen_constraints = {
     ("clk_en",): 1,
@@ -25,10 +26,10 @@ lassen_constraints = {
 }
 @pytest.mark.parametrize("arch", [
 #    ("PE_lut", gen_PE_lut(16), {}),
-    ("basic_alu", gen_ALU(16), {}),
-#    ("lassen", lassen_fc, lassen_constraints)
+#    ("basic_alu", gen_ALU(16), {}),
+    ("lassen", lassen_fc, lassen_constraints)
 ])
-@pytest.mark.parametrize("op", ["coreir.add", "coreir.const", "corebit.or_", "corebit.const"])
+@pytest.mark.parametrize("op", ["coreir.add", "coreir.ult", "coreir.const", "corebit.or_", "corebit.const"])
 def test_discover(arch, op):
     CoreIRContext(reset=True)
     name, arch_fc, constraints = arch
