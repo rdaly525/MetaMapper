@@ -32,7 +32,7 @@ from lassen.sim import PE_fc
 
 def test_camera():
     print("STARTING TEST")
-    app = "harris"
+    app = "camera_pipeline"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
