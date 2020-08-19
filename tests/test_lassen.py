@@ -32,8 +32,9 @@ from lassen.sim import PE_fc
 
 def test_camera():
     print("STARTING TEST")
-    app = "camera"
+    #app = "camera"
     app = "harris"
+    app = "camera_pipeline"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
@@ -52,7 +53,7 @@ def test_camera():
     # breakpoint()
     mapper = Mapper(CoreIRNodes, ArchNodes, conv=False)
     for kname, kmod in kernels.items():
-        mapped_mod = mapper.map_module(cmod=kmod, prove=False)
+        mapped_mod = mapper.map_module(cmod=kmod, prove=True)
 
     print("Num PEs used:",  mapper.num_pes)
     c.run_passes(["wireclocks-clk"])

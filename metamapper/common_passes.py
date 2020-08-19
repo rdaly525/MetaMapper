@@ -135,7 +135,7 @@ class CountPEs(Visitor):
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
 
-    def visit_PE_wrapped(self, node):
+    def visit_PE(self, node):
         Visitor.generic_visit(self, node)
         self.res += 1
 
@@ -268,6 +268,7 @@ def print_dag(dag: Dag):
     print(Printer().run(dag).res)
 
 def count_pes(dag: Dag):
+    print(CountPEs().run(dag).res)
     return CountPEs().run(dag).res
 
 class CheckIfTree(Visitor):

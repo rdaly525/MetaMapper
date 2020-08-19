@@ -47,6 +47,7 @@ class Mapper:
 "commonlib.umin",
 "commonlib.smin",
 "commonlib.smax",
+"commonlib.abs",
 "coreir.const",
 "corebit.and_",
 "coreir.add",
@@ -64,6 +65,7 @@ class Mapper:
 "coreir.sge",
 "coreir.ule",
 "coreir.uge",
+
         )
         if peak_rules is None:
             for node_name in ArchNodes._node_names:
