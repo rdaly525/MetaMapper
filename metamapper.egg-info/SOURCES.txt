@@ -1,0 +1,15 @@
+README.md
+setup.py
+metamapper/__init__.py
+metamapper/common_passes.py
+metamapper/coreir_mapper.py
+metamapper/coreir_util.py
+metamapper/magma_util.py
+metamapper/node.py
+metamapper/peak_util.py
+metamapper/rewrite_table.py
+metamapper.egg-info/PKG-INFO
+metamapper.egg-info/SOURCES.txt
+metamapper.egg-info/dependency_links.txt
+metamapper.egg-info/requires.txt
+metamapper.egg-info/top_level.txt

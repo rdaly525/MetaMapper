@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: metamapper
+Version: 0.0.1
+Summary: A Mapper constructor for CoreIR
+Home-page: https://github.com/rdaly525/MetaMapper
+Maintainer: Ross Daly
+Maintainer-email: rdaly525@stanford.edu
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.6

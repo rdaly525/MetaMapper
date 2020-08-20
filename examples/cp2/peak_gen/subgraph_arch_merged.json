@@ -1,0 +1,74 @@
+{
+    "bit_outputs": [
+        [
+            "9",
+            "0"
+        ]
+    ],
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "input_width": 16,
+    "modules": [
+        {
+            "id": "0",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "alu"
+        },
+        {
+            "id": "1",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "0"
+            ],
+            "type": "alu"
+        },
+        {
+            "id": "2",
+            "in0": [
+                "in3"
+            ],
+            "in1": [
+                "in4"
+            ],
+            "in2": [
+                "1",
+                "bit_in0"
+            ],
+            "type": "mux"
+        },
+        {
+            "id": "9",
+            "type": "bitconst"
+        },
+        {
+            "id": "12",
+            "type": "const"
+        },
+        {
+            "id": "15",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "mul"
+        }
+    ],
+    "output_width": 16,
+    "outputs": [
+        [
+            "2",
+            "12",
+            "15",
+            "0"
+        ]
+    ]
+}

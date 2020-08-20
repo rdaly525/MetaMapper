@@ -1,0 +1,907 @@
+============================= test session starts ==============================
+platform linux -- Python 3.7.5, pytest-5.4.3, py-1.9.0, pluggy-0.13.1
+rootdir: /nobackup/melchert/MetaMapper
+collected 1 item
+
+tests/test_lassen.py /tmp/tmpl_fimvrd.json
+examples/dse/gaussian_mapped.json
+STARTING TEST
+Loaded coreir.mul!
+Loaded coreir.add!
+Loaded coreir.const!
+Loaded coreir.and_!
+Loaded coreir.or_!
+Loaded coreir.ashr!
+Loaded coreir.eq!
+Loaded coreir.lshr!
+Loaded coreir.mux!
+Loaded coreir.sub!
+Loaded coreir.slt!
+Loaded coreir.sle!
+Loaded coreir.sgt!
+Loaded coreir.sge!
+Loaded coreir.ult!
+Loaded coreir.ule!
+Loaded coreir.ugt!
+Loaded coreir.uge!
+Loaded corebit.const!
+Loaded corebit.or_!
+Loaded corebit.and_!
+Loaded corebit.xor!
+Loaded corebit.not_!
+Loaded commonlib.abs!
+Loaded commonlib.smax!
+Loaded commonlib.smin!
+Loaded commonlib.umin!
+Loaded commonlib.umax!
+Loaded other.const_mul0!
+Loaded other.const_mul1!
+1.1969132372178137
+
+0<Input>
+1<Select:imm>(0)
+2<Select:in0>(0)
+3<other.const_mul0:3, ['imm', 'in0']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(11<class 'hwtypes.bit_vector.BitVector[5]'>)>
+1<Constant>(0<class 'hwtypes.bit_vector.BitVector[1]'>)>
+2<Constant>(0<class 'hwtypes.bit_vector.BitVector[8]'>)>
+3<Constant>(19<class 'hwtypes.bit_vector.BitVector[5]'>)>
+4<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+5<Input>
+6<Select:imm>(5)
+7<Constant>(2<class 'hwtypes.bit_vector.BitVector[2]'>)>
+8<Constant>(32764<class 'hwtypes.bit_vector.BitVector[16]'>)>
+9<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+10<Constant>(Bit(True)<class 'hwtypes.bit_vector.Bit'>)>
+11<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+12<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+13<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+14<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+15<Combine:['alu', 'signed', 'lut', 'cond', 'rega', 'data0', 'regb', 'data1', 'regd', 'bit0', 'rege', 'bit1', 'regf', 'bit2']>(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+16<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+17<Select:in0>(5)
+18<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+19<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+20<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+21<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+22<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+23<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+24<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+25<PE:25, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+26<Select:alu_res>(25)
+27<Output>(26)
+
+Searching for other.const_mul0 -> PE
+  Found!
+0.8862598948180676
+
+0<Input>
+1<Select:in0>(0)
+2<Select:imm>(0)
+3<other.const_mul1:3, ['in0', 'imm']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(11<class 'hwtypes.bit_vector.BitVector[5]'>)>
+1<Constant>(1<class 'hwtypes.bit_vector.BitVector[1]'>)>
+2<Constant>(0<class 'hwtypes.bit_vector.BitVector[8]'>)>
+3<Constant>(19<class 'hwtypes.bit_vector.BitVector[5]'>)>
+4<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+5<Input>
+6<Select:imm>(5)
+7<Constant>(2<class 'hwtypes.bit_vector.BitVector[2]'>)>
+8<Constant>(65279<class 'hwtypes.bit_vector.BitVector[16]'>)>
+9<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+10<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+11<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+12<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+13<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+14<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+15<Combine:['alu', 'signed', 'lut', 'cond', 'rega', 'data0', 'regb', 'data1', 'regd', 'bit0', 'rege', 'bit1', 'regf', 'bit2']>(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+16<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+17<Select:in0>(5)
+18<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+19<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+20<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+21<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+22<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+23<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+24<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+25<PE:25, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+26<Select:alu_res>(25)
+27<Output>(26)
+
+Searching for other.const_mul1 -> PE
+  Found!
+0.6027734722010791
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<commonlib.umax:3, ['in0', 'in1']>(1, 2)
+4<Select:0>(3)
+5<Output>(4)
+
+
+0<Constant>(161572480561233924<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for commonlib.umax -> PE
+  Found!
+0.5293100397102535
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<commonlib.umin:3, ['in0', 'in1']>(1, 2)
+4<Select:0>(3)
+5<Output>(4)
+
+
+0<Constant>(180122370474033157<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for commonlib.umin -> PE
+  Found!
+1.5588847398757935
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<commonlib.smin:3, ['in0', 'in1']>(1, 2)
+4<Select:0>(3)
+5<Output>(4)
+
+
+0<Constant>(252201854012014629<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for commonlib.smin -> PE
+  Found!
+3.1917594289407134
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<commonlib.smax:3, ['in0', 'in1']>(1, 2)
+4<Select:0>(3)
+5<Output>(4)
+
+
+0<Constant>(216173194429906980<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for commonlib.smax -> PE
+  Found!
+0.5423040851019323
+
+0<Input>
+1<Select:value>(0)
+2<coreir.const:2, ['value']>(1)
+3<Select:out>(2)
+4<Output>(3)
+
+
+0<Constant>(31<class 'hwtypes.bit_vector.BitVector[5]'>)>
+1<Constant>(1<class 'hwtypes.bit_vector.BitVector[1]'>)>
+2<Constant>(0<class 'hwtypes.bit_vector.BitVector[8]'>)>
+3<Constant>(19<class 'hwtypes.bit_vector.BitVector[5]'>)>
+4<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+5<Input>
+6<Select:value>(5)
+7<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+8<Constant>(0<class 'hwtypes.bit_vector.BitVector[16]'>)>
+9<Constant>(3<class 'hwtypes.bit_vector.BitVector[2]'>)>
+10<Constant>(Bit(True)<class 'hwtypes.bit_vector.Bit'>)>
+11<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+12<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+13<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+14<Constant>(Bit(False)<class 'hwtypes.bit_vector.Bit'>)>
+15<Combine:['alu', 'signed', 'lut', 'cond', 'rega', 'data0', 'regb', 'data1', 'regd', 'bit0', 'rege', 'bit1', 'regf', 'bit2']>(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+16<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+17<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+18<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+19<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+20<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+21<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+22<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+23<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+24<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+25<PE:25, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+26<Select:alu_res>(25)
+27<Output>(26)
+
+Searching for coreir.const -> PE
+  Found!
+3.7772911731153727
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<corebit.and_:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(10034020038501179420<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+2<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+3<Input>
+4<Select:in0>(3)
+5<Select:in1>(3)
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 1, 2, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for corebit.and_ -> PE
+  Found!
+0.19854543870314956
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.add:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(252201306489667584<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.add -> PE
+  Found!
+1.0853152312338352
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.sub:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(180069080864440353<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.sub -> PE
+  Found!
+2.2192173041403294
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<Select:sel>(0)
+4<coreir.mux:4, ['in0', 'in1', 'sel']>(1, 2, 3)
+5<Select:out>(4)
+6<Output>(5)
+
+
+0<Constant>(108073059477536808<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Select:sel>(1)
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.mux -> PE
+  Found!
+6.106211523991078
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.ashr:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(280173567259492399<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.ashr -> PE
+  Found!
+0.9431758131831884
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.and_:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(180144809731997747<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.and_ -> PE
+  Found!
+2.678123832680285
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.eq:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(14627656748927827924<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.eq -> PE
+  Found!
+1.123961032833904
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.mul:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(252202403769925675<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.mul -> PE
+  Found!
+0.4970017420127988
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.sle:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(15186146533431304228<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.sle -> PE
+  Found!
+0.35058737732470036
+
+0<Input>
+1<Select:value>(0)
+2<corebit.const:2, ['value']>(1)
+3<Select:out>(2)
+4<Output>(3)
+
+
+0<Constant>(3<class 'hwtypes.bit_vector.BitVector[5]'>)>
+1<Constant>(1<class 'hwtypes.bit_vector.BitVector[1]'>)>
+2<Constant>(192<class 'hwtypes.bit_vector.BitVector[8]'>)>
+3<Constant>(14<class 'hwtypes.bit_vector.BitVector[5]'>)>
+4<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+5<Constant>(49152<class 'hwtypes.bit_vector.BitVector[16]'>)>
+6<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+7<Constant>(49152<class 'hwtypes.bit_vector.BitVector[16]'>)>
+8<Constant>(2<class 'hwtypes.bit_vector.BitVector[2]'>)>
+9<Constant>(Bit(True)<class 'hwtypes.bit_vector.Bit'>)>
+10<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+11<Constant>(Bit(True)<class 'hwtypes.bit_vector.Bit'>)>
+12<Constant>(0<class 'hwtypes.bit_vector.BitVector[2]'>)>
+13<Input>
+14<Select:value>(13)
+15<Combine:['alu', 'signed', 'lut', 'cond', 'rega', 'data0', 'regb', 'data1', 'regd', 'bit0', 'rege', 'bit1', 'regf', 'bit2']>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14)
+16<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+17<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+18<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+19<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+20<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+21<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+22<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+23<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+24<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+25<PE:25, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+26<Select:res_p>(25)
+27<Output>(26)
+
+Searching for corebit.const -> PE
+  Found!
+1.1719879009760916
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.ult:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(7800234898206474246<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.ult -> PE
+  Found!
+2.088168946094811
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.lshr:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(851518472207<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:alu_res>(11)
+13<Output>(12)
+
+Searching for coreir.lshr -> PE
+  Found!
+1.733199699781835
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.slt:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(15150109490070872134<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in0>(1)
+3<Select:in1>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.slt -> PE
+  Found!
+0.715707475785166
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.sge:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(14845825625680494629<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.sge -> PE
+  Found!
+2.9985759630799294
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.ule:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(14879892481634451972<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.ule -> PE
+  Found!
+2.2359049562364817
+
+0<Input>
+1<Select:in0>(0)
+2<Select:in1>(0)
+3<coreir.uge:3, ['in0', 'in1']>(1, 2)
+4<Select:out>(3)
+5<Output>(4)
+
+
+0<Constant>(10538424021401460741<class 'hwtypes.bit_vector.BitVector[64]'>)>
+1<Input>
+2<Select:in1>(1)
+3<Select:in0>(1)
+4<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+5<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+6<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+7<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+8<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+9<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+10<Constant>(<class 'peak.mapper.utils.Unbound'><class 'type'>)>
+11<PE:11, ['inst', 'data0', 'data1', 'bit0', 'bit1', 'bit2', 'clk_en', 'config_addr', 'config_data', 'config_en']>(0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+12<Select:res_p>(11)
+13<Output>(12)
+
+Searching for coreir.uge -> PE
+  Found!
+1.7900019884109497e-06
+Searching for other.const_mul0 -> memory.rom2
+  Not Found :(
+1.7113052308559418e-06
+Searching for other.const_mul1 -> memory.rom2
+  Not Found :(
+1.4510005712509155e-06
+Searching for commonlib.umax -> memory.rom2
+  Not Found :(
+1.2097880244255066e-06
+Searching for commonlib.umin -> memory.rom2
+  Not Found :(
+1.2242235243320465e-06
+Searching for commonlib.smin -> memory.rom2
+  Not Found :(
+1.298263669013977e-06
+Searching for commonlib.smax -> memory.rom2
+  Not Found :(
+1.3308599591255188e-06
+Searching for coreir.const -> memory.rom2
+  Not Found :(
+1.1259689927101135e-06
+Searching for corebit.and_ -> memory.rom2
+  Not Found :(
+1.1771917343139648e-06
+Searching for coreir.add -> memory.rom2
+  Not Found :(
+1.3727694749832153e-06
+Searching for coreir.sub -> memory.rom2
+  Not Found :(
+1.2242235243320465e-06
+Searching for coreir.mux -> memory.rom2
+  Not Found :(
+1.232139766216278e-06
+Searching for coreir.ashr -> memory.rom2
+  Not Found :(
+1.1897645890712738e-06
+Searching for coreir.and_ -> memory.rom2
+  Not Found :(
+1.1669471859931946e-06
+Searching for coreir.eq -> memory.rom2
+  Not Found :(
+1.5082769095897675e-06
+Searching for coreir.mul -> memory.rom2
+  Not Found :(
+1.3760291039943695e-06
+Searching for coreir.sle -> memory.rom2
+  Not Found :(
+1.2042000889778137e-06
+Searching for corebit.const -> memory.rom2
+  Not Found :(
+1.3201497495174408e-06
+Searching for coreir.ult -> memory.rom2
+  Not Found :(
+1.2051314115524292e-06
+Searching for coreir.lshr -> memory.rom2
+  Not Found :(
+1.1059455573558807e-06
+Searching for coreir.slt -> memory.rom2
+  Not Found :(
+1.3080425560474396e-06
+Searching for coreir.sge -> memory.rom2
+  Not Found :(
+1.3140961527824402e-06
+Searching for coreir.ule -> memory.rom2
+  Not Found :(
+1.126900315284729e-06
+Searching for coreir.uge -> memory.rom2
+  Not Found :(
+RR other.const_mul0 used 0 times
+RR other.const_mul1 used 0 times
+RR commonlib.umax used 0 times
+RR commonlib.umin used 0 times
+RR commonlib.smin used 0 times
+RR commonlib.smax used 0 times
+RR coreir.const used 1 times
+RR corebit.and_ used 0 times
+RR coreir.add used 0 times
+RR coreir.sub used 0 times
+RR coreir.mux used 0 times
+RR coreir.ashr used 0 times
+RR coreir.and_ used 0 times
+RR coreir.eq used 0 times
+RR coreir.mul used 0 times
+RR coreir.sle used 0 times
+RR corebit.const used 0 times
+RR coreir.ult used 0 times
+RR coreir.lshr used 1 times
+RR coreir.slt used 0 times
+RR coreir.sge used 0 times
+RR coreir.ule used 0 times
+RR coreir.uge used 0 times
+2
+RR other.const_mul0 used 0 times
+RR other.const_mul1 used 0 times
+RR commonlib.umax used 0 times
+RR commonlib.umin used 0 times
+RR commonlib.smin used 0 times
+RR commonlib.smax used 0 times
+RR coreir.const used 1 times
+RR corebit.and_ used 0 times
+RR coreir.add used 0 times
+RR coreir.sub used 0 times
+RR coreir.mux used 0 times
+RR coreir.ashr used 0 times
+RR coreir.and_ used 0 times
+RR coreir.eq used 0 times
+RR coreir.mul used 0 times
+RR coreir.sle used 0 times
+RR corebit.const used 0 times
+RR coreir.ult used 0 times
+RR coreir.lshr used 0 times
+RR coreir.slt used 0 times
+RR coreir.sge used 0 times
+RR coreir.ule used 0 times
+RR coreir.uge used 0 times
+1
+RR other.const_mul0 used 0 times
+RR other.const_mul1 used 0 times
+RR commonlib.umax used 0 times
+RR commonlib.umin used 0 times
+RR commonlib.smin used 0 times
+RR commonlib.smax used 0 times
+RR coreir.const used 9 times
+RR corebit.and_ used 0 times
+RR coreir.add used 9 times
+RR coreir.sub used 0 times
+RR coreir.mux used 0 times
+RR coreir.ashr used 0 times
+RR coreir.and_ used 0 times
+RR coreir.eq used 0 times
+RR coreir.mul used 9 times
+RR coreir.sle used 0 times
+RR corebit.const used 0 times
+RR coreir.ult used 0 times
+RR coreir.lshr used 0 times
+RR coreir.slt used 0 times
+RR coreir.sge used 0 times
+RR coreir.ule used 0 times
+RR coreir.uge used 0 times
+27
+RR other.const_mul0 used 0 times
+RR other.const_mul1 used 0 times
+RR commonlib.umax used 0 times
+RR commonlib.umin used 0 times
+RR commonlib.smin used 0 times
+RR commonlib.smax used 0 times
+RR coreir.const used 0 times
+RR corebit.and_ used 0 times
+RR coreir.add used 0 times
+RR coreir.sub used 0 times
+RR coreir.mux used 0 times
+RR coreir.ashr used 0 times
+RR coreir.and_ used 0 times
+RR coreir.eq used 0 times
+RR coreir.mul used 0 times
+RR coreir.sle used 0 times
+RR corebit.const used 0 times
+RR coreir.ult used 0 times
+RR coreir.lshr used 0 times
+RR coreir.slt used 0 times
+RR coreir.sge used 0 times
+RR coreir.ule used 0 times
+RR coreir.uge used 0 times
+0
+RR other.const_mul0 used 0 times
+RR other.const_mul1 used 0 times
+RR commonlib.umax used 0 times
+RR commonlib.umin used 0 times
+RR commonlib.smin used 0 times
+RR commonlib.smax used 0 times
+RR coreir.const used 0 times
+RR corebit.and_ used 0 times
+RR coreir.add used 0 times
+RR coreir.sub used 0 times
+RR coreir.mux used 0 times
+RR coreir.ashr used 0 times
+RR coreir.and_ used 0 times
+RR coreir.eq used 0 times
+RR coreir.mul used 0 times
+RR coreir.sle used 0 times
+RR corebit.const used 0 times
+RR coreir.ult used 0 times
+RR coreir.lshr used 0 times
+RR coreir.slt used 0 times
+RR coreir.sge used 0 times
+RR coreir.ule used 0 times
+RR coreir.uge used 0 times
+0
+Num PEs used: 30
+.
+
+============================== 1 passed in 45.58s ==============================
