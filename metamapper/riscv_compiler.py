@@ -147,7 +147,8 @@ class Compiler:
 
         #Determine rd indices
         node_to_rd = {}
-        free = set(range(1, 32))
+        #free = set(range(1, 32))
+        free = set(range(1, 100))
         to_free = {}
         for node_idx, node in enumerate(node_list):
             if node_idx in to_free:
@@ -185,6 +186,7 @@ class Compiler:
         #assume the last instruction returns the final value
         output_idx = node_to_rd[node_list[-1]]
         print("out", output_idx)
+        print("len", len(inst_list))
         return Binary(inst_list, input_info, output_idx, orig_dag=original_dag, rv=self.rv, rv_hack=self.rv_hack)
 
 def aadt_to_adt(val):

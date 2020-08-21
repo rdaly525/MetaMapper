@@ -84,6 +84,23 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
             stack.add(locals[i.immediate_arguments])
         elif opcode == C.i32_const:
             stack.add(Constant(value=BV32(i.immediate_arguments), type=BV32))
+        elif opcode == C.i32_popcnt:
+            in0 = stack.pop()
+            v = Expr(in0)
+            s0, s1, s2, s3, s4 = Expr(1), Expr(2), Expr(4), Expr(8), Expr(16)
+            b0 = Expr(0x5555_5555)
+            b1 = Expr(0x3333_3333)
+            b2 = Expr(0x0F0F0F0F)
+            b3 = Expr(0x00FF00FF)
+            b4 = Expr(0x0000FFFF)
+
+            c = v - ((v>> s0) & b0)
+            c = ((c>>s1) & b1) + (c&b1)
+            c = ((c>>s2) + c) & b2
+            c = ((c>>s3) + c) & b3
+            c = ((c>>s4) + c) & b4
+            stack.add(c.node)
+
         elif opcode in UnaryOps:
             node_name = UnaryOps[opcode]
             node = WasmNodes.dag_nodes[node_name]
@@ -114,6 +131,26 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
     assert stack.len() == 0
     output = Output(ret, type=output_t)
     return Dag(sources=[input], sinks=[output])
+
+class Expr:
+    def __init__(self, node):
+        BV32 = fam().PyFamily().BitVector[32]
+        if isinstance(node, int):
+            node = Constant(type=BV32, value=BV32(node))
+        self.node = node
+
+    def __sub__(self, rhs):
+        return Expr(WasmNodes.dag_nodes["i32.sub"](self.node, rhs.node).select("out"))
+
+    def __add__(self, rhs):
+        return Expr(WasmNodes.dag_nodes["i32.add"](self.node, rhs.node).select("out"))
+
+    def __and__(self, rhs):
+        return Expr(WasmNodes.dag_nodes["i32.and_"](self.node, rhs.node).select("out"))
+
+    def __rshift__(self, rhs):
+        return Expr(WasmNodes.dag_nodes["i32.shr_u"](self.node, rhs.node).select("out"))
+
 
 
 UnaryOps = {

@@ -69,16 +69,13 @@ def test_single():
 from metamapper.common_passes import print_dag, ExtractNames
 #@pytest.mark.parametrize("i", range(1, 26))
 #@pytest.mark.parametrize("i", range(1, 26))
-@pytest.mark.parametrize("i", range(20, 21))
+@pytest.mark.parametrize("i", range(18, 19))
 #@pytest.mark.parametrize("i", (18, 20, 22, 23, 25))
 #@pytest.mark.parametrize("i", range(1,25))
 def test_load(i):
     CoreIRContext(reset=True)
     set_fam(riscv.family)
     WasmNodes = gen_WasmNodes()
-    if i == 18:
-        pytest.skip()
-
 
     p = f"p{i}"
     print("DOING", p)
@@ -110,6 +107,9 @@ def test_load(i):
     binary = compiler.compile(app, prove=True)
 
     ce = binary.prove()
+    print(4, binary.run(in0=4))
+    print(3, binary.run(in0=3))
+
     end = timer()
     if ce is not None:
         print(ce)

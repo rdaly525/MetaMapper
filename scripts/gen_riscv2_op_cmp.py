@@ -30,7 +30,7 @@ def gen():
                         #n = n[4:]
                         found = found[0]
                         tdata.setdefault(n, np.zeros(num_files))
-                        tdata[n][i] = float(t)/60 #in minutes
+                        tdata[n][i] = float(t) #in minutes
                         fdata.setdefault(n, [])
                         fdata[n].append(found=="f")
 
@@ -40,13 +40,15 @@ def gen():
             #print(n1, f, t)
 
         x_pos = list(range(len(fdata)))
-        mean_time = [np.mean(val) for val in tdata.values()]
+        mean_time = [np.median(val) for val in tdata.values()]
         tot_s = sum(mean_time)
         print(f"{r}:{name}, {tot_s//60}min {tot_s%60}sec")
         min_time = [np.mean(val)-np.min(val) for val in tdata.values()]
         max_time = [np.max(val)-np.min(val) for val in tdata.values()]
         col = ["blue" if len(set(f)) != 1 else ("green" if f[0] else "red") for f in fdata.values()]
         names = list(tdata.keys())
+        print(list(zip(names, mean_time)))
+        assert 0
         ax = axs
         legend_handles = [
             mp.Patch(color="green", label="SAT"),
