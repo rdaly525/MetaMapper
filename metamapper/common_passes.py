@@ -189,7 +189,7 @@ class BindsToCombines(Transformer):
         for path, child in zip(node.paths, node.children()):
             assert len(path) > 0
             field = path[0]
-            assert field in node.type.field_dict
+            # assert field in node.type.field_dict
             field_info.setdefault(field, {"paths":[], "children":[]})
             field_info[field]["paths"].append(path[1:])
             field_info[field]["children"].append(child)

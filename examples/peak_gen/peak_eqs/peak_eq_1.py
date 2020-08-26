@@ -10,8 +10,8 @@ def mapping_function_1_fc(family: AbstractFamily):
     Bit = family.Bit
     @family.assemble(locals(), globals())
     class mapping_function_1(Peak):
-        def __call__(self, in1 : Data, in4 : Data, in5 : Data, in0 : Data, in2 : Data, in3 : Data) -> Data:
+        def __call__(self, const0 : Const(Data)) -> Data:
             
-            return Data(in5 + Data(in4 + Data(in3 + Data(in2 + Data(in0 + in1)))))
+            return const0
       
     return mapping_function_1

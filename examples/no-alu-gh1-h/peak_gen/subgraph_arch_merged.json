@@ -1,0 +1,129 @@
+{
+    "bit_outputs": [
+        [
+            "10",
+            "14",
+            "16"
+        ]
+    ],
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "input_width": 16,
+    "modules": [
+        {
+            "id": "0",
+            "type": "const"
+        },
+        {
+            "id": "1",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "0",
+                "in2"
+            ],
+            "type": "mul"
+        },
+        {
+            "id": "5",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "add"
+        },
+        {
+            "id": "6",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "in0",
+                "5"
+            ],
+            "type": "add"
+        },
+        {
+            "id": "9",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "gte"
+        },
+        {
+            "id": "10",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "lte"
+        },
+        {
+            "id": "11",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "in2": [
+                "bit_in0"
+            ],
+            "type": "mux"
+        },
+        {
+            "id": "14",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "sub"
+        },
+        {
+            "id": "15",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "shr"
+        },
+        {
+            "id": "16",
+            "in0": [
+                "bit_in0"
+            ],
+            "in1": [
+                "bit_in1"
+            ],
+            "in2": [
+                "bit_in2"
+            ],
+            "type": "lut"
+        }
+    ],
+    "output_width": 16,
+    "outputs": [
+        [
+            "14",
+            "6",
+            "0",
+            "10",
+            "1",
+            "15",
+            "9",
+            "11"
+        ]
+    ]
+}

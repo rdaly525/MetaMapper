@@ -1,0 +1,139 @@
+{
+    "bit_outputs": [
+        [
+            "14",
+            "9",
+            "19"
+        ]
+    ],
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "input_width": 16,
+    "modules": [
+        {
+            "id": "0",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "add"
+        },
+        {
+            "id": "1",
+            "in0": [
+                "in2"
+            ],
+            "in1": [
+                "0",
+                "in0"
+            ],
+            "type": "add"
+        },
+        {
+            "id": "2",
+            "in0": [
+                "in3"
+            ],
+            "in1": [
+                "1"
+            ],
+            "type": "add"
+        },
+        {
+            "id": "8",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "gte"
+        },
+        {
+            "id": "9",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "lte"
+        },
+        {
+            "id": "10",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "shr"
+        },
+        {
+            "id": "12",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "in2": [
+                "bit_in0"
+            ],
+            "type": "mux"
+        },
+        {
+            "id": "14",
+            "in0": [
+                "bit_in0"
+            ],
+            "in1": [
+                "bit_in1"
+            ],
+            "in2": [
+                "bit_in2"
+            ],
+            "type": "lut"
+        },
+        {
+            "id": "17",
+            "type": "const"
+        },
+        {
+            "id": "19",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "sub"
+        },
+        {
+            "id": "20",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "mul"
+        }
+    ],
+    "output_width": 16,
+    "outputs": [
+        [
+            "9",
+            "10",
+            "1",
+            "19",
+            "2",
+            "17",
+            "8",
+            "12",
+            "20"
+        ]
+    ]
+}

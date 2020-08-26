@@ -1,0 +1,144 @@
+{
+    "bit_outputs": [
+        [
+            "18",
+            "5",
+            "6",
+            "11"
+        ]
+    ],
+    "enable_input_regs": false,
+    "enable_output_regs": false,
+    "input_width": 16,
+    "modules": [
+        {
+            "id": "0",
+            "in0": [
+                "in0"
+            ],
+            "in1": [
+                "in1"
+            ],
+            "type": "absd"
+        },
+        {
+            "id": "4",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "gte"
+        },
+        {
+            "id": "5",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "lte"
+        },
+        {
+            "id": "6",
+            "in0": [
+                "bit_in0"
+            ],
+            "in1": [
+                "bit_in1"
+            ],
+            "in2": [
+                "bit_in2"
+            ],
+            "type": "lut"
+        },
+        {
+            "id": "11",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "sub"
+        },
+        {
+            "id": "12",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "bit_alu"
+        },
+        {
+            "id": "13",
+            "type": "const"
+        },
+        {
+            "id": "15",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "shr"
+        },
+        {
+            "id": "16",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "in2": [
+                "bit_in0"
+            ],
+            "type": "mux"
+        },
+        {
+            "id": "17",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "add"
+        },
+        {
+            "id": "18",
+            "type": "bitconst"
+        },
+        {
+            "id": "20",
+            "in0": [
+                "in1"
+            ],
+            "in1": [
+                "in0"
+            ],
+            "type": "mul"
+        }
+    ],
+    "output_width": 16,
+    "outputs": [
+        [
+            "16",
+            "15",
+            "4",
+            "12",
+            "0",
+            "5",
+            "13",
+            "11",
+            "17",
+            "20"
+        ]
+    ]
+}
