@@ -109,7 +109,7 @@ def gen_rrules():
 
 def test_camera():
     print("STARTING TEST")
-    app = "unet_conv_3_3"
+    app = "resnet"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
