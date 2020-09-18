@@ -7,6 +7,7 @@ import coreir
 
 from hwtypes.modifiers import is_modified
 from hwtypes.adt import Product, Tuple, Sum, TaggedUnion
+from . import CoreIRContext
 
 
 #Passes will be run on this
@@ -94,11 +95,13 @@ class Dag(AbstractDag):
 class Nodes:
     _cache = {}
     def __new__(cls, name):
-        if not name in cls._cache:
+        c = CoreIRContext()
+        cls._cache.setdefault(c, {})
+        if not name in cls._cache[c]:
             self = super().__new__(cls)
             self.__init__(name)
-            cls._cache[name] = self
-        return cls._cache[name]
+            cls._cache[c][name] = self
+        return cls._cache[c][name]
 
     def __init__(self, name):
         self.name = name

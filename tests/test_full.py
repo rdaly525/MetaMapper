@@ -29,6 +29,7 @@ lassen_constraints = {
 #@pytest.mark.parametrize("app", ["conv_3_3"])#, "add2", "add1_const", "add4", "add3_const"])
 @pytest.mark.parametrize("app", ["add2", "add1_const", "add4", "add3_const"])
 def test_app(arch, app):
+    print("STARTING TEST")
     c = CoreIRContext(reset=True)
     file_name = f"examples/coreir/{app}.json"
     cutil.load_libs(["commonlib"])

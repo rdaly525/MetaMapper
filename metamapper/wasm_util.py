@@ -106,15 +106,17 @@ def ilist_to_dag(num_args, ilist : tp.List[Instruction]):
             pass
         elif opcode == C.tee_local:
             locals[i.immediate_arguments] = stack.top()
+            stack.add(node(in0, in1).select(0))
+        elif opcode == C.end:
+            #Control flow would pop off the label
+            pass
         else:
             raise NotImplementedError(C.op_name(opcode))
-
 
     ret = stack.pop()
     assert stack.len() == 0
     output = Output(ret, type=output_t)
     return Dag(sources=[input], sinks=[output])
-
 
 UnaryOps = {
     C.i32_clz: "i32.clz",
