@@ -255,6 +255,9 @@ class Combine(DagNode):
 
     @property
     def attributes(self):
-        return ("type", "iname")
+        attrs = ("type", "iname")
+        if hasattr(self, "tu_field"):
+            attrs = (*attrs, "tu_field")
+        return attrs
 
     nodes = Common

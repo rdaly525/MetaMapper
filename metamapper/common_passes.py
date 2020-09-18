@@ -8,6 +8,102 @@ from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
 from .node import DagNode
 
+
+class Riscv2_Riscv(Transformer):
+    def __init__(self, nodes, rv, Inst2):
+        self.nodes = nodes
+        self.rv = rv
+        self.Inst2 = Inst2
+
+    def visit_Riscv2(self, node):
+        Transformer.generic_visit(self, node)
+        assert node.num_children == 3
+        inst2, rs1, rs2, = node.children()
+        assert isinstance(inst2, Constant)
+        riscv_node = self.nodes.dag_nodes["R32I_mappable"]
+        BV= fam().PyFamily().BitVector
+        Inst = self.rv.isa.ISA_fc.Py.Inst
+        i0 = Constant(type=Inst, value=inst2.value[:30])
+        i1 = Constant(type=Inst, value=inst2.value[30:])
+        n0 = riscv_node(i0, Constant(type=BV[32],value=Unbound), rs1, rs2, Constant(type=BV[32],value=Unbound))
+        n1 = riscv_node(i1, Constant(type=BV[32],value=Unbound), n0.select("rd"), n0.select("rd"), Constant(type=BV[32],value=Unbound))
+        return n1
+
+class TypeLegalize(Transformer):
+    def __init__(self, WasmNodes:Nodes):
+        self.WasmNodes = WasmNodes
+        self.BV = fam().PyFamily().BitVector
+
+    def const0(self, value):
+        if value == self.BV[32](0):
+            const0 = self.WasmNodes.dag_nodes["const0"]
+            return const0(Constant(value=Unbound, type=self.BV[32])).select("out")
+
+    def const1(self, value):
+        if value == self.BV[32](1):
+            const1 = self.WasmNodes.dag_nodes["const1"]
+            return const1(Constant(value=Unbound, type=self.BV[32])).select("out")
+
+    def constn1(self, value):
+        if value == self.BV[32](-1):
+            constn1 = self.WasmNodes.dag_nodes["constn1"]
+            return constn1(Constant(value=Unbound,type=self.BV[32])).select("out")
+
+    def const12(self, value):
+        if value[:12].sext(20) == value:
+            const12 = self.WasmNodes.dag_nodes["const12"]
+            c = Constant(value=value[:12], type=self.BV[12])
+            return const12(c).select("out")
+
+    def const20(self, value):
+        if value[:20].zext(12) == value:
+            const20 = self.WasmNodes.dag_nodes["const20"]
+            c = Constant(value=value[:20], type=self.BV[20])
+            return const20(c).select("out")
+        
+
+    def constOther(self, value):
+        lsb = self.const20(value[:16].zext(16))
+        msb = self.const20(value[16:].zext(16))
+        assert lsb is not None
+        assert msb is not None
+        shl = self.WasmNodes.dag_nodes["i32.shl"]
+        or_ = self.WasmNodes.dag_nodes["i32.or_"]
+        msb_shift = shl(msb, self.const12(value=self.BV[32](16))).select("out")
+        return or_(lsb, msb_shift).select("out")
+
+    def visit_Constant(self, node):
+        value = node.value
+        assert isinstance(value, self.BV[32])
+        for f in (
+            self.const0,
+            self.const1,
+            self.constn1,
+            self.const12,
+            self.const20,
+            self.constOther
+        ):
+            new = f(value)
+            if new is not None:
+                return new
+        raise NotImplementedError()
+
+
+class ExtractNames(Visitor):
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+    def extract(self, dag: Dag):
+        self.ops = {}
+        self.run(dag)
+        return self.ops
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        if node.nodes == self.nodes:
+            self.ops.setdefault(node.node_name, 0)
+            self.ops[node.node_name] +=1
+
 class VerifyNodes(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
@@ -27,8 +123,17 @@ class VerifyNodes(Visitor):
 
 from peak.mapper.utils import rebind_type, solved_to_bv
 import pysmt.shortcuts as smt
-from pysmt.logics import BV
+from pysmt.logics import QF_BV
 
+
+def prove_formula(formula, solver, i1):
+    with smt.Solver(solver, logic=QF_BV) as solver:
+        solver.add_assertion(formula.value)
+        verified = not solver.solve()
+        if verified:
+            return None
+        else:
+            return solved_to_bv(i1._value_, solver)
 
 #Returns None if equal, counter example for one input otherwise
 def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
@@ -39,15 +144,8 @@ def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
     i0, o0 = SMT().get(dag0)
     i1, o1 = SMT().get(dag1)
 
-    formula = o0.substitute((i0, i1)) != o1
-
-    with smt.Solver(solver_name, logic=BV) as solver:
-        solver.add_assertion(formula.value)
-        verified = not solver.solve()
-        if verified:
-            return None
-        else:
-            return solved_to_bv(i1, solver)
+    formula = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
+    return prove_formula(formula, solver_name, i1)
 
 def _get_aadt(T):
     T = rebind_type(T, fam().SMTFamily())
@@ -62,7 +160,7 @@ class SMT(Visitor):
         if len(dag.sources) !=1:
             raise NotImplementedError
         self.run(dag)
-        return self.values[dag.input]._value_, self.values[dag.output]._value_
+        return self.values[dag.input], self.values[dag.output]
 
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
@@ -85,7 +183,8 @@ class SMT(Visitor):
 
     def visit_Select(self, node: Select):
         Visitor.generic_visit(self, node)
-        self.values[node] = self.values[node.children()[0]][node.field]
+        val =self.values[node.children()[0]]
+        self.values[node] = val[node.field]
 
     def visit_Combine(self, node: Combine):
         Visitor.generic_visit(self, node)
@@ -146,7 +245,7 @@ class Printer(Visitor):
         self.res += f"{node._id_}<Input>\n"
 
     def visit_Constant(self, node):
-        self.res += f"{node._id_}<Constant>({node.value}{type(node.value)})>\n"
+        self.res += f"{node._id_}<Constant>({node.value}{type(node.value)}, {node.type})>\n"
 
     def visit_Output(self, node):
         Visitor.generic_visit(self, node)
@@ -313,11 +412,13 @@ class Uses(Visitor):
         assert node.num_children == 5
         inst, _, rs1, rs2, _ = node.children()
         assert isinstance(inst, Constant)
+        self.uses.setdefault(node, {})
         for rs, idx in ((rs1,'rs1'), (rs2,'rs2')):
             if isinstance(rs, Constant):
-                assert rs.value is Unbound
+                #if rs.value is not Unbound:
+                #    raise ValueError(f"expected Unbound, not {rs.value}")
                 continue
-            self.uses.setdefault(node, {})[idx] = self.uses[rs]
+            self.uses[node][idx] = self.uses[rs]
         self.insts[node] = inst.assemble(fam().PyFamily())
 
     def visit_Output(self, node):
@@ -333,6 +434,8 @@ class Uses(Visitor):
             self.uses[node] = node.field
             self.uses[node.field] = {}
         else:
+            if node.field != "rd":
+                raise ValueError(f"{node.field} is not rd")
             assert node.field == "rd"
             self.uses[node] = child
 

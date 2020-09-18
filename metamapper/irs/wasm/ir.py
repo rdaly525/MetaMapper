@@ -1,12 +1,18 @@
+from ast_tools.passes import loop_unroll, apply_ast_passes
+from ast_tools.macros import unroll
+
 from peak.ir import IR
 from peak import Peak, name_outputs
-from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
+from peak import Peak, name_outputs, family_closure, Const
 import math
+from ...family import fam
 
 def gen_WASM(include64=False):
     WASM = IR()
 
+    BV = fam().PyFamily().BitVector
+    BitVector = BV
     class Output32(Product):
         out=BitVector[32]
 
@@ -25,12 +31,6 @@ def gen_WASM(include64=False):
         Data = BitVector[width]
         Data32 = BitVector[32]
 
-        #TODO is this a problem declaring a constant outside the scope?
-        def shift_amount(x : Data):
-            #Need to zero out all but the bottom bits
-            mask = Data(width)-Data(1)
-            return x & mask
-
         assert width in (32,64)
 
         class UnaryInput(Product):
@@ -43,7 +43,162 @@ def gen_WASM(include64=False):
             in0=Data
             in1=Data
 
-        #Integer Arithmetic Instructions
+        class BinaryInput(Product):
+            in0 = Data
+            in1 = Data
+
+        class TernaryInput(Product):
+            in0=Data
+            in1=Data
+            pred=Data
+
+        @family_closure(fam())
+        def const0_fc(family):
+            Data = BV[width]
+            family.assemble(locals(), globals())
+            class const0(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, in0:Data) -> Data:
+                    return Data(0)
+            return const0
+        WASM.add_instruction("const0", const0_fc)
+
+        @family_closure(fam())
+        def const1_fc(family):
+            Data = BV[width]
+
+            family.assemble(locals(), globals())
+            class const1(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, in0:Data) -> Data:
+                    return Data(1)
+            return const1
+        WASM.add_instruction("const1", const1_fc)
+
+        @family_closure(fam())
+        def constn1_fc(family):
+            Data = BV[width]
+
+            family.assemble(locals(), globals())
+            class constn1(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, in0:Data) -> Data:
+                    return Data(-1)
+            return constn1
+        WASM.add_instruction("constn1", constn1_fc)
+
+        @family_closure(fam())
+        def const12_fc(family):
+            Data12 = BV[12]
+            Data = BV[width]
+            family.assemble(locals(), globals())
+
+            class const12(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, imm: Const(Data12)) -> Data:
+                    return imm.sext(20)
+
+            return const12
+
+        WASM.add_instruction("const12", const12_fc)
+
+        @family_closure(fam())
+        def const20_fc(family):
+            Data20 = BV[20]
+            Data = BV[width]
+            family.assemble(locals(), globals())
+
+            class const20(Peak):
+                @name_outputs(out=Data)
+                def __call__(self, imm: Const(Data20)) -> Data:
+                    return imm.zext(12)
+
+            return const20
+
+        WASM.add_instruction("const20", const20_fc)
+
+        #@family_closure(fam())
+        #def const20_12_s_fc(family):
+        #    Data = BV[width]
+        #    family.assemble(locals(), globals())
+        #    B1 = family.BitVector[1]
+        #    class const20_12_s(Peak):
+        #        @name_outputs(out=Data)
+        #        def __call__(self, imm20: Const(BV[20]), imm12: Const(BV[12])) -> Data:
+        #          #return (imm12[:11].concat(B1(1))).concat(imm20)
+        #          return imm12.concat(imm20)
+
+        #    return const20_12_s
+
+        #WASM.add_instruction("const20_12_s", const20_12_s_fc)
+
+        #@family_closure(fam())
+        #def const20_12_u_fc(family):
+        #    Data = BV[width]
+        #    family.assemble(locals(), globals())
+        #    B1 = family.BitVector[1]
+        #    class const20_12_u(Peak):
+        #        @name_outputs(out=Data)
+        #        def __call__(self, imm20: Const(BV[20]), imm12: Const(BV[12])) -> Data:
+        #          return imm12[:11].concat(B1(0)).concat(imm20)
+        #    return const20_12_u
+        #WASM.add_instruction("const20_12_u", const20_12_u_fc)
+
+        @apply_ast_passes([loop_unroll()])
+        def clz(f, in0 : Data):
+            cnt = f.BitVector[width](0)
+            mask = f.BitVector[width](1)
+            for i in unroll(reversed(range(Data.size))):
+                # shift the bit we are checking down and mask
+                bit = (in0 >> i) & mask
+                # if the bit is set the mask to 0
+                mask = mask ^ bit
+                cnt = cnt + mask
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz, family=fam(), cls_name='clz')
+
+        @apply_ast_passes([loop_unroll()])
+        def ctz(f, in0 : Data):
+            cnt = f.BitVector[width](0)
+            mask = f.BitVector[width](1)
+            for i in unroll(range(Data.size)):
+                # shift the bit we are checking down and mask
+                bit = (in0 >> i) & mask
+                # if the bit is set the mask to 0
+                mask = mask ^ bit
+                cnt = cnt + mask
+            return cnt
+        WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz, family=fam(), cls_name='ctz')
+
+        @apply_ast_passes([loop_unroll()])
+        def popcnt(f, in0: Data):
+            cnt = f.BitVector[width](0)
+            for i in unroll(range(Data.size)):
+                cnt = cnt + ((in0 >> i) & 1)
+            return cnt
+
+        WASM.add_peak_instruction(f"{prefix}.popcnt", UnaryInput, Output, popcnt, family=fam(), cls_name='popcnt')
+
+        def select(f, in0 : Data, in1: Data, pred: Data):
+            return (pred!=0).ite(in0, in1)
+        WASM.add_peak_instruction(f"{prefix}.select", TernaryInput, Output, select, family=fam(), cls_name='select')
+
+        #Comparison
+        for name, fun in (
+            ("lt_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)<f.Signed[width](y))),
+            ("le_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)<=f.Signed[width](y))),
+            ("gt_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)>f.Signed[width](y))),
+            ("ge_s", lambda f, x, y: f.BitVector[width](f.Signed[width](x)<=f.Signed[width](y))),
+            ("lt_u", lambda f, x, y: f.BitVector[width](x<y)),
+            ("le_u", lambda f, x, y: f.BitVector[width](x<=y)),
+            ("gt_u", lambda f, x, y: f.BitVector[width](x>y)),
+            ("ge_u", lambda f, x, y: f.BitVector[width](x>=y)),
+            ("eq", lambda f, x, y: f.BitVector[width](x==y)),
+            ("ne", lambda f, x, y: f.BitVector[width](x!=y)),
+        ):
+            WASM.add_peak_instruction(f"{prefix}.{name}", BinaryInput, Output, fun, family=fam(), cls_name=name)
+
+                #Integer Arithmetic Instructions
         for name, fun in (
             ("add", lambda f, x, y: x+y),
             ("sub", lambda f, x, y: x-y),
@@ -55,11 +210,16 @@ def gen_WASM(include64=False):
             ("and_", lambda f, x, y: x & y),
             ("or_", lambda f, x, y: x | y),
             ("xor", lambda f, x, y: x ^ y),
-            ("shl", lambda f, x, y: x << shift_amount(y)),
-            ("shr_s", lambda f, x, y: x.bvashr(shift_amount(y))),
-            ("shr_l", lambda f, x, y: x.bvlshr(shift_amount(y))),
+            ("shl", lambda f, x, y: x << y),
+            ("shr_s", lambda f, x, y: x.bvashr(y)),
+            ("shr_u", lambda f, x, y: x.bvlshr(y)),
         ):
-            WASM.add_peak_instruction(f"{prefix}.{name}",BinaryInput,Output,fun, cls_name=name)
+            WASM.add_peak_instruction(f"{prefix}.{name}",BinaryInput,Output,fun, family=fam(), cls_name=name)
+
+
+
+
+
 
         ##Need to test these
         #def rotl(in0 : Data, in1 : Data):
@@ -76,20 +236,7 @@ def gen_WASM(include64=False):
         #    return msbs | lsbs
         #WASM.add_peak_instruction(f"{prefix}.rotr",BinaryInput,Output,rotr)
 
-        #def clz(in0 : Data):
-        #    #TODO
-        #    return Data(0)
-        #WASM.add_peak_instruction(f"{prefix}.clz",UnaryInput,Output,clz)
 
-        #def ctz(in0 : Data):
-        #    #TODO
-        #    return Data(0)
-        #WASM.add_peak_instruction(f"{prefix}.ctz",UnaryInput,Output,ctz)
-
-        #def popcnt(in0 : Data):
-        #    #TODO
-        #    return Data(0)
-        #WASM.add_peak_instruction(f"{prefix}.popcnt",UnaryInput,Output,popcnt)
 
         #WASM.add_peak_instruction(f"{prefix}.eqz",UnaryInput,Output32,lambda x : x==Data(0))
 

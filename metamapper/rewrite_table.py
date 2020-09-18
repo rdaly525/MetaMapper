@@ -11,6 +11,8 @@ from .family import fam
 #debug
 from peak.mapper.utils import pretty_print_binding
 
+#Rewrite Rule for i32.const
+
 
 #TODO possibly make from peak_rule directly 
 class RewriteRule:
@@ -55,7 +57,8 @@ class RewriteTable:
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-
+        #print("from_dag")
+        #print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -75,7 +78,8 @@ class RewriteTable:
         #input -> ibinding node
         ibind_children = []
         ibind_paths = []
-
+        pretty_print_binding(rule.ibinding)
+        pretty_print_binding(rule.obinding)
         for from_b, to_b in rule.ibinding:
             assert isinstance(to_b, tuple)
             if isinstance(from_b, tuple):
@@ -115,6 +119,7 @@ class RewriteTable:
         to_output = Output(*output_children, iname="self", type=from_bv.output_t)
         to_dag = Dag([to_input], [to_output])
 
+
         #print("Before combine")
         #print_dag(to_dag)
         BindsToCombines().run(to_dag)
@@ -126,6 +131,8 @@ class RewriteTable:
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
         #print_dag(to_dag)
+        #print("to_dag")
+        #print_dag(to_dag)
 
         #Verify that the io matches
         #TODO verify outputs match
@@ -136,11 +143,14 @@ class RewriteTable:
             checker = lambda match: True,
             name = name
         )
+        rr._rule = rule
         self.add_rule(rr)
         return rr
 
     #Discovers and returns a rule if possible
-    def discover(self, from_name, to_name, path_constraints={}, rr_name=None) -> tp.Union[None, RewriteRule]:
+    def discover(self, from_name, to_name, path_constraints={}, rr_name=None, solver="z3") -> tp.Union[None, RewriteRule]:
+        if rr_name is None:
+            rr_name = from_name
         if isinstance(from_name, str):
             from_fc = self.from_.peak_nodes[from_name]
         else:
@@ -149,9 +159,11 @@ class RewriteTable:
         to_fc = self.to.peak_nodes[to_name]
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints, family=fam())
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
-        peak_rr = ir_mapper.solve('z3', external_loop=True)
+        peak_rr = ir_mapper.solve(solver, external_loop=True)
+        print("rr", peak_rr)
         if peak_rr is None:
             return None
+        print(peak_rr, rr_name)
         rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 

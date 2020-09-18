@@ -4,7 +4,7 @@ from examples.PEs.alu_add3 import gen_ALU as gen_Add3
 from peak import family_closure, Peak, Const, family
 from metamapper.common_passes import print_dag, SimplifyCombines, RemoveSelects
 from metamapper.irs.coreir import gen_CoreIRNodes
-from metamapper.irs.wasm import gen_WasmNodes
+#from metamapper.irs.wasm import gen_WasmNodes
 
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
@@ -249,6 +249,7 @@ def test_eager_covering():
     #m.compile("tests/build/add4_mapped", mapped_m, output="coreir")
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("op", ["i32.add"]) #, "coreir.const", "corebit.or_", "corebit.const"])
 def test_discover_wasm(op):
     CoreIRContext(reset=True)

@@ -147,23 +147,23 @@ def gen_peak_CoreIR(width):
         #("srem", lambda x, y: x.bvsrem(y)),
         #("smod", lambda x, y: x.bvsmod(y)),
     ):
-        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, name)
+        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, cls_name=name)
 
     for name, fun in (
         ("and_", lambda f, x, y: x&y),
         ("or_", lambda f, x, y: x|y),
         ("xor", lambda f, x, y: x^y),
     ):
-        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, name)
-        CoreIR.add_peak_instruction(f"corebit.{name}", BinaryInputBit, OutputBit, fun, name)
+        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBV, fun, cls_name=name)
+        CoreIR.add_peak_instruction(f"corebit.{name}", BinaryInputBit, OutputBit, fun, cls_name=name)
 
     for name, fun in (
         ("wire", lambda f, x: x),
         ("not_", lambda f, x: ~x),
         ("neg", lambda f, x: -x)
     ):
-        CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBV, fun, name)
-        CoreIR.add_peak_instruction(f"corebit.{name}", UnaryInputBit, OutputBit, fun, name)
+        CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBV, fun, cls_name=name)
+        CoreIR.add_peak_instruction(f"corebit.{name}", UnaryInputBit, OutputBit, fun, cls_name=name)
 
     def reduce(fun):
         def _reduce(val):
@@ -178,7 +178,7 @@ def gen_peak_CoreIR(width):
         ("orr", lambda f, x: reduce(lambda a, b : a|b)(x)),
         ("xorr", lambda f, x: reduce(lambda a, b : a^b)(x)),
     ):
-        CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBit, fun, name)
+        CoreIR.add_peak_instruction(f"coreir.{name}", UnaryInput, OutputBit, fun, cls_name=name)
 
     for name, fun in (
         ("eq" , lambda f, x, y: x==y),
@@ -192,10 +192,10 @@ def gen_peak_CoreIR(width):
         ("ugt", lambda f, x, y: x.bvugt(y)),
         ("uge", lambda f, x, y: x.bvuge(y)),
     ):
-        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBit, fun, name)
+        CoreIR.add_peak_instruction(f"coreir.{name}", BinaryInput, OutputBit, fun, cls_name=name)
 
-    CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda f, in0, in1, sel: sel.ite(in1, in0), "mux")
-    CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda f, in0, in1, sel: sel.ite(in1, in0), "mux")
+    CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
+    CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
 
     return CoreIR
 
