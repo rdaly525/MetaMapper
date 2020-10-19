@@ -29,7 +29,6 @@ def test_peak_to_node(args):
             imm=Data
         @family.assemble(globals(), locals())
         class FMA(Peak):
-            @name_outputs(out=Data)
             def __call__(self, config: Const(Config), a:Data, b:Data) -> Data:
                 return a*config.imm + b
         return FMA
@@ -47,8 +46,8 @@ def test_peak_to_node(args):
     in1 = input_node.select("in1")
     in2 = input_node.select("in2")
     fma1 = FMANode(Constant(value=BV16(5), type=BV16), in0, in1)
-    fma2 = FMANode(Constant(value=BV16(2), type=BV16), in2, fma1.select("out"))
-    output_node = Output(fma2.select("out"), type=output_type)
+    fma2 = FMANode(Constant(value=BV16(2), type=BV16), in2, fma1.select(0))
+    output_node = Output(fma2.select(0), type=output_type)
     dag = Dag(sources=[input_node], sinks=[output_node])
 
     #You can print the dag

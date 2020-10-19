@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from hwtypes.modifiers import strip_modifiers
 from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects
 import typing as tp
@@ -67,7 +69,7 @@ class RewriteTable:
         to_node_t = self.to.dag_nodes[to_node_name]
         assert issubclass(to_node_t, DagNode)
         to_bv = to_fc(fam().PyFamily())
-        to_input = Input(iname="self", type=from_bv.input_t)
+        to_input = Input(iname="self", type=strip_modifiers(from_bv.input_t))
 
         def sel_from(path, node: DagNode):
             assert isinstance(path, tuple)

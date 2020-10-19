@@ -10,6 +10,7 @@ def gen_isa(width):
         imm = 1
         Add = 2
         Mux = 6
+        isub=7
 
     @family_closure
     def isa_fc(family):
