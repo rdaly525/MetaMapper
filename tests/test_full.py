@@ -12,17 +12,11 @@ from metamapper.coreir_mapper import Mapper
 import delegator
 import pytest
 
-
-lassen_constraints = {
-    ("clk_en",): 1,
-    ("config_addr",): 0,
-    ("config_data",): 0,
-    ("config_en",): 0,
-}
+lassen_rules = "/Users/rdaly/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
 @pytest.mark.parametrize("arch", [
     ("PE_lut", gen_PE_lut(16), {}),
-    #("Lassen", lassen_fc, lassen_constraints),
+    #("Lassen", lassen_fc, {}),
     ("ALU", gen_ALU(16), {}),
 ])
 #@pytest.mark.parametrize("app", ["camera_pipeine"])#, "add2", "add1_const", "add4", "add3_const"])
@@ -34,15 +28,21 @@ def test_app(arch, app):
     file_name = f"examples/coreir/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cmod = cutil.load_from_json(file_name) #, libraries=["lakelib"])
-    pb_dags = cutil.preprocess(CoreIRNodes, cmod)
+    cmod = cutil.load_from_json(file_name) #libraries=["lakelib"])
+    dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
     name, arch_fc, constraints = arch
-    if name == "ALU" and app == "add_or":
-        pytest.skip()
+    #if name == "ALU" and app == "add_or":
+    #    pytest.skip()
+    if name == "Lassen":
+        rule_file = lassen_rules
+    else:
+        rule_file = None
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
-    mapper = Mapper(CoreIRNodes, ArchNodes, conv=True)
-    mapped_cmod = mapper.do_mapping(pb_dags)
+    mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
+    mapped_dag = mapper.do_mapping(dag)
+    return
+
     mapped_cmod.print_()
     c.set_top(mapped_cmod)
     c.run_passes(["cullgraph"])
@@ -58,4 +58,3 @@ def test_app(arch, app):
     assert not res.return_code, res.out + res.err
 
 #test_app(("PE_lut", gen_PE_lut(16), {}),"add2")
-

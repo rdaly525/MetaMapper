@@ -20,8 +20,10 @@ def gen_sub_modules(width):
                     res = alu_inst.imm
                 elif op == OP.Add:
                     res = a + b
-                else: # op == OP.Mux:
+                elif op == OP.Mux:
                     res = d.ite(a, b)
+                else:
+                    res = alu_inst.imm - a
                 return res
 
         @family.assemble(locals(), globals())

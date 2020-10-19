@@ -1,25 +1,45 @@
 import coreir
 from DagVisitor import Visitor, Transformer
 from collections import OrderedDict
-from .node import DagNode, Dag, Nodes, Input, Combine, Constant
+from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant
 from . import CoreIRContext
 import typing as tp
 from .family import fam
 from peak.mapper import Unbound
 from peak.assembler import AssembledADT, Assembler, AssembledADTRecursor
 from .common_passes import print_dag
-from hwtypes.adt import Product, Enum
+from hwtypes.adt import Product, Enum, Tuple
 import os
+import keyword
+from hwtypes.adt import Product
+from hwtypes.modifiers import strip_modifiers, is_modified
 
+#There is a hack where names aliasing with python keywords need to get remapped
+#Use this function to select into coreir instances
+def select(inst, name):
+    if len(name) > 3 and name[-3:]=="___":
+        name = name[:-3]
+    return inst.select(name)
 
 #returns input objects and output objects
 #removes clk and reset
+
+def fix_keyword(val:str):
+    if val.isdigit():
+        return int(val)
+    if val in keyword.kwlist:
+        return val + "___"
+    return val
+
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     assert isinstance(rtype, coreir.Record)
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
-        if t.kind not in ("Array", "Bit", "BitIn"):
+        n = fix_keyword(n)
+        if t.kind == "Named":
+            continue
+        if t.kind not in ("Array", "Bit", "BitIn", "Record"):
             if t.kind == "Named":
                 continue
             raise NotImplementedError(t.kind)
@@ -28,7 +48,7 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
         elif t.is_output():
             outputs[n] = t
         else:
-            raise ValueError("Bad io type!")
+            raise NotImplementedError("mixed io type not supported!")
 
     #Filter out "ASYNCRESET" and "CLK"
     for d in (inputs, outputs):
@@ -37,17 +57,26 @@ def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
                 del d[name]
     return inputs, outputs
 
-
+_PRODUCT_CNT = 0
 def ctype_to_adt(ctype: coreir.type):
     if ctype.kind in ("Bit", "BitIn"):
         return fam().PyFamily().Bit
     elif ctype.kind == "Array":
         etype = ctype.element_type
-        if etype.kind not in ("Bit", "BitIn"):
-            raise NotImplementedError(f"Element type of array {etype.kind}")
-        return fam().PyFamily().BitVector[len(ctype)]
-    else:
-        raise NotImplementedError(ctype.kind)
+        if etype.kind in ("Bit", "BitIn"):
+            return fam().PyFamily().BitVector[len(ctype)]
+        else:
+            elem_adt = ctype_to_adt(etype)
+            return Tuple[(elem_adt for _ in range(len(ctype)))]
+    elif ctype.kind == "Record":
+        assert isinstance(ctype, coreir.Record)
+        field_dict = OrderedDict()
+        for n, t in ctype.items():
+            field_dict[n] = ctype_to_adt(t)
+        global _PRODUCT_CNT
+        pt = Product.from_fields(f"T{_PRODUCT_CNT}", field_dict)
+        _PRODUCT_CNT += 1
+        return pt
 
 def adt_to_ctype(adt):
     c = CoreIRContext()
@@ -78,30 +107,35 @@ class Loader:
         self.c = cmod.context
         self.node_map: tp.Mapping[coreir.Instance, str] = {}
 
-        #Verify all instances are from particular nodes
-        #TODO Find all stateful instances
-        for inst in cmod.definition.instances:
-            node_name = self.nodes.name_from_coreir(inst.module)
-            if node_name is None:
-                raise ValueError(f"{inst.module.name} was never loaded into {self.nodes}")
-            if self.nodes.is_stateful(node_name):
-                raise NotImplementedError("TODO")
-
         inputs, outputs = parse_rtype(cmod.type)
         input_adt = fields_to_adt(inputs, "Input")
         output_adt = fields_to_adt(outputs, "Output")
 
         source_nodes = [Input(iname="self", type=input_adt)]
-        stateful_instances = [cmod.definition.interface]
+        stateful_instances = {cmod.definition.interface: output_adt}
+        for inst in cmod.definition.instances:
+            node_name = self.nodes.name_from_coreir(inst.module)
+            source_node_t = None
+            if node_name is None:
+                source_node_t = InstanceInput
+            elif self.nodes.is_stateful(node_name):
+                source_node_t, _ = self.nodes.dag_nodes[node_name]
+            if source_node_t is not None:
+                inputs, outputs = parse_rtype(inst.module.type)
+                sink_adt = fields_to_adt(inputs, f"{inst.name}_sink")
+                source_adt = fields_to_adt(outputs, f"{inst.name}_source")
+                node = source_node_t(iname=inst.name, type=source_adt)
+                source_nodes.append(node)
+                stateful_instances[inst] = sink_adt
+
         # load up node_map with source nodes
-        for source, inst in zip(source_nodes, stateful_instances):
+        for source, inst in zip(source_nodes, stateful_instances.keys()):
             self.node_map[inst] = source
 
         #create all the sinks
         sink_nodes = []
-        for i, (source, inst) in enumerate(zip(source_nodes, stateful_instances)):
+        for source, (inst, sink_adt) in zip(source_nodes, stateful_instances.items()):
             sink_t = type(source).sink_t
-            sink_adt = output_adt if i == 0 else None
             sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
@@ -117,9 +151,16 @@ class Loader:
         else:
             node_t = sink_t
         children = []
-        for child_inst, port in self.get_drivers(inst):
-            child_node = self.add_node(child_inst)
-            children.append(child_node.select(port))
+        for i, (child_inst, sel_path) in enumerate(self.get_drivers(inst)):
+            if (child_inst, sel_path) == (None, None):
+                children.append(Constant(value=Unbound, type=None))
+            else:
+                child_node = self.add_node(child_inst)
+                child = child_node
+                for sel in sel_path:
+                    sel = fix_keyword(sel)
+                    child = child.select(sel)
+                children.append(child)
 
         if inst is self.cmod.definition.interface:
             iname = "self"
@@ -168,18 +209,39 @@ class Loader:
             inputs, outputs = parse_rtype(inst.module.type)
         drivers = []
         for port_name, t in inputs.items():
-            port = inst.select(port_name)
+            port = select(inst, port_name)
             conns = port.connected_wireables
-            assert len(conns) == 1, f"{len(conns)}, {port}"
-            driver = conns[0]
-            dpath = driver.selectpath
-            assert len(dpath) == 2
-            driver_iname, driver_port = dpath[0], dpath[1]
-            driver_inst = self.inst_from_name(driver_iname)
-            drivers.append((driver_inst, driver_port))
+            if len(conns) == 0:
+                drivers.append((None, None))
+            else:
+                assert len(conns) == 1, f"{len(conns)}, {port}"
+                driver = conns[0]
+                dpath = driver.selectpath
+                driver_iname, driver_ports = dpath[0], dpath[1:]
+                driver_inst = self.inst_from_name(driver_iname)
+                drivers.append((driver_inst, driver_ports))
         return drivers
 
-def coreir_to_dag(nodes: Nodes, cmod):
+#Takes in a coreir module and translates it into a dag
+def coreir_to_dag(nodes: Nodes, cmod: coreir.Module) -> Dag:
+
+    c = cmod.context
+    assert cmod.definition
+
+    #Simple optimizations
+    c.run_passes(["rungenerators", "deletedeadinstances"])
+    c.run_passes(["flatten", "removebulkconnections"])
+
+    #First inline all non-findable instances
+    #TODO better mechanism for this
+    to_inline = []
+    for inst in cmod.definition.instances:
+        mod_name = inst.module.name
+        if mod_name in ("counter", "reshape", "absd"):
+            to_inline.append(inst)
+    for inst in to_inline:
+        print("inlining", inst.name, inst.module.name)
+        coreir.inline_instance(inst)
     return Loader(cmod, nodes).dag
 
 #returns module, and map from instances to dags
@@ -198,13 +260,14 @@ def load_from_json(file, libraries=[]):
     cmod = c.load_from_file(file)
     return cmod
 
-def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Instance, Dag]:
+def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> Dag:
 
     c = cmod.context
     assert cmod.definition
 
     #Simple optimizations
     c.run_passes(["rungenerators", "deletedeadinstances"])
+    c.run_passes(["flatten", "removebulkconnections", "flatten_types"])
 
     #First inline all non-findable instances
     #TODO better mechanism for this
@@ -217,44 +280,50 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> tp.Mapping[coreir.Ins
         print("inlining", inst.name, inst.module.name)
         coreir.inline_instance(inst)
 
-    c.run_passes(["isolate_primitives"])
-
-    #Find all instances of modules which need to be mapped (All the *___primitives) modules
-    primitive_blocks = []
-    assert cmod.definition
-    for inst in cmod.definition.instances:
-        mod_name = inst.module.name
-        if "___primitives" in mod_name:
-            primitive_blocks.append(inst)
-    assert len(primitive_blocks)==1
-    #dagify all the primitive_blocks
-    pb_dags = {inst:coreir_to_dag(CoreIRNodes, inst.module) for inst in primitive_blocks}
-    return pb_dags
+    return coreir_to_dag(CoreIRNodes, cmod)
 
 class ToCoreir(Visitor):
     def __init__(self, nodes: Nodes, def_: coreir.ModuleDef):
         self.coreir_const = CoreIRContext().get_namespace("coreir").generators["const"]
+        self.coreir_bit_const = CoreIRContext().get_namespace("corebit").modules["const"]
         self.coreir_pt = CoreIRContext().get_namespace("_").generators["passthrough"]
         self.nodes = nodes
         self.def_ = def_
         self.node_to_inst: tp.Mapping[DagNode, coreir.Wireable] = {}  # inst is really the output port of the instance
 
+    def doit(self, dag: Dag):
+        #Create all the instances for the Source/Sinks first
+        for sink in list(dag.roots())[1:]:
+            inst = self.create_instance(sink)
+            self.node_to_inst[sink] = inst
+            self.node_to_inst[sink.source] = inst
+        self.run(dag)
+
     def visit_Select(self, node):
         Visitor.generic_visit(self, node)
         child_inst = self.node_to_inst[node.children()[0]]
-        self.node_to_inst[node] = child_inst.select(node.field)
+        self.node_to_inst[node] = select(child_inst, node.field)
 
     def visit_Input(self, node):
         self.node_to_inst[node] = self.def_.interface
 
+    def visit_Source(self, node):
+        assert node.sink in self.node_to_inst
+        self.node_to_inst[node] = self.node_to_inst[node.sink]
+
     def visit_Constant(self, node):
+        assert isinstance(node, Constant)
         bv_val = node.value
         if bv_val is Unbound:
             self.node_to_inst[node] = None
             return
-        iname ="c"+str(id(node))
-        const_mod = self.coreir_const(width=bv_val.size)
+        is_bool = type(bv_val) is bool
+        if is_bool:
+            const_mod = self.coreir_bit_const
+        else:
+            const_mod = self.coreir_const(width=bv_val.size)
         config = CoreIRContext().new_values(fields=dict(value=bv_val))
+        iname = "c" + str(id(node))
         inst = self.def_.add_module_instance(iname, const_mod, config=config)
         self.node_to_inst[node] = inst.select("out")
 
@@ -277,27 +346,47 @@ class ToCoreir(Visitor):
         #    self.def_.connect(child_inst, pt_sel)
         #self.node_to_inst[node] = pt_inst.select("out")
 
+    def create_instance(self, node):
+        if node in self.node_to_inst:
+            return self.node_to_inst[node]
+        cmod_t = self.nodes.coreir_modules[type(node).node_name]
+        # create new instance
+        #create modparams
+        children = list(node.children())
+        config_fields = {}
+        for param in reversed(type(node).modparams):
+            child = children.pop(-1)
+            assert isinstance(child, Constant)
+            bv_val = child.value
+            if bv_val is Unbound:
+                continue
+            config_fields[param] = bv_val
+        if len(config_fields) > 0:
+            config = CoreIRContext().new_values(fields=config_fields)
+            inst = self.def_.add_module_instance(node.iname, cmod_t, config=config)
+        else:
+            inst = self.def_.add_module_instance(node.iname, cmod_t)
+        return inst
+
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
-        cmod_t = self.nodes.coreir_modules[type(node).node_name]
-
-        # create new instance
-        #TODO what if this has modparams?
-        inst = self.def_.add_module_instance(node.iname, cmod_t)
-        input_t = self.nodes.peak_nodes[node.node_name](fam().PyFamily()).input_t
-        inst_inputs = list(input_t.field_dict.keys())
+        inst = self.create_instance(node)
+        inst_inputs = list(self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t.field_dict.keys())
         # Wire all the children (inputs)
-        for port, child in zip(inst_inputs, node.children()):
+        #Get only the non-modparam children
+        children = list(node.children())[:-len(node.modparams)]
+        for port, child in zip(inst_inputs, children):
+            if type(node).node_name == "coreir_reg" and port == "in0":
+                port = "in"
             child_inst = self.node_to_inst[child]
             if child_inst is not None:
-                self.def_.connect(child_inst, inst.select(port))
+                self.def_.connect(child_inst, select(inst, port))
             else:
-                coreir.connect_const(inst.select(port), 0)
+                coreir.connect_const(select(inst, port), 0)
 
         self.node_to_inst[node] = inst
 
-        # CLK and ASYNC?
-        #inst.ASYNCRESET @= self.io.RESET
+    #The issue is that output is visited first then the source, then the sink. Depth first vs breadth first.
 
     def visit_Output(self, node):
         Visitor.generic_visit(self, node)
@@ -308,7 +397,11 @@ class ToCoreir(Visitor):
         for port, child in zip(outputs.keys(), node.children()):
             child_inst = self.node_to_inst[child]
             if child_inst is not None:
-                self.def_.connect(child_inst, io.select(port))
+                self.def_.connect(child_inst, select(io, port))
+
+    #I want to solve this for a generic Source/Sink Pair and not special case to registers
+    #CoreIR Registers have modparams. These are gotten from the Sink part of the pair.
+
 
 
 class VerifyUniqueIname(Visitor):
@@ -321,7 +414,7 @@ class VerifyUniqueIname(Visitor):
             raise ValueError(f"{node.iname} for {node} already used by {self.inames[node.iname]}")
         self.inames[node.iname] = node
 
-    def visit_Input(self, node):
+    def visit_Source(self, node):
         pass
 
 # Magma compiles output ports into either "O" for single outputs or "O0", "O1" etc for multi-output
@@ -332,6 +425,8 @@ class FixSelects(Transformer):
         for node_name in nodes._node_names:
             peak_fc = nodes.peak_nodes[node_name]
             dag_node = nodes.dag_nodes[node_name]
+            if nodes.is_stateful(node_name):
+                dag_node = dag_node[0] #Use the source
             assert issubclass(dag_node, DagNode), f"{dag_node}"
             peak_outputs = list(peak_fc(fam().PyFamily()).output_t.field_dict.keys())
             if len(peak_outputs) == 1:
@@ -342,10 +437,10 @@ class FixSelects(Transformer):
     def visit_Select(self, node):
         Transformer.generic_visit(self, node)
         child = node.children()[0]
-        if isinstance(child, (Input, Combine)):
+        if isinstance(child, (Source, Combine)):
             return None
         assert type(child) in self.field_map
-        replace_field = self.field_map[type(child)][node.field]
+        replace_field = fix_keyword(self.field_map[type(child)][node.field])
         return child.select(replace_field)
 
         # Create a map from field to coreir field

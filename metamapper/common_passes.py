@@ -116,15 +116,15 @@ class VerifyNodes(Visitor):
         return None
 
     def generic_visit(self, node):
-        nodes = type(node).nodes
-        if nodes != self.nodes and nodes != Common:
-            self.wrong_nodes.add(node)
+        if node.node_name != "coreir.reg":
+            nodes = type(node).nodes
+            if nodes != self.nodes and nodes != Common:
+                self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
 from peak.mapper.utils import rebind_type, solved_to_bv
 import pysmt.shortcuts as smt
 from pysmt.logics import QF_BV
-
 
 def prove_formula(formula, solver, i1):
     with smt.Solver(solver, logic=QF_BV) as solver:
@@ -211,7 +211,6 @@ class SMT(Visitor):
         self.values[node] = output_val
 
 
-
 class AddID(Visitor):
     def __init__(self):
         self.curid = 0
@@ -244,6 +243,9 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
         self.res += f"{node._id_}<Input>\n"
 
+    def visit_InstanceInput(self, node):
+        self.res += f"{node._id_}<InstanceInput>\n"
+
     def visit_Constant(self, node):
         self.res += f"{node._id_}<Constant>({node.value}{type(node.value)}, {node.type})>\n"
 
@@ -251,6 +253,11 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<Output>({child_ids})\n"
+
+    def visit_InstanceOutput(self, node):
+        Visitor.generic_visit(self, node)
+        child_ids = ", ".join([str(child._id_) for child in node.children()])
+        self.res += f"{node._id_}<InstanceOutput>({child_ids})\n"
 
     def visit_Combine(self, node: Bind):
         Visitor.generic_visit(self, node)
