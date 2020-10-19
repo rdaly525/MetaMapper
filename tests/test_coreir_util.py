@@ -28,6 +28,7 @@ full_apps = [
     #"camera_pipeline"
 ]
 
+@pytest.mark.skip
 @pytest.mark.parametrize("name", full_apps)
 def test_apps(name):
     c = CoreIRContext(reset=True)
