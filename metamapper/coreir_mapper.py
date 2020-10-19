@@ -86,10 +86,10 @@ class Mapper:
                         new_rewrite_rule = read_serialized_bindings(rrs[op], ir_fc, arch_fc)
                         counter_example = new_rewrite_rule.verify()
 
-                    if counter_example is not None:
-                        print(counter_example)
-                        raise ValueError(f"RR for {op} fails with ^ Counter Example")
-                    self.table.add_peak_rule(new_rewrite_rule)
+                        if counter_example is not None:
+                            print(counter_example)
+                            raise ValueError(f"RR for {op} fails with ^ Counter Example")
+                        self.table.add_peak_rule(new_rewrite_rule)
 
     def do_mapping(self, dag, convert_unbound=True, prove_mapping=True) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
