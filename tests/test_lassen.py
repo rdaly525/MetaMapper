@@ -15,10 +15,7 @@ import delegator
 import pytest
 from hwtypes import BitVector, Tuple, Bit, bit_vector
 
-from peak_gen.sim import fp_pe_arch_closure, pe_arch_closure
-from peak_gen.arch import read_arch, graph_arch
-from peak_gen.isa import inst_arch_closure
-from peak_gen.peak_wrapper import wrapped_peak_class
+
 from peak.mapper import RewriteRule
 from peak.mapper.utils import pretty_print_binding
 import glob, jsonpickle
@@ -28,13 +25,13 @@ import sys
 import inspect
 import importlib
 import os
-from lassen.sim import PE_fc 
+
+
+
 
 def test_camera():
     print("STARTING TEST")
-    #app = "camera"
-    app = "harris"
-    #app = "camera_pipeline"
+    app = "resnet"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
@@ -45,15 +42,16 @@ def test_camera():
     cutil.load_from_json(file_name)
     kernels = dict(c.global_namespace.modules)
 
-    
+    # rrules, PE_fc = gen_rrules()
+    rrules, PE_fc = None, lassen_fc
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, PE_fc)
     mr = "memory.rom2"
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
     # breakpoint()
-    mapper = Mapper(CoreIRNodes, ArchNodes, conv=False)
+    mapper = Mapper(CoreIRNodes, ArchNodes, peak_rules=rrules, conv=False)
     for kname, kmod in kernels.items():
-        mapped_mod = mapper.map_module(cmod=kmod, prove=True)
+        mapped_mod = mapper.map_module(cmod=kmod, prove=False)
 
     print("Num PEs used:",  mapper.num_pes)
     c.run_passes(["wireclocks-clk"])
