@@ -31,7 +31,7 @@ import os
 
 def test_camera():
     print("STARTING TEST")
-    app = "resnet"
+    app = "laplacian_pyramid"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
