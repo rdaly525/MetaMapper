@@ -69,8 +69,8 @@ class Mapper:
         )
         if peak_rules is None:
             for node_name in ArchNodes._node_names:
-                if node_name != "PE":
-                    continue
+                # if node_name != "PE":
+                #     continue
                 #auto discover the rules for CoreIR
                 peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["commonlib.abs"], node_name, rr_name="abs")
                 peak_rule = self.table.discover(CoreIRNodes._peakir_.instructions["other.const_mul0"], node_name, rr_name="const_mul0")

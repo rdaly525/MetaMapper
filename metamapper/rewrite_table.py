@@ -158,7 +158,7 @@ class RewriteTable:
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints, family=fam())
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
         start = timer()
-        peak_rr = ir_mapper.solve('z3', external_loop=False)
+        peak_rr = ir_mapper.solve('z3', external_loop=True)
         end = timer()
         print(f"{end-start}")
         if peak_rr is None:

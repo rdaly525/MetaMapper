@@ -25,11 +25,20 @@ import sys
 import inspect
 import importlib
 import os
-from lassen.sim import PE_fc 
+from lassen.sim import PE_fc as lassen_fc 
 
 
     
 app = str(sys.argv[1])
+if len(sys.argv) > 2:
+    print("Mapping with custom PEs not working yet")
+    exit()
+    arch = read_arch(str(sys.argv[2]))
+    PE_fc = wrapped_peak_class(arch)
+else:
+    PE_fc = lassen_fc
+
+
 c = CoreIRContext(reset=True)
 file_name = f"examples/mapping/{app}.json"
 cutil.load_libs(["commonlib"])
