@@ -230,7 +230,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module) -> Dag:
 
     #Simple optimizations
     c.run_passes(["rungenerators", "deletedeadinstances"])
-    c.run_passes(["flatten", "removebulkconnections"])
+    c.run_passes(["flatten", "removebulkconnections", "flattentypes"])
 
     #First inline all non-findable instances
     #TODO better mechanism for this

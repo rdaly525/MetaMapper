@@ -61,6 +61,8 @@ class DagNode(Visited):
     @lru_cache(None)
     def select(self, field):
         self._selects.add(field)
+        print(self.type)
+        print(self.type.field_dict[field])
         if field not in self.type.field_dict:
             raise ValueError(f"{field} not in {list(self.type.field_dict.items())}")
         return Select(self, field=field, type=self.type.field_dict[field])

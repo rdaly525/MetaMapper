@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes, print_dag, SimplifyCombines, RemoveSelects, prove_equal, Clone, ExtractNames
+from metamapper.common_passes import VerifyNodes, print_dag, count_pes, SimplifyCombines, RemoveSelects, prove_equal, Clone, ExtractNames
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -46,6 +46,7 @@ class Mapper:
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
+        self.num_pes = 0
 
         if not lazy and rule_file is None and len(ops) == 0:
             raise ValueError("If not lazy, need ops specified!")
@@ -108,6 +109,7 @@ class Mapper:
         RemoveSelects().run(mapped_dag)
         #print("RemovedSelects")
         #print_dag(mapped_dag)
+        self.num_pes += count_pes(mapped_dag)
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")

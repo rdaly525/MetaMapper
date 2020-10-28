@@ -8,6 +8,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
+from metamapper.common_passes import  print_dag
 
 import delegator
 import pytest
@@ -17,9 +18,9 @@ lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 @pytest.mark.parametrize("arch", [
     ("Lassen", lassen_fc, {}),
 ])
-#@pytest.mark.parametrize("app", ["camera_pipeine"])#, "add2", "add1_const", "add4", "add3_const"])
-@pytest.mark.parametrize("app", ["gaussian_compute"])#, "add2", "add1_const", "add4", "add3_const"])
-# @pytest.mark.parametrize("app", ["add2", "add1_const", "add4", "add3_const"])
+@pytest.mark.parametrize("app", ["camera_pipeline_compute"])
+# @pytest.mark.parametrize("app", ["gaussian_compute"])
+# @pytest.mark.parametrize("app", ["camera_pipeline_compute", "gaussian_compute", "add2", "add1_const", "add4", "add3_const"])
 def test_app(arch, app):
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
@@ -37,10 +38,15 @@ def test_app(arch, app):
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
 
     for kname, kmod in kernels.items():
-
+    # kname = "hcompute_blur_unnormalized_stencil"
+    # kmod = kernels[kname]
+        print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-        mapped_dag = mapper.do_mapping(dag)    
+        print_dag(dag)
+        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)    
 
+
+    print(f"Num PEs used: {mapper.num_pes}")
     return
     c.run_passes(["wireclocks-clk"])
     c.run_passes(["wireclocks-arst"])
