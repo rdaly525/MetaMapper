@@ -175,10 +175,13 @@ class Loader:
                 else:
                     raise NotImplementedError()
 
-            modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
-            #TODO unsafe. Assumes that modargs are specified at the end.
-            children += modargs
+            if inst.module.name != "rom2":
+                modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
+                #TODO unsafe. Assumes that modargs are specified at the end.
+                children += modargs
             iname = inst.name
+
+            
         if inst.module.name == "rom2":
             node = node_t(*children, init=inst.config["init"], iname=iname)
         elif sink_t is None:
@@ -372,7 +375,13 @@ class ToCoreir(Visitor):
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
-        inst = self.create_instance(node)
+        
+        if type(node).node_name == "memory.rom2":
+            rom_mod = self.nodes.coreir_modules["memory.rom2"]
+            config = CoreIRContext().new_values(dict(init=node.init))
+            inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
+        else:
+            inst = self.create_instance(node)
         inst_inputs = list(self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t.field_dict.keys())
         # Wire all the children (inputs)
         #Get only the non-modparam children
