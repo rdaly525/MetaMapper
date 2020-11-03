@@ -24,6 +24,7 @@ def gen_peak_CoreIR(width):
         Data = family.BitVector[width]
         SData = family.Signed[width]
         class abs(Peak):
+            @name_outputs(out=Data)
             def __call__(self, in0: Data) -> Data:
                 in0_s = SData(in0)
                 in0_neg = Data(-in0_s)
@@ -37,6 +38,7 @@ def gen_peak_CoreIR(width):
         Data = family.BitVector[width]
         SData = family.Signed[width]
         class absd(Peak):
+            @name_outputs(out=Data)
             def __call__(self, in0: Data, in1: Data) -> Data:
                 d = in0 - in1
                 d_s = SData(d)
@@ -50,6 +52,7 @@ def gen_peak_CoreIR(width):
         Data = family.BitVector[width]
         SData = family.Signed[width]
         class smax(Peak):
+            @name_outputs(out=Data)
             def __call__(self, in0: Data, in1: Data) -> Data:
                 return (SData(in0) >= SData(in1)).ite(in0, in1)
         return smax
@@ -62,6 +65,7 @@ def gen_peak_CoreIR(width):
         Data = family.BitVector[width]
         SData = family.Signed[width]
         class smin(Peak):
+            @name_outputs(out=Data)
             def __call__(self, in0: Data, in1: Data) -> Data:
                 return (SData(in0) <= SData(in1)).ite(in0, in1)
         return smin
@@ -72,6 +76,7 @@ def gen_peak_CoreIR(width):
     def umax_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         class umax(Peak):
+            @name_outputs(out=Data)
             def __call__(self, in0: Data, in1: Data) -> Data:
                 return (in0 >= in1).ite(in0, in1)
         return umax
@@ -83,6 +88,7 @@ def gen_peak_CoreIR(width):
     def umin_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         class umin(Peak):
+            @name_outputs(out=Data)
             def __call__(self, in0: Data, in1: Data) -> Data:
                 return (in0 <= in1).ite(in0, in1)
         return umin

@@ -87,6 +87,7 @@ class Mapper:
                     rrs = json.loads(read_file.read())
                     for op in ops:
                         ir_fc = self.CoreIRNodes.peak_nodes[op]
+                        print(op)
                         new_rewrite_rule = read_serialized_bindings(rrs[op], ir_fc, arch_fc)
                         counter_example = new_rewrite_rule.verify()
 

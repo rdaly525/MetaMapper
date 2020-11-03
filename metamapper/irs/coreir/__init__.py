@@ -1,5 +1,5 @@
 from .ir import gen_peak_CoreIR
-from ...node import Nodes, Constant, DagNode
+from ...node import Nodes, Constant, DagNode, Select
 from ... import CoreIRContext
 from ...peak_util import load_from_peak
 import coreir
@@ -14,9 +14,9 @@ def gen_CoreIRNodes(width):
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
 
-    basic = ("mul", "add", "const", "and_", "or_")
-    other = ("ashr", "eq", "lshr", "mux", "slt", "sge", "sub", "ult")
-    bit_ops = ("const", "or_", "and_", "xor")
+    basic = ("mul", "add", "const", "and_", "or_", "neg")
+    other = ("ashr", "eq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
+    bit_ops = ("const", "or_", "and_", "xor", "not_", "mux")
     commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
     for namespace, ops, is_module in (
         ("coreir", basic + other, False),
@@ -59,6 +59,7 @@ def gen_CoreIRNodes(width):
             return Select(self, field="rdata",type=BitVector[16])
 
         nodes = CoreIRNodes
+        static_attributes = {}
         node_name = "memory.rom2"
         num_children = 2
         type = Product.from_fields("Output",{"rdata":BitVector[16]})

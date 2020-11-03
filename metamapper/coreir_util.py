@@ -115,6 +115,7 @@ class Loader:
         stateful_instances = {cmod.definition.interface: output_adt}
         for inst in cmod.definition.instances:
             node_name = self.nodes.name_from_coreir(inst.module)
+            print("node_name: ", node_name, inst.module.name)
             source_node_t = None
             if node_name is None:
                 source_node_t = InstanceInput
@@ -193,6 +194,7 @@ class Loader:
             node = node_t(*children, iname=iname, type=sink_adt)
         return node
 
+
     def inst_from_name(self, iname):
         if iname == "self":
             return self.cmod.definition.interface
@@ -235,7 +237,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module) -> Dag:
 
     #Simple optimizations
     c.run_passes(["rungenerators", "deletedeadinstances"])
-    c.run_passes(["flatten", "removebulkconnections", "flattentypes"])
+    # c.run_passes(["flatten", "removebulkconnections", "flattentypes"])
 
     #First inline all non-findable instances
     #TODO better mechanism for this
