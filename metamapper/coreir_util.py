@@ -136,10 +136,7 @@ class Loader:
         sink_nodes = []
         for source, (inst, sink_adt) in zip(source_nodes, stateful_instances.items()):
             sink_t = type(source).sink_t
-            try:
-                sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
-            except:
-                breakpoint()
+            sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
         self.dag = Dag(source_nodes, sink_nodes)
@@ -182,7 +179,9 @@ class Loader:
             #TODO unsafe. Assumes that modargs are specified at the end.
             children += modargs
             iname = inst.name
-        if sink_t is None:
+        if inst.module.name == "rom2":
+            node = node_t(*children, init=inst.config["init"], iname=iname)
+        elif sink_t is None:
             node = node_t(*children, iname=iname)
             self.node_map[inst] = node
         elif sink_adt is None:

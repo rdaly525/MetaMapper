@@ -45,28 +45,28 @@ def gen_CoreIRNodes(width):
     cmod = c.get_namespace("coreir").generators["reg"](width=width)
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.reg", stateful=True, modparams=("clk_posedge", "init"))
 
-    # class Rom(DagNode):
-    #     def __init__(self, raddr, ren, *, init, iname):
-    #         super().__init__(raddr, ren, init=init, iname=iname)
+    class Rom(DagNode):
+        def __init__(self, raddr, ren, *, init, iname):
+            super().__init__(raddr, ren, init=init, iname=iname)
 
-    #     @property
-    #     def attributes(self):
-    #         return ("init", "iname")
+        @property
+        def attributes(self):
+            return ("init", "iname")
 
-    #     #Hack to get correct port name
-    #     def select(self, field):
-    #         self._selects.add("rdata")
-    #         return Select(self, field="rdata",type=BitVector[16])
+        #Hack to get correct port name
+        def select(self, field):
+            self._selects.add("rdata")
+            return Select(self, field="rdata",type=BitVector[16])
 
-    #     nodes = CoreIRNodes
-    #     node_name = "memory.rom2"
-    #     num_children = 2
-    #     type = Product.from_fields("Output",{"rdata":BitVector[16]})
+        nodes = CoreIRNodes
+        node_name = "memory.rom2"
+        num_children = 2
+        type = Product.from_fields("Output",{"rdata":BitVector[16]})
 
-    # rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
+    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
 
-    # CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
-    # assert "memory.rom2" in CoreIRNodes.dag_nodes
-    # assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
+    CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
+    assert "memory.rom2" in CoreIRNodes.dag_nodes
+    assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
     return CoreIRNodes
 

@@ -78,7 +78,10 @@ class Mapper:
                     else:
                         print(f"  Found!")
         else:
+            
             for arch_name in self.ArchNodes._node_names:
+                if arch_name != "PE":
+                    continue
                 arch_fc = self.ArchNodes.peak_nodes[arch_name]
                 with open(rule_file, "r") as read_file:
                     rrs = json.loads(read_file.read())
