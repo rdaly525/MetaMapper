@@ -136,7 +136,10 @@ class Loader:
         sink_nodes = []
         for source, (inst, sink_adt) in zip(source_nodes, stateful_instances.items()):
             sink_t = type(source).sink_t
-            sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
+            try:
+                sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
+            except:
+                breakpoint()
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
         self.dag = Dag(source_nodes, sink_nodes)

@@ -21,7 +21,7 @@ lassen_rules = "/Users/rdaly/lassen/scripts/rewrite_rules/lassen_rewrite_rules.j
 ])
 #@pytest.mark.parametrize("app", ["camera_pipeine"])#, "add2", "add1_const", "add4", "add3_const"])
 #@pytest.mark.parametrize("app", ["conv_3_3"])#, "add2", "add1_const", "add4", "add3_const"])
-@pytest.mark.parametrize("app", ["add2", "add1_const", "add4", "add3_const"])
+@pytest.mark.parametrize("app", ["add4_pipe"])
 def test_app(arch, app):
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
@@ -40,21 +40,12 @@ def test_app(arch, app):
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
-    mapped_dag = mapper.do_mapping(dag)
-    return
-
-    mapped_cmod.print_()
-    c.set_top(mapped_cmod)
-    c.run_passes(["cullgraph"])
-    mapped_file = f"tests/build/{name}_{app}_mapped"
-    mapped_cmod.save_to_file(f"{mapped_file}.json")
-
-    #Test syntax of serialized json
-    res = delegator.run(f"coreir -i {mapped_file}.json -l commonlib")
-    assert not res.return_code, res.out + res.err
-
-    #Test serializing to verilog
-    res = delegator.run(f'coreir -i {mapped_file}.json -l commonlib -p "wireclocks-clk; wireclocks-arst" -o {mapped_file}.v --inline')
-    assert not res.return_code, res.out + res.err
+    mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
+    
+    c.run_passes(["wireclocks-clk"])
+    c.run_passes(["wireclocks-arst"])
+    c.run_passes(["markdirty"])
+    output_file= f"examples/coreir/{app}_mapped.json"
+    c.save_to_file(output_file)
 
 #test_app(("PE_lut", gen_PE_lut(16), {}),"add2")

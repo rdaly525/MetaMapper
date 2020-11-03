@@ -7,7 +7,18 @@ from peak.family import AbstractFamily
 def gen_peak_CoreIR(width):
     CoreIR = IR()
 
+    @family_closure
+    def rom_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class rom(Peak):
+            @name_outputs(rdata=Data)
+            def __call__(self, raddr: Data, ren: Bit) -> Data:
+                return Data(0)
+        return rom
 
+    CoreIR.add_instruction("memory.rom2", rom_fc)
+    
     @family_closure
     def abs_fc(family: AbstractFamily):
         Data = family.BitVector[width]
