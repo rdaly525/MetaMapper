@@ -10,8 +10,8 @@ def mapping_function_6_fc(family: AbstractFamily):
     Bit = family.Bit
     @family.assemble(locals(), globals())
     class mapping_function_6(Peak):
-        def __call__(self, in1 : Data, in0 : Data) -> Data:
-            sub0 = SData(in0 - in1); 
-            return Data((sub0 >= SData(0)).ite(sub0, (SData(-1)*sub0)))
+        def __call__(self, in0 : Data, in1 : Data) -> Data:
+            
+            return Data(in1 & in0)
       
     return mapping_function_6

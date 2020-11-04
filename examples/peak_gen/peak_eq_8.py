@@ -10,8 +10,8 @@ def mapping_function_8_fc(family: AbstractFamily):
     Bit = family.Bit
     @family.assemble(locals(), globals())
     class mapping_function_8(Peak):
-        def __call__(self, in1 : Data, in0 : Data) -> Data:
+        def __call__(self, in0 : Data, in1 : Data) -> Data:
             
-            return Data((in0 >= in1).ite(in0, in1))
+            return Data(SData(in1) >> SData(in0))
       
     return mapping_function_8

@@ -244,7 +244,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module) -> Dag:
     to_inline = []
     for inst in cmod.definition.instances:
         mod_name = inst.module.name
-        if mod_name in ("counter", "reshape", "absd"):
+        if mod_name in ("counter", "reshape", "absd", "umax", "umin", "smax", "smin", "abs", "sle"):
             to_inline.append(inst)
     for inst in to_inline:
         print("inlining", inst.name, inst.module.name)
@@ -273,15 +273,15 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> Dag:
     assert cmod.definition
 
     #Simple optimizations
-    c.run_passes(["rungenerators", "deletedeadinstances"])
-    c.run_passes(["flatten", "removebulkconnections", "flatten_types"])
+    # c.run_passes(["rungenerators", "deletedeadinstances"])
+    # c.run_passes(["flatten", "removebulkconnections"])
 
     #First inline all non-findable instances
     #TODO better mechanism for this
     to_inline = []
     for inst in cmod.definition.instances:
         mod_name = inst.module.name
-        if mod_name in ("counter", "reshape", "absd"):
+        if mod_name in ("absd", "umax", "umin", "smax", "smin", "abs", "sle"):
             to_inline.append(inst)
     for inst in to_inline:
         print("inlining", inst.name, inst.module.name)

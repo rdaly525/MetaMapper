@@ -55,6 +55,7 @@ for kname, kmod in kernels.items():
 # kname = "hcompute_blur_unnormalized_stencil"
 # kmod = kernels[kname]
     print(kname)
+    
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     print_dag(dag)
     mapped_dag = mapper.do_mapping(dag, prove_mapping=False)    
