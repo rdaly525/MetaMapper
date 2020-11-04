@@ -116,7 +116,7 @@ class VerifyNodes(Visitor):
         return None
 
     def generic_visit(self, node):
-        if node.node_name != "coreir.reg":
+        if node.node_name != "coreir.reg" and node.node_name != "memory.rom2":
             nodes = type(node).nodes
             if nodes != self.nodes and nodes != Common:
                 self.wrong_nodes.add(node)
