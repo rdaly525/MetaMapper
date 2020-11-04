@@ -30,13 +30,8 @@ from lassen.sim import PE_fc as lassen_fc
 
     
 app = str(sys.argv[1])
-if len(sys.argv) > 2:
-    print("Mapping with custom PEs not working yet")
-    exit()
-    arch = read_arch(str(sys.argv[2]))
-    PE_fc = wrapped_peak_class(arch)
-else:
-    PE_fc = lassen_fc
+
+PE_fc = lassen_fc
 
 lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 

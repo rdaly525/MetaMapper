@@ -1,0 +1,118 @@
+{
+  "ibinding": [
+    [
+      [
+        "in0"
+      ],
+      [
+        "inputs0"
+      ]
+    ],
+    [
+      [
+        "in1"
+      ],
+      [
+        "inputs1"
+      ]
+    ],
+    [
+      [
+        "const0"
+      ],
+      [
+        "inst",
+        "const_data",
+        0
+      ]
+    ],
+    [
+      {
+        "type": "BitVector",
+        "width": 1,
+        "value": 0
+      },
+      [
+        "inst",
+        "mul",
+        0
+      ]
+    ],
+    [
+      {
+        "type": "BitVector",
+        "width": 1,
+        "value": 0
+      },
+      [
+        "inst",
+        "mux_in0",
+        0
+      ]
+    ],
+    [
+      {
+        "type": "BitVector",
+        "width": 1,
+        "value": 0
+      },
+      [
+        "inst",
+        "mux_in1",
+        0
+      ]
+    ],
+    [
+      {
+        "type": "BitVector",
+        "width": 2,
+        "value": 1
+      },
+      [
+        "inst",
+        "mux_out",
+        0
+      ]
+    ],
+    [
+      {
+        "type": "BitVector",
+        "width": 1,
+        "value": 0
+      },
+      [
+        "inst",
+        "signed",
+        0
+      ]
+    ],
+    [
+      {
+        "type": "BitVector",
+        "width": 1,
+        "value": 0
+      },
+      [
+        "inst",
+        "signed",
+        1
+      ]
+    ],
+    [
+      "unbound",
+      [
+        "clk_en"
+      ]
+    ]
+  ],
+  "obinding": [
+    [
+      [
+        0
+      ],
+      [
+        "pe_outputs_0"
+      ]
+    ]
+  ]
+}

@@ -41,7 +41,7 @@ class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
     # rule_file #pointer to serialized rule file
-    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=[], rule_file=None):
+    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=[], rule_file=None, rrules=None):
 
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
@@ -54,19 +54,19 @@ class Mapper:
             raise ValueError("if lazy, needs no ops specified!")
 
         if not lazy:
-            self.gen_rules(ops, rule_file)
+            self.gen_rules(ops, rule_file, rrules)
             self.compile_time_rule_gen = lambda dag : None
         else:
             def lazy_rule_gen(dag: Dag):
                 op_dict = ExtractNames(self.CoreIRNodes).extract(dag)
                 ops = list(op_dict.keys())
-                self.gen_rules(ops, rule_file)
+                self.gen_rules(ops, rule_file, rrules)
             self.compile_time_rule_gen = lazy_rule_gen
 
         self.inst_sel = alg(self.table)
 
-    def gen_rules(self, ops, rule_file=None):
-        if rule_file is None:
+    def gen_rules(self, ops, rule_file=None, rrules=None):
+        if rule_file is None and rrules is None:
             for node_name in self.ArchNodes._node_names:
                 # auto discover the rules for CoreIR
                 for op in ops:
@@ -77,7 +77,7 @@ class Mapper:
                         pass
                     else:
                         print(f"  Found!")
-        else:
+        elif rrules is None:
             
             for arch_name in self.ArchNodes._node_names:
                 if arch_name != "PE":
@@ -94,6 +94,9 @@ class Mapper:
                             print(counter_example)
                             raise ValueError(f"RR for {op} fails with ^ Counter Example")
                         self.table.add_peak_rule(new_rewrite_rule)
+        else:
+            for ind, peak_rule in enumerate(rrules):
+                self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
 
     def do_mapping(self, dag, convert_unbound=True, prove_mapping=True) -> coreir.Module:
         #Preprocess isolates coreir primitive modules

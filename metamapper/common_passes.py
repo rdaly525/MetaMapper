@@ -116,10 +116,11 @@ class VerifyNodes(Visitor):
         return None
 
     def generic_visit(self, node):
-        if node.node_name != "coreir.reg" and node.node_name != "memory.rom2":
-            nodes = type(node).nodes
-            if nodes != self.nodes and nodes != Common:
-                self.wrong_nodes.add(node)
+        if hasattr(node, "node_name"):
+            if node.node_name != "coreir.reg" and node.node_name != "memory.rom2":
+                nodes = type(node).nodes
+                if nodes != self.nodes and nodes != Common:
+                    self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
 from peak.mapper.utils import rebind_type, solved_to_bv
@@ -228,6 +229,10 @@ class CountPEs(Visitor):
         Visitor.generic_visit(self, node)
 
     def visit_PE(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += 1
+
+    def visit_PE_wrapped(self, node):
         Visitor.generic_visit(self, node)
         self.res += 1
 

@@ -26,10 +26,10 @@ class RewriteRule:
         name = None
     ):
 
-        pattern_is_tree = CheckIfTree().is_tree(tile)
-        if not pattern_is_tree:
-            print_dag(tile)
-            raise NotImplementedError("Tile not a tree")
+        # pattern_is_tree = CheckIfTree().is_tree(tile)
+        # if not pattern_is_tree:
+        #     print_dag(tile)
+        #     raise NotImplementedError("Tile not a tree")
 
         self.tile = tile
         self.replace = replace
