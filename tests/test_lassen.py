@@ -49,7 +49,7 @@ def test_app(arch, app):
         mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
         cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped")
     print(f"Num PEs used: {mapper.num_pes}")
-    output_file = f"examples/build/{app}_mapped.json"
+    output_file = f"build/{app}_mapped.json"
     c.save_to_file(output_file)
 
     #return
