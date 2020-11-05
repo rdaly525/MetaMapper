@@ -46,23 +46,24 @@ def test_app(arch, app):
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         print_dag(dag)
-        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)    
-
-
+        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
+        cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped")
     print(f"Num PEs used: {mapper.num_pes}")
-    return
-    c.run_passes(["wireclocks-clk"])
-    c.run_passes(["wireclocks-arst"])
-    c.run_passes(["markdirty"])
-    output_file= f"examples/clockwork/{app}_mapped.json"
+    output_file = f"examples/build/{app}_mapped.json"
     c.save_to_file(output_file)
 
-    #Test syntax of serialized json
-    res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    assert not res.return_code, res.out + res.err
+    #return
+    #c.run_passes(["wireclocks-clk"])
+    #c.run_passes(["wireclocks-arst"])
+    #c.run_passes(["markdirty"])
 
-    #Test serializing to verilog
-    res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o examples/clockwork/{app}_mapped.v --inline')
-    assert not res.return_code, res.out + res.err
+
+    ##Test syntax of serialized json
+    #res = delegator.run(f"coreir -i {output_file} -l commonlib")
+    #assert not res.return_code, res.out + res.err
+
+    ##Test serializing to verilog
+    #res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o examples/clockwork/{app}_mapped.v --inline')
+    #assert not res.return_code, res.out + res.err
 
 #test_app(("PE_lut", gen_PE_lut(16), {}),"add2")

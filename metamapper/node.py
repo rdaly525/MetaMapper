@@ -59,13 +59,14 @@ class DagNode(Visited):
         raise NotImplementedError()
 
     @lru_cache(None)
-    def select(self, field):
+    def select(self, field, original=None):
         self._selects.add(field)
-        print(self.type)
-        print(self.type.field_dict[field])
-        if field not in self.type.field_dict:
-            raise ValueError(f"{field} not in {list(self.type.field_dict.items())}")
-        return Select(self, field=field, type=self.type.field_dict[field])
+        if original is None:
+            original = field
+        if original not in self.type.field_dict:
+            raise ValueError(f"{original} not in {list(self.type.field_dict.items())}")
+        return Select(self, field=field, type=self.type.field_dict[original])
+
 
     def copy(self):
         args = self.children()

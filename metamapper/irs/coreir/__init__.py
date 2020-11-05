@@ -33,7 +33,10 @@ def gen_CoreIRNodes(width):
             else:
                 gen = c.get_namespace(namespace).generators[coreir_op]
                 cmod = gen(width=width)
-            name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name)
+            modparams = ()
+            if op == "const":
+                modparams = ("value",)
+            name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name, modparams=modparams)
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name

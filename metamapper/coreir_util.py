@@ -1,7 +1,7 @@
 import coreir
 from DagVisitor import Visitor, Transformer
 from collections import OrderedDict
-from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant
+from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant, Select
 from . import CoreIRContext
 import typing as tp
 from .family import fam
@@ -17,6 +17,8 @@ from hwtypes.modifiers import strip_modifiers, is_modified
 #There is a hack where names aliasing with python keywords need to get remapped
 #Use this function to select into coreir instances
 def select(inst, name):
+    if isinstance(name, int):
+        name = str(name)
     if len(name) > 3 and name[-3:]=="___":
         name = name[:-3]
     return inst.select(name)
@@ -92,12 +94,23 @@ def adt_to_ctype(adt):
     elif issubclass(adt, Product):
         fields = OrderedDict()
         for field, sub_adt in adt.field_dict.items():
+            if field == "__fake__":
+                continue
             fields[field] = adt_to_ctype(sub_adt)
         return c.Record(fields)
+    elif issubclass(adt, Tuple):
+        sub_adts = []
+        for i, sub_adt in adt.field_dict.items():
+            sub_adts.append(adt_to_ctype(sub_adt))
+        if not all(sub_adt==sub_adts[0] for sub_adt in sub_adts):
+            raise ValueError("Cannot handle tuple of different types")
+        return c.Array(len(sub_adts), sub_adts[0])
     else:
         raise NotImplementedError(str(adt))
 
 def fields_to_adt(inputs: dict, name):
+    if len(inputs)==0:
+        return Product.from_fields(name, {"__fake__": fam().PyFamily().Bit})
     return Product.from_fields(name, {field:ctype_to_adt(CT) for field, CT in inputs.items()})
 
 class Loader:
@@ -115,7 +128,7 @@ class Loader:
         stateful_instances = {cmod.definition.interface: output_adt}
         for inst in cmod.definition.instances:
             node_name = self.nodes.name_from_coreir(inst.module)
-            print("node_name: ", node_name, inst.module.name)
+            #print("node_name: ", node_name, inst.module.name)
             source_node_t = None
             if node_name is None:
                 source_node_t = InstanceInput
@@ -385,7 +398,7 @@ class ToCoreir(Visitor):
             inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
         else:
             inst = self.create_instance(node)
-        inst_inputs = list(self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t.field_dict.keys())
+        inst_inputs = list(self.nodes.peak_nodes[node.node_name].Py.input_t.field_dict.keys())
         # Wire all the children (inputs)
         #Get only the non-modparam children
         children = list(node.children())[:-len(node.modparams)]
@@ -436,26 +449,34 @@ class VerifyUniqueIname(Visitor):
 class FixSelects(Transformer):
     def __init__(self, nodes):
         self.field_map = {}
+        self.nodes = nodes
         for node_name in nodes._node_names:
             peak_fc = nodes.peak_nodes[node_name]
             dag_node = nodes.dag_nodes[node_name]
+            cmod = nodes.coreir_modules[node_name]
+            _, c_outputs = parse_rtype(cmod.type)
+            c_output_keys = list(c_outputs.keys())
             if nodes.is_stateful(node_name):
                 dag_node = dag_node[0] #Use the source
             assert issubclass(dag_node, DagNode), f"{dag_node}"
             peak_outputs = list(peak_fc(fam().PyFamily()).output_t.field_dict.keys())
-            if len(peak_outputs) == 1:
-                self.field_map[dag_node] = {peak_outputs[0]: "O"}
-            else:
-                self.field_map[dag_node] = {name: f"O{i}" for i, name in enumerate(peak_outputs)}
+            #print("p",peak_outputs)
+            #print("c", c_outputs)
+            assert len(peak_outputs) == len(c_output_keys)
+            self.field_map[dag_node] = {name: c_output_keys[i] for i, name in enumerate(peak_outputs)}
+            #if len(peak_outputs) == 1:
+            #    self.field_map[dag_node] = {peak_outputs[0]: }
+            #else:
+            #    self.field_map[dag_node] = {name: f"O{i}" for i, name in enumerate(peak_outputs)}
 
     def visit_Select(self, node):
         Transformer.generic_visit(self, node)
-        child = node.children()[0]
-        if isinstance(child, (Source, Combine)):
+        child : DagNode = node.children()[0]
+        if isinstance(child, (Source, Combine, Select)):
             return None
-        assert type(child) in self.field_map
+        assert type(child) in self.field_map, str(child)
         replace_field = fix_keyword(self.field_map[type(child)][node.field])
-        return child.select(replace_field)
+        return child.select(replace_field, original=node.field)
 
         # Create a map from field to coreir field
 
@@ -476,7 +497,7 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
     FixSelects(nodes).run(dag)
     c = CoreIRContext()
     #construct coreir type
-    inputs = {field:c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items()}
+    inputs = {field:c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items() if field != "__fake__"}
     outputs = {field:adt_to_ctype(T) for field, T in dag.output.type.field_dict.items()}
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
