@@ -18,9 +18,9 @@ lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 @pytest.mark.parametrize("arch", [
     ("Lassen", lassen_fc, {}),
 ])
-@pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
-                                "resnet_block_compute", "resnet_compute", "stereo_compute"])
-#@pytest.mark.parametrize("app", ["gaussian_compute"])
+#@pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
+#                                "resnet_block_compute", "resnet_compute", "stereo_compute"])
+@pytest.mark.parametrize("app", ["gaussian_compute"])
 # @pytest.mark.parametrize("app", ["camera_pipeline_compute", "gaussian_compute", "add2", "add1_const", "add4", "add3_const"])
 def test_app(arch, app):
     print("STARTING TEST")
