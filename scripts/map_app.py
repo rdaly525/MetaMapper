@@ -46,7 +46,7 @@ arch_fc = lassen_fc
 rule_file = lassen_rules
 
 ArchNodes = Nodes("Arch")
-putil.load_from_peak(ArchNodes, arch_fc)
+PE_name = putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
@@ -59,19 +59,21 @@ for kname, kmod in kernels.items():
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     print_dag(dag)
     mapped_dag = mapper.do_mapping(dag, prove_mapping=False)    
-
+    cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped")
 
 print(f"Num PEs used: {mapper.num_pes}")
-c.run_passes(["wireclocks-clk"])
-c.run_passes(["wireclocks-arst"])
-c.run_passes(["markdirty"])
+# c.run_passes(["wireclocks-clk"])
+# c.run_passes(["wireclocks-arst"])
+# c.run_passes(["markdirty"])
+# pe_arch_node = ArchNodes.coreir_modules[PE_name]
+# pe_arch_node.definition 
 output_file= f"examples/clockwork/{app}_mapped.json"
 c.save_to_file(output_file)
 
-#Test syntax of serialized json
-res = delegator.run(f"coreir -i {output_file} -l commonlib")
-assert not res.return_code, res.out + res.err
+# #Test syntax of serialized json
+# res = delegator.run(f"coreir -i {output_file} -l commonlib")
+# assert not res.return_code, res.out + res.err
 
-#Test serializing to verilog
-res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o examples/clockwork/{app}_mapped.v --inline')
-assert not res.return_code, res.out + res.err
+# #Test serializing to verilog
+# res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o examples/clockwork/{app}_mapped.v --inline')
+# assert not res.return_code, res.out + res.err

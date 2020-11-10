@@ -350,6 +350,7 @@ class ToCoreir(Visitor):
 
     def visit_Combine(self, node: Combine):
         raise NotImplementedError("TODO")
+        # print("Visit combine")
         #Visitor.generic_visit(self, node)
         #def create_pt(cinputs):
         #    rtype = CoreIRContext().Record(cinputs)
@@ -482,15 +483,17 @@ class FixSelects(Transformer):
 
 #This will construct a new coreir module from the dag with ref_type
 def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module, name: str) -> coreir.ModuleDef:
+    breakpoint()
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     #remove everything from old definition
     mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
     def_ = mod.new_definition()
+    # print_dag(dag)
     ToCoreir(nodes, def_).run(dag)
     mod.definition = def_
     return mod
-
+ 
 #This will construct a new coreir module from the dag with ref_type
 def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
@@ -502,6 +505,8 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
     def_ = mod.new_definition()
+    # print_dag(dag)
     ToCoreir(nodes, def_).run(dag)
     mod.definition = def_
+    mod.print_()
     return mod

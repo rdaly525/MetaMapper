@@ -80,8 +80,8 @@ class RewriteTable:
         #input -> ibinding node
         ibind_children = []
         ibind_paths = []
-        pretty_print_binding(rule.ibinding)
-        pretty_print_binding(rule.obinding)
+        # pretty_print_binding(rule.ibinding)
+        # pretty_print_binding(rule.obinding)
         for from_b, to_b in rule.ibinding:
             assert isinstance(to_b, tuple)
             if isinstance(from_b, tuple):
@@ -162,10 +162,10 @@ class RewriteTable:
         arch_mapper = ArchMapper(to_fc, path_constraints=path_constraints, family=fam())
         ir_mapper = arch_mapper.process_ir_instruction(from_fc)
         peak_rr = ir_mapper.solve(solver, external_loop=True)
-        print("rr", peak_rr)
+        # print("rr", peak_rr)
         if peak_rr is None:
             return None
-        print(peak_rr, rr_name)
+        # print(peak_rr, rr_name)
         rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 
