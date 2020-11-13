@@ -79,7 +79,7 @@ class GreedyCovering:
         for rr in self.rrt.rules:
             #Will update dag in place
             cnt = GreedyReplace(rr).replace(dag)
-            print(f"RR {rr.name} used {cnt} times")
+            #print(f"RR {rr.name} used {cnt} times")
         return dag
 
 

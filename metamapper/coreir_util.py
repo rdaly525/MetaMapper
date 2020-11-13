@@ -338,9 +338,10 @@ class ToCoreir(Visitor):
         if bv_val is Unbound:
             self.node_to_inst[node] = None
             return
-        is_bool = type(bv_val) is bool
+        is_bool = type(bv_val) is fam().PyFamily().Bit
         if is_bool:
             const_mod = self.coreir_bit_const
+            bv_val = bool(bv_val)
         else:
             const_mod = self.coreir_const(width=bv_val.size)
         config = CoreIRContext().new_values(fields=dict(value=bv_val))
@@ -401,7 +402,7 @@ class ToCoreir(Visitor):
         inst_inputs = list(self.nodes.peak_nodes[node.node_name].Py.input_t.field_dict.keys())
         # Wire all the children (inputs)
         #Get only the non-modparam children
-        children = list(node.children())[:-len(node.modparams)]
+        children = node.children() if len(node.modparams)==0 else list(node.children())[:-len(node.modparams)]
         for port, child in zip(inst_inputs, children):
             if type(node).node_name == "coreir_reg" and port == "in0":
                 port = "in"

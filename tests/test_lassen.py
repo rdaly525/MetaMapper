@@ -21,6 +21,7 @@ lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 #@pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
 #                                "resnet_block_compute", "resnet_compute", "stereo_compute"])
 @pytest.mark.parametrize("app", ["gaussian_compute"])
+#@pytest.mark.parametrize("app", ["after_mapping_harris"])
 # @pytest.mark.parametrize("app", ["camera_pipeline_compute", "gaussian_compute", "add2", "add1_const", "add4", "add3_const"])
 def test_app(arch, app):
     print("STARTING TEST")
@@ -28,7 +29,7 @@ def test_app(arch, app):
     file_name = f"examples/clockwork/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cutil.load_from_json(file_name) #libraries=["lakelib"])
+    cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
     kernels = dict(c.global_namespace.modules)
 
     arch_fc = lassen_fc
@@ -41,29 +42,32 @@ def test_app(arch, app):
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
 
     for kname, kmod in kernels.items():
-    # kname = "hcompute_blur_unnormalized_stencil"
-    # kmod = kernels[kname]
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-        print_dag(dag)
+        #print_dag(dag)
         mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
-        cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped")
+        #print("Mapped",flush=True)
+        #print_dag(mapped_dag)
+        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped")
+        #print("CMOD",flush=True)
+        #mod.print_()
+
     print(f"Num PEs used: {mapper.num_pes}")
     output_file = f"build/{app}_mapped.json"
+    print(f"saving to {output_file}")
     c.save_to_file(output_file)
 
-    #return
-    #c.run_passes(["wireclocks-clk"])
-    #c.run_passes(["wireclocks-arst"])
-    #c.run_passes(["markdirty"])
+    c.run_passes(["wireclocks-clk"])
+    c.run_passes(["wireclocks-arst"])
+    c.run_passes(["markdirty"])
 
 
-    ##Test syntax of serialized json
-    #res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    #assert not res.return_code, res.out + res.err
+    #Test syntax of serialized json
+    res = delegator.run(f"coreir -i {output_file} -l commonlib")
+    assert not res.return_code, res.out + res.err
 
-    ##Test serializing to verilog
-    #res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o examples/clockwork/{app}_mapped.v --inline')
-    #assert not res.return_code, res.out + res.err
+    #Test serializing to verilog
+    res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
+    assert not res.return_code, res.out + res.err
 
 #test_app(("PE_lut", gen_PE_lut(16), {}),"add2")

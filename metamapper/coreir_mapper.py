@@ -1,4 +1,5 @@
-from metamapper.common_passes import VerifyNodes, print_dag, count_pes, SimplifyCombines, RemoveSelects, prove_equal, Clone, ExtractNames
+from metamapper.common_passes import VerifyNodes, print_dag, count_pes, SimplifyCombines, RemoveSelects, prove_equal, \
+    Clone, ExtractNames, Unbound2Const
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -125,8 +126,7 @@ class Mapper:
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
         #Create a new module representing the mapped_dag
+
+        if convert_unbound:
+            Unbound2Const().run(mapped_dag)
         return mapped_dag
-        #mapped_mod = cutil.dag_to_coreir_def(self.ArchNodes, mapped_dag, inst.module, inst.module.name + "_mapped")
-        ##coreir.inline_instance(inst)
-        #return mapped_mod
-        #cmod should now contain a mapped coreir module

@@ -88,6 +88,11 @@ class TypeLegalize(Transformer):
                 return new
         raise NotImplementedError()
 
+class Unbound2Const(Visitor):
+    def visit_Constant(self, node):
+        if node.value is Unbound:
+            node.value = node.type(0)
+
 
 class ExtractNames(Visitor):
     def __init__(self, nodes):
