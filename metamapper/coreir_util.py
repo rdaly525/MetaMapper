@@ -304,13 +304,14 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> Dag:
     return coreir_to_dag(CoreIRNodes, cmod)
 
 class ToCoreir(Visitor):
-    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef):
+    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef, convert_unbounds=True):
         self.coreir_const = CoreIRContext().get_namespace("coreir").generators["const"]
         self.coreir_bit_const = CoreIRContext().get_namespace("corebit").modules["const"]
         self.coreir_pt = CoreIRContext().get_namespace("_").generators["passthrough"]
         self.nodes = nodes
         self.def_ = def_
         self.node_to_inst: tp.Mapping[DagNode, coreir.Wireable] = {}  # inst is really the output port of the instance
+        self.convert_unbounds=convert_unbounds
 
     def doit(self, dag: Dag):
         #Create all the instances for the Source/Sinks first
@@ -409,7 +410,7 @@ class ToCoreir(Visitor):
             child_inst = self.node_to_inst[child]
             if child_inst is not None:
                 self.def_.connect(child_inst, select(inst, port))
-            else:
+            elif self.convert_unbounds:
                 coreir.connect_const(select(inst, port), 0)
 
         self.node_to_inst[node] = inst
@@ -482,18 +483,18 @@ class FixSelects(Transformer):
         # Create a map from field to coreir field
 
 #This will construct a new coreir module from the dag with ref_type
-def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module, name: str) -> coreir.ModuleDef:
+def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     #remove everything from old definition
-    mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
+    #mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
     def_ = mod.new_definition()
     ToCoreir(nodes, def_).run(dag)
     mod.definition = def_
     return mod
 
 #This will construct a new coreir module from the dag with ref_type
-def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
+def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     c = CoreIRContext()
@@ -503,6 +504,6 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
     def_ = mod.new_definition()
-    ToCoreir(nodes, def_).run(dag)
+    ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).run(dag)
     mod.definition = def_
     return mod
