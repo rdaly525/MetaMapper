@@ -109,7 +109,7 @@ def gen_rrules():
 
 def test_camera():
     print("STARTING TEST")
-    app = "laplacian_pyramid_compute"
+    app = "harris_compute"
     c = CoreIRContext(reset=True)
     file_name = f"examples/dse/{app}.json"
     cutil.load_libs(["commonlib"])
