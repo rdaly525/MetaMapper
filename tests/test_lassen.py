@@ -43,6 +43,9 @@ def test_app(arch, app):
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
 
+    c.run_passes(["rungenerators", "deletedeadinstances"])
+
+
     for kname, kmod in kernels.items():
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)

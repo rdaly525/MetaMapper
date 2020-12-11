@@ -25,7 +25,7 @@ DSE_PE_location = "../DSEGraphAnalysis/outputs"
 def gen_rrules():
 
     arch = read_arch(f"{DSE_PE_location}/PE.json")
-    PE_fc = wrapped_peak_class(arch)
+    PE_fc = wrapped_peak_class(arch, debug=True)
 
     mapping_funcs = []
     rrules = []
@@ -71,7 +71,7 @@ kernels = dict(c.global_namespace.modules)
 arch_fc, rrules = gen_rrules()
 
 ArchNodes = Nodes("Arch")
-putil.load_from_peak(ArchNodes, arch_fc)
+putil.load_from_peak(ArchNodes, arch_fc, name="TESTEST")
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
@@ -82,10 +82,10 @@ c.run_passes(["rungenerators", "deletedeadinstances"])
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-    #print_dag(dag)
+    print_dag(dag)
     mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
     #print("Mapped",flush=True)
-    #print_dag(mapped_dag)
+    print_dag(mapped_dag)
     #mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     #mod.print_()
@@ -117,3 +117,4 @@ if verilog:
     #Test serializing to verilog
     res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
     assert not res.return_code, res.out + res.err
+

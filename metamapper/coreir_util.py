@@ -189,8 +189,12 @@ class Loader:
                 else:
                     raise NotImplementedError()
 
-            if inst.module.name != "rom2":
-                modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
+            if inst.module.name != "rom2" and inst.module.name != "Mem":
+                try:
+                    modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
+                except:
+                    print(inst.module.name)
+                    breakpoint()
                 #TODO unsafe. Assumes that modargs are specified at the end.
                 children += modargs
             iname = inst.name

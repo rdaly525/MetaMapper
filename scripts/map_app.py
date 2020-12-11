@@ -33,6 +33,9 @@ app = str(sys.argv[1])
 
 
 lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+arch_fc = lassen_fc
+rule_file = lassen_rules
+
 
 verilog = False
 print("STARTING TEST")
@@ -43,8 +46,6 @@ CoreIRNodes = gen_CoreIRNodes(16)
 cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
 kernels = dict(c.global_namespace.modules)
 
-arch_fc = lassen_fc
-rule_file = lassen_rules
 
 ArchNodes = Nodes("Arch")
 putil.load_from_peak(ArchNodes, arch_fc)
@@ -58,10 +59,10 @@ c.run_passes(["rungenerators", "deletedeadinstances"])
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-    #print_dag(dag)
+    print_dag(dag)
     mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
     #print("Mapped",flush=True)
-    #print_dag(mapped_dag)
+    print_dag(mapped_dag)
     #mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     #mod.print_()
