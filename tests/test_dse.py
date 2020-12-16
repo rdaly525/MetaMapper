@@ -53,49 +53,56 @@ def gen_rrules(app):
     return PE_fc, rrules
 
 # @pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
-#                                 "resnet_block_compute", "resnet_compute", "stereo_compute"])
+                                # "resnet_block_compute", "resnet_compute", "stereo_compute"])
 # @pytest.mark.parametrize("app", ["gaussian_compute", "camera_pipeline_compute"])
 @pytest.mark.parametrize("app", ["gaussian_compute"])
 def test_app(app):
+    verilog = False
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
     file_name = f"examples/clockwork/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cutil.load_from_json(file_name) #libraries=["lakelib"])
+    cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
     kernels = dict(c.global_namespace.modules)
 
     arch_fc, rrules = gen_rrules(app)
 
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
-    
+    mr = "memory.rom2"
+    ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
 
+    c.run_passes(["rungenerators", "deletedeadinstances"])
+
+
     for kname, kmod in kernels.items():
-    # kname = "hcompute_blur_unnormalized_stencil"
-    # kmod = kernels[kname]
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-        print_dag(dag)
-        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
-        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
-    output_file = f"build/dse_{app}_mapped.json"
-    print(f"saving to {output_file}")
+        mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
+        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
+
+    #  Without these lines the last kernel will not be created in the output coreir file
+    dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
+    mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
+    mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mappedd", convert_unbounds=verilog)
+
     print(f"Num PEs used: {mapper.num_pes}")
-    return
-    c.run_passes(["wireclocks-clk"])
-    c.run_passes(["wireclocks-arst"])
-    c.run_passes(["markdirty"])
-    output_file= f"examples/clockwork/{app}_mapped.json"
+    output_file = f"build/{app}_mapped.json"
+    print(f"saving to {output_file}")
     c.save_to_file(output_file)
 
-    #Test syntax of serialized json
-    res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    assert not res.return_code, res.out + res.err
+    if verilog:
+        c.run_passes(["wireclocks-clk"])
+        c.run_passes(["wireclocks-arst"])
+        c.run_passes(["markdirty"])
 
-    #Test serializing to verilog
-    res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o examples/clockwork/{app}_mapped.v --inline')
-    assert not res.return_code, res.out + res.err
 
-#test_app(("PE_lut", gen_PE_lut(16), {}),"add2")
+        #Test syntax of serialized json
+        res = delegator.run(f"coreir -i {output_file} -l commonlib")
+        assert not res.return_code, res.out + res.err
+
+        #Test serializing to verilog
+        res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
+        assert not res.return_code, res.out + res.err

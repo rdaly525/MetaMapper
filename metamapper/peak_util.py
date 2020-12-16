@@ -111,8 +111,8 @@ def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
             asm.width,
             HashableDict(asm.layout),
             instr_magma_type,
-            wrapped_name= "Wrapped"+peak_m.name
-            #wrapped_name = "WrappedPE"
+            # wrapped_name= "Wrapped"+peak_m.name
+            wrapped_name = "WrappedPE"
         )
 
     #TODO This  compilation is sometimes cached.

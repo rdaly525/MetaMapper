@@ -195,8 +195,12 @@ class Loader:
                 else:
                     raise NotImplementedError()
 
-            if inst.module.name != "rom2":
-                modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
+            if inst.module.name != "rom2" and inst.module.name != "Mem":
+                try:
+                    modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
+                except:
+                    print(inst.module.name)
+                    breakpoint()
                 #TODO unsafe. Assumes that modargs are specified at the end.
                 children += modargs
             iname = inst.name
@@ -255,7 +259,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module) -> Dag:
     assert cmod.definition
 
     #Simple optimizations
-    c.run_passes(["rungenerators", "deletedeadinstances"])
+    # c.run_passes(["rungenerators", "deletedeadinstances"])
     # c.run_passes(["flatten", "removebulkconnections", "flattentypes"])
 
     #First inline all non-findable instances
@@ -490,14 +494,15 @@ class FixSelects(Transformer):
         # Create a map from field to coreir field
 
 #This will construct a new coreir module from the dag with ref_type
-def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module) -> coreir.ModuleDef:
+def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unbounds=True) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     #remove everything from old definition
     #mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
     def_ = mod.new_definition()
-    ToCoreir(nodes, def_).doit(dag)
+    ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
+    mod.print_()
     return mod
 
 #This will construct a new coreir module from the dag with ref_type
@@ -514,4 +519,5 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> c
     print("I", inputs)
     ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
+    mod.print_()
     return mod
