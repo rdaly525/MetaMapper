@@ -55,7 +55,7 @@ def gen_rrules(app):
 # @pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
 #                                 "resnet_block_compute", "resnet_compute", "stereo_compute"])
 # @pytest.mark.parametrize("app", ["gaussian_compute", "camera_pipeline_compute"])
-@pytest.mark.parametrize("app", ["camera_pipeline_compute"])
+@pytest.mark.parametrize("app", ["gaussian_compute"])
 def test_app(app):
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
@@ -78,9 +78,10 @@ def test_app(app):
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         print_dag(dag)
-        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)    
-
-
+        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
+        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
+    output_file = f"build/dse_{app}_mapped.json"
+    print(f"saving to {output_file}")
     print(f"Num PEs used: {mapper.num_pes}")
     return
     c.run_passes(["wireclocks-clk"])

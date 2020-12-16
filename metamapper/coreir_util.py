@@ -23,22 +23,28 @@ def select(inst, name):
         name = name[:-3]
     return inst.select(name)
 
-#returns input objects and output objects
-#removes clk and reset
 
-def fix_keyword(val:str):
+
+def fix_keyword_from_coreir(val:str):
     if val.isdigit():
         return int(val)
     if val in keyword.kwlist:
         return val + "___"
     return val
 
+def fix_keyword_to_coreir(val:str):
+    if val[-3:] == "___":
+        return val[:-3]
+    return val
+
+#returns input objects and output objects
+#removes clk and reset
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     assert isinstance(rtype, coreir.Record)
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
-        n = fix_keyword(n)
+        n = fix_keyword_from_coreir(n)
         if t.kind == "Named":
             continue
         if t.kind not in ("Array", "Bit", "BitIn", "Record"):
@@ -172,7 +178,7 @@ class Loader:
                 child_node = self.add_node(child_inst)
                 child = child_node
                 for sel in sel_path:
-                    sel = fix_keyword(sel)
+                    sel = fix_keyword_from_coreir(sel)
                     child = child.select(sel)
                 children.append(child)
 
@@ -330,7 +336,9 @@ class ToCoreir(Visitor):
         self.node_to_inst[node] = self.def_.interface
 
     def visit_Source(self, node):
-        assert node.sink in self.node_to_inst
+        if node.sink not in self.node_to_inst:
+            raise ValueError()
+
         self.node_to_inst[node] = self.node_to_inst[node.sink]
 
     def visit_Constant(self, node):
@@ -339,7 +347,7 @@ class ToCoreir(Visitor):
         if bv_val is Unbound:
             self.node_to_inst[node] = None
             return
-        is_bool = type(bv_val) is fam().PyFamily().Bit
+        is_bool = type(bv_val) is fam().PyFamily().Bit or isinstance(bv_val, bool)
         if is_bool:
             const_mod = self.coreir_bit_const
             bv_val = bool(bv_val)
@@ -432,7 +440,6 @@ class ToCoreir(Visitor):
     #CoreIR Registers have modparams. These are gotten from the Sink part of the pair.
 
 
-
 class VerifyUniqueIname(Visitor):
     def __init__(self):
         self.inames = {}
@@ -477,7 +484,7 @@ class FixSelects(Transformer):
         if isinstance(child, (Source, Combine, Select)):
             return None
         assert type(child) in self.field_map, str(child)
-        replace_field = fix_keyword(self.field_map[type(child)][node.field])
+        replace_field = fix_keyword_from_coreir(self.field_map[type(child)][node.field])
         return child.select(replace_field, original=node.field)
 
         # Create a map from field to coreir field
@@ -489,7 +496,7 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module) -> coreir.Modu
     #remove everything from old definition
     #mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
     def_ = mod.new_definition()
-    ToCoreir(nodes, def_).run(dag)
+    ToCoreir(nodes, def_).doit(dag)
     mod.definition = def_
     return mod
 
@@ -499,11 +506,12 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> c
     FixSelects(nodes).run(dag)
     c = CoreIRContext()
     #construct coreir type
-    inputs = {field:c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items() if field != "__fake__"}
-    outputs = {field:adt_to_ctype(T) for field, T in dag.output.type.field_dict.items()}
+    inputs = {fix_keyword_to_coreir(field):c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items() if field != "__fake__"}
+    outputs = {fix_keyword_to_coreir(field):adt_to_ctype(T) for field, T in dag.output.type.field_dict.items()}
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
     def_ = mod.new_definition()
-    ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).run(dag)
+    print("I", inputs)
+    ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
     return mod

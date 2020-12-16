@@ -5,6 +5,7 @@ from metamapper.irs.coreir import gen_CoreIRNodes
 import pytest
 
 examples_coreir = [
+    "add4_pipe_mapped",
     "add2",
     "multi",
     #"add4_pipe",

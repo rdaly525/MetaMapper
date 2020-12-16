@@ -173,6 +173,13 @@ class Nodes:
         self.coreir_modules[node_name] = cmod
         self._node_names.add(node_name)
 
+    #add a copy of nodes[node_name] to self
+    def copy(self, nodes, node_name):
+        peak_node = nodes.peak_nodes[node_name]
+        cmod = nodes.coreir_modules[node_name]
+        dag_nodes = nodes.dag_nodes[node_name]
+        self.add(node_name, peak_node, cmod, dag_nodes)
+
     #TODO just change staticattrs to pass in input_t and output_t
     #Have that indicate whether there is dynamic type or not
     #If this is state, then it creates two nodes a source and sink
