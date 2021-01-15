@@ -55,8 +55,7 @@ def gen_rrules(app):
 # @pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
                                 # "resnet_block_compute", "resnet_compute", "stereo_compute"])
 # @pytest.mark.parametrize("app", ["gaussian_compute", "camera_pipeline_compute"])
-# @pytest.mark.parametrize("app", ["camera_pipeline_compute"])
-@pytest.mark.parametrize("app", ["harris_compute"])
+@pytest.mark.parametrize("app", ["gaussian_compute"])
 def test_app(app):
     verilog = False
     print("STARTING TEST")
@@ -81,20 +80,13 @@ def test_app(app):
     for kname, kmod in kernels.items():
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-        #print_dag(dag)
         mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-        #print("Mapped",flush=True)
-        #print_dag(mapped_dag)
-        #mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-        #mod.print_()
 
     #  Without these lines the last kernel will not be created in the output coreir file
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mappedd", convert_unbounds=verilog)
-
-
 
     print(f"Num PEs used: {mapper.num_pes}")
     output_file = f"build/{app}_mapped.json"
