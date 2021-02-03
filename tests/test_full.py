@@ -13,13 +13,12 @@ from metamapper.coreir_mapper import Mapper
 import delegator
 import pytest
 
-lassen_rules = "/Users/rdaly/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
-
+lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
 #The problem is that there is a mapping problem between coreir port names and hwtypes port names
 #I need a generic solution to be able to easily go between each of these.
 
-
+@pytest.mark.skip
 @pytest.mark.parametrize("arch", [
     #("PE_lut", gen_PE_lut(16), {}),
     ("Lassen", lassen_fc, {}),

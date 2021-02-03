@@ -14,7 +14,7 @@ from metamapper.instruction_selection import GreedyCovering
 
 from metamapper.common_passes import VerifyNodes
 from metamapper import CoreIRContext
-from peak.examples import riscv #import sim, isa, family, asm
+#from peak.examples import riscv #import sim, isa, family, asm
 from metamapper.family import set_fam, fam
 
 lassen_constraints = {

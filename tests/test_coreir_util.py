@@ -5,9 +5,9 @@ from metamapper.irs.coreir import gen_CoreIRNodes
 import pytest
 
 examples_coreir = [
-    "add4_pipe_mapped",
     "add2",
     "multi",
+    #"add4_pipe_mapped",
     #"add4_pipe",
     #"pipe",
     #"add1_const",
@@ -15,6 +15,7 @@ examples_coreir = [
     #"add4",
     #"add3_const"
 ]
+
 
 @pytest.mark.parametrize("name", examples_coreir)
 def test_examples_coreir(name):

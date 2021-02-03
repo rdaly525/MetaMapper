@@ -55,6 +55,7 @@ def gen_rrules(app):
 # @pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
                                 # "resnet_block_compute", "resnet_compute", "stereo_compute"])
 # @pytest.mark.parametrize("app", ["gaussian_compute", "camera_pipeline_compute"])
+@pytest.mark.skip
 @pytest.mark.parametrize("app", ["gaussian_compute"])
 def test_app(app):
     verilog = False

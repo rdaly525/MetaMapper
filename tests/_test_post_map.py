@@ -13,27 +13,18 @@ from metamapper.common_passes import  print_dag
 import delegator
 import pytest
 
-lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
-@pytest.mark.skip
 @pytest.mark.parametrize("arch", [
     ("Lassen", lassen_fc, {}),
 ])
-#@pytest.mark.parametrize("app", ["harris_compute", "camera_pipeline_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
-#                                "resnet_block_compute", "resnet_compute", "stereo_compute"])
-#@pytest.mark.parametrize("app", ["gaussian_compute"])
-@pytest.mark.parametrize("app", ["harris_compute"])
-#@pytest.mark.parametrize("app", ["after_mapping_harris"])
-# @pytest.mark.parametrize("app", ["camera_pipeline_compute", "gaussian_compute", "add2", "add1_const", "add4", "add3_const"])
+@pytest.mark.parametrize("app", ["resnet_3x_med_dse"])
 def test_app(arch, app):
-    verilog = False
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
-    file_name = f"examples/clockwork/{app}.json"
-    cutil.load_libs(["commonlib"])
+    file_name = f"examples/post_mapping/{app}.json"
     CoreIRNodes = gen_CoreIRNodes(16)
-    cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
-    kernels = dict(c.global_namespace.modules)
+    cutil.load_from_json(file_name, libraries=["cgralib"])
 
     arch_fc = lassen_fc
     rule_file = lassen_rules
