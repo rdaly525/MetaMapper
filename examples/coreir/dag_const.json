@@ -1,0 +1,63 @@
+{"top":"global.Add4",
+"namespaces":{
+  "global":{
+    "modules":{
+      "Add4":{
+        "type":["Record",[
+          ["in0",["Array",16,"BitIn"]],
+          ["out",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "a1":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector", 16], "16'h1111"]}
+          },
+          "a2":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector", 16], "16'h2222"]}
+          },
+          "a3":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector", 16], "16'h3333"]}
+          },
+          "a4":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector", 16], "16'h4444"]}
+          }
+        },
+        "connections":[
+          ["self.in0","a1.in0"],
+          ["c1.out","a1.in1"],
+          ["a1.out","a2.in0"],
+          ["c2.out","a2.in1"],
+          ["a2.out","a3.in0"],
+          ["c3.out","a3.in1"],
+          ["a3.out","a4.in0"],
+          ["c4.out","a4.in1"],
+          ["self.out","a4.out"]
+        ]
+      }
+    }
+  }
+}
+}
