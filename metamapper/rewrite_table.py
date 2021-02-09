@@ -26,10 +26,10 @@ class RewriteRule:
         name = None
     ):
 
-        pattern_is_tree = CheckIfTree().is_tree(tile)
-        if not pattern_is_tree:
-            print_dag(tile)
-            raise NotImplementedError("Tile not a tree")
+        # pattern_is_tree = CheckIfTree().is_tree(tile)
+        # if not pattern_is_tree:
+        #     print_dag(tile)
+        #     raise NotImplementedError("Tile not a tree")
 
         self.tile = tile
         self.replace = replace
@@ -80,8 +80,8 @@ class RewriteTable:
         #input -> ibinding node
         ibind_children = []
         ibind_paths = []
-        pretty_print_binding(rule.ibinding)
-        pretty_print_binding(rule.obinding)
+        #pretty_print_binding(rule.ibinding)
+        #pretty_print_binding(rule.obinding)
         for from_b, to_b in rule.ibinding:
             assert isinstance(to_b, tuple)
             if isinstance(from_b, tuple):

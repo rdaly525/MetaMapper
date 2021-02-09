@@ -1,7 +1,7 @@
 import coreir
 from DagVisitor import Visitor, Transformer
 from collections import OrderedDict
-from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant
+from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant, Select
 from . import CoreIRContext
 import typing as tp
 from .family import fam
@@ -17,26 +17,34 @@ from hwtypes.modifiers import strip_modifiers, is_modified
 #There is a hack where names aliasing with python keywords need to get remapped
 #Use this function to select into coreir instances
 def select(inst, name):
+    if isinstance(name, int):
+        name = str(name)
     if len(name) > 3 and name[-3:]=="___":
         name = name[:-3]
     return inst.select(name)
 
-#returns input objects and output objects
-#removes clk and reset
 
-def fix_keyword(val:str):
+
+def fix_keyword_from_coreir(val:str):
     if val.isdigit():
         return int(val)
     if val in keyword.kwlist:
         return val + "___"
     return val
 
+def fix_keyword_to_coreir(val:str):
+    if val[-3:] == "___":
+        return val[:-3]
+    return val
+
+#returns input objects and output objects
+#removes clk and reset
 def parse_rtype(rtype) -> tp.Mapping[str, coreir.Type]:
     assert isinstance(rtype, coreir.Record)
     inputs = OrderedDict()
     outputs = OrderedDict()
     for n, t in rtype.items():
-        n = fix_keyword(n)
+        n = fix_keyword_from_coreir(n)
         if t.kind == "Named":
             continue
         if t.kind not in ("Array", "Bit", "BitIn", "Record"):
@@ -92,12 +100,23 @@ def adt_to_ctype(adt):
     elif issubclass(adt, Product):
         fields = OrderedDict()
         for field, sub_adt in adt.field_dict.items():
+            if field == "__fake__":
+                continue
             fields[field] = adt_to_ctype(sub_adt)
         return c.Record(fields)
+    elif issubclass(adt, Tuple):
+        sub_adts = []
+        for i, sub_adt in adt.field_dict.items():
+            sub_adts.append(adt_to_ctype(sub_adt))
+        if not all(sub_adt==sub_adts[0] for sub_adt in sub_adts):
+            raise ValueError("Cannot handle tuple of different types")
+        return c.Array(len(sub_adts), sub_adts[0])
     else:
         raise NotImplementedError(str(adt))
 
 def fields_to_adt(inputs: dict, name):
+    if len(inputs)==0:
+        return Product.from_fields(name, {"__fake__": fam().PyFamily().Bit})
     return Product.from_fields(name, {field:ctype_to_adt(CT) for field, CT in inputs.items()})
 
 class Loader:
@@ -115,6 +134,7 @@ class Loader:
         stateful_instances = {cmod.definition.interface: output_adt}
         for inst in cmod.definition.instances:
             node_name = self.nodes.name_from_coreir(inst.module)
+            #print("node_name: ", node_name, inst.module.name)
             source_node_t = None
             if node_name is None:
                 source_node_t = InstanceInput
@@ -158,7 +178,7 @@ class Loader:
                 child_node = self.add_node(child_inst)
                 child = child_node
                 for sel in sel_path:
-                    sel = fix_keyword(sel)
+                    sel = fix_keyword_from_coreir(sel)
                     child = child.select(sel)
                 children.append(child)
 
@@ -175,11 +195,20 @@ class Loader:
                 else:
                     raise NotImplementedError()
 
-            modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
-            #TODO unsafe. Assumes that modargs are specified at the end.
-            children += modargs
+            if inst.module.name != "rom2" and inst.module.name != "Mem":
+                try:
+                    modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
+                except:
+                    print(inst.module.name)
+                    breakpoint()
+                #TODO unsafe. Assumes that modargs are specified at the end.
+                children += modargs
             iname = inst.name
-        if sink_t is None:
+
+            
+        if inst.module.name == "rom2":
+            node = node_t(*children, init=inst.config["init"], iname=iname)
+        elif sink_t is None:
             node = node_t(*children, iname=iname)
             self.node_map[inst] = node
         elif sink_adt is None:
@@ -187,6 +216,7 @@ class Loader:
         else:
             node = node_t(*children, iname=iname, type=sink_adt)
         return node
+
 
     def inst_from_name(self, iname):
         if iname == "self":
@@ -229,19 +259,20 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module) -> Dag:
     assert cmod.definition
 
     #Simple optimizations
-    c.run_passes(["rungenerators", "deletedeadinstances"])
-    c.run_passes(["flatten", "removebulkconnections"])
+    # c.run_passes(["rungenerators", "deletedeadinstances"])
+    # c.run_passes(["flatten", "removebulkconnections", "flattentypes"])
 
     #First inline all non-findable instances
     #TODO better mechanism for this
-    to_inline = []
-    for inst in cmod.definition.instances:
-        mod_name = inst.module.name
-        if mod_name in ("counter", "reshape", "absd"):
-            to_inline.append(inst)
-    for inst in to_inline:
-        print("inlining", inst.name, inst.module.name)
-        coreir.inline_instance(inst)
+    for _ in range(3):
+        to_inline = []
+        for inst in cmod.definition.instances:
+            mod_name = inst.module.name
+            if mod_name in ("counter", "reshape", "absd", "umax", "umin", "smax", "smin", "abs", "sle"):
+                to_inline.append(inst)
+        for inst in to_inline:
+            print("inlining", inst.name, inst.module.name)
+            coreir.inline_instance(inst)
     return Loader(cmod, nodes).dag
 
 #returns module, and map from instances to dags
@@ -266,15 +297,15 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> Dag:
     assert cmod.definition
 
     #Simple optimizations
-    c.run_passes(["rungenerators", "deletedeadinstances"])
-    c.run_passes(["flatten", "removebulkconnections", "flatten_types"])
+    # c.run_passes(["rungenerators", "deletedeadinstances"])
+    # c.run_passes(["flatten", "removebulkconnections"])
 
     #First inline all non-findable instances
     #TODO better mechanism for this
     to_inline = []
     for inst in cmod.definition.instances:
         mod_name = inst.module.name
-        if mod_name in ("counter", "reshape", "absd"):
+        if mod_name in ("absd", "umax", "umin", "smax", "smin", "abs", "sle"):
             to_inline.append(inst)
     for inst in to_inline:
         print("inlining", inst.name, inst.module.name)
@@ -283,13 +314,14 @@ def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> Dag:
     return coreir_to_dag(CoreIRNodes, cmod)
 
 class ToCoreir(Visitor):
-    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef):
+    def __init__(self, nodes: Nodes, def_: coreir.ModuleDef, convert_unbounds=True):
         self.coreir_const = CoreIRContext().get_namespace("coreir").generators["const"]
         self.coreir_bit_const = CoreIRContext().get_namespace("corebit").modules["const"]
         self.coreir_pt = CoreIRContext().get_namespace("_").generators["passthrough"]
         self.nodes = nodes
         self.def_ = def_
         self.node_to_inst: tp.Mapping[DagNode, coreir.Wireable] = {}  # inst is really the output port of the instance
+        self.convert_unbounds=convert_unbounds
 
     def doit(self, dag: Dag):
         #Create all the instances for the Source/Sinks first
@@ -308,7 +340,9 @@ class ToCoreir(Visitor):
         self.node_to_inst[node] = self.def_.interface
 
     def visit_Source(self, node):
-        assert node.sink in self.node_to_inst
+        if node.sink not in self.node_to_inst:
+            raise ValueError()
+
         self.node_to_inst[node] = self.node_to_inst[node.sink]
 
     def visit_Constant(self, node):
@@ -317,9 +351,10 @@ class ToCoreir(Visitor):
         if bv_val is Unbound:
             self.node_to_inst[node] = None
             return
-        is_bool = type(bv_val) is bool
+        is_bool = type(bv_val) is fam().PyFamily().Bit or isinstance(bv_val, bool)
         if is_bool:
             const_mod = self.coreir_bit_const
+            bv_val = bool(bv_val)
         else:
             const_mod = self.coreir_const(width=bv_val.size)
         config = CoreIRContext().new_values(fields=dict(value=bv_val))
@@ -370,18 +405,24 @@ class ToCoreir(Visitor):
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
-        inst = self.create_instance(node)
-        inst_inputs = list(self.nodes.peak_nodes[node.node_name](family.PyFamily()).input_t.field_dict.keys())
+        
+        if type(node).node_name == "memory.rom2":
+            rom_mod = self.nodes.coreir_modules["memory.rom2"]
+            config = CoreIRContext().new_values(dict(init=node.init))
+            inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
+        else:
+            inst = self.create_instance(node)
+        inst_inputs = list(self.nodes.peak_nodes[node.node_name].Py.input_t.field_dict.keys())
         # Wire all the children (inputs)
         #Get only the non-modparam children
-        children = list(node.children())[:-len(node.modparams)]
+        children = node.children() if len(node.modparams)==0 else list(node.children())[:-len(node.modparams)]
         for port, child in zip(inst_inputs, children):
             if type(node).node_name == "coreir_reg" and port == "in0":
                 port = "in"
             child_inst = self.node_to_inst[child]
             if child_inst is not None:
                 self.def_.connect(child_inst, select(inst, port))
-            else:
+            elif self.convert_unbounds:
                 coreir.connect_const(select(inst, port), 0)
 
         self.node_to_inst[node] = inst
@@ -403,7 +444,6 @@ class ToCoreir(Visitor):
     #CoreIR Registers have modparams. These are gotten from the Sink part of the pair.
 
 
-
 class VerifyUniqueIname(Visitor):
     def __init__(self):
         self.inames = {}
@@ -422,51 +462,62 @@ class VerifyUniqueIname(Visitor):
 class FixSelects(Transformer):
     def __init__(self, nodes):
         self.field_map = {}
+        self.nodes = nodes
         for node_name in nodes._node_names:
             peak_fc = nodes.peak_nodes[node_name]
             dag_node = nodes.dag_nodes[node_name]
+            cmod = nodes.coreir_modules[node_name]
+            _, c_outputs = parse_rtype(cmod.type)
+            c_output_keys = list(c_outputs.keys())
             if nodes.is_stateful(node_name):
                 dag_node = dag_node[0] #Use the source
             assert issubclass(dag_node, DagNode), f"{dag_node}"
             peak_outputs = list(peak_fc(fam().PyFamily()).output_t.field_dict.keys())
-            if len(peak_outputs) == 1:
-                self.field_map[dag_node] = {peak_outputs[0]: "O"}
-            else:
-                self.field_map[dag_node] = {name: f"O{i}" for i, name in enumerate(peak_outputs)}
+            #print("p",peak_outputs)
+            #print("c", c_outputs)
+            assert len(peak_outputs) == len(c_output_keys)
+            self.field_map[dag_node] = {name: c_output_keys[i] for i, name in enumerate(peak_outputs)}
+            #if len(peak_outputs) == 1:
+            #    self.field_map[dag_node] = {peak_outputs[0]: }
+            #else:
+            #    self.field_map[dag_node] = {name: f"O{i}" for i, name in enumerate(peak_outputs)}
 
     def visit_Select(self, node):
         Transformer.generic_visit(self, node)
-        child = node.children()[0]
-        if isinstance(child, (Source, Combine)):
+        child : DagNode = node.children()[0]
+        if isinstance(child, (Source, Combine, Select)):
             return None
-        assert type(child) in self.field_map
-        replace_field = fix_keyword(self.field_map[type(child)][node.field])
-        return child.select(replace_field)
+        assert type(child) in self.field_map, str(child)
+        replace_field = fix_keyword_from_coreir(self.field_map[type(child)][node.field])
+        return child.select(replace_field, original=node.field)
 
         # Create a map from field to coreir field
 
 #This will construct a new coreir module from the dag with ref_type
-def dag_to_coreir_def(nodes: Nodes, dag: Dag, ref_mod: coreir.Module, name: str) -> coreir.ModuleDef:
+def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unbounds=True) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     #remove everything from old definition
-    mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
+    #mod = CoreIRContext(False).global_namespace.new_module(name, ref_mod.type)
     def_ = mod.new_definition()
-    ToCoreir(nodes, def_).run(dag)
+    ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
+    mod.print_()
     return mod
 
 #This will construct a new coreir module from the dag with ref_type
-def dag_to_coreir(nodes: Nodes, dag: Dag, name: str) -> coreir.ModuleDef:
+def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     c = CoreIRContext()
     #construct coreir type
-    inputs = {field:c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items()}
-    outputs = {field:adt_to_ctype(T) for field, T in dag.output.type.field_dict.items()}
+    inputs = {fix_keyword_to_coreir(field):c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items() if field != "__fake__"}
+    outputs = {fix_keyword_to_coreir(field):adt_to_ctype(T) for field, T in dag.output.type.field_dict.items()}
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
     def_ = mod.new_definition()
-    ToCoreir(nodes, def_).run(dag)
+    print("I", inputs)
+    ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
+    mod.print_()
     return mod

@@ -88,6 +88,11 @@ class TypeLegalize(Transformer):
                 return new
         raise NotImplementedError()
 
+class Unbound2Const(Visitor):
+    def visit_Constant(self, node):
+        if node.value is Unbound:
+            node.value = node.type(0)
+
 
 class ExtractNames(Visitor):
     def __init__(self, nodes):
@@ -116,10 +121,11 @@ class VerifyNodes(Visitor):
         return None
 
     def generic_visit(self, node):
-        if node.node_name != "coreir.reg":
-            nodes = type(node).nodes
-            if nodes != self.nodes and nodes != Common:
-                self.wrong_nodes.add(node)
+        if hasattr(node, "node_name"):
+            if node.node_name != "coreir.reg" and node.node_name != "memory.rom2":
+                nodes = type(node).nodes
+                if nodes != self.nodes and nodes != Common:
+                    self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
 from peak.mapper.utils import rebind_type, solved_to_bv
@@ -219,6 +225,21 @@ class AddID(Visitor):
         Visitor.generic_visit(self, node)
         node._id_ = self.curid
         self.curid += 1
+
+class CountPEs(Visitor):
+    def __init__(self):
+        self.res = 0
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+
+    def visit_PE(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += 1
+
+    def visit_PE_wrapped(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += 1
 
 class Printer(Visitor):
     def __init__(self):
@@ -356,6 +377,10 @@ def print_dag(dag: Dag):
     AddID().run(dag)
     print(Printer().run(dag).res)
 
+def count_pes(dag: Dag):
+    print(CountPEs().run(dag).res)
+    return CountPEs().run(dag).res
+
 class CheckIfTree(Visitor):
     def __init__(self):
         self.parent_cnt = {}
@@ -388,16 +413,21 @@ class CheckIfTree(Visitor):
 class Clone(Visitor):
     def clone(self, dag: Dag, iname_prefix: str = ""):
         assert dag is not None
-        self.node_map = {}
+        self.node_map = {node: node.copy() for node in dag.sources}
         self.iname_prefix = iname_prefix
         self.run(dag)
+
         dag_copy = Dag(
             sources=[self.node_map[node] for node in dag.sources],
             sinks=[self.node_map[node] for node in dag.sinks]
         )
         return dag_copy
 
+    def visit_Input(self, node):
+        pass
+
     def generic_visit(self, node):
+        # print("Visiting", node)
         Visitor.generic_visit(self, node)
         new_node = node.copy()
         children = (self.node_map[child] for child in node.children())

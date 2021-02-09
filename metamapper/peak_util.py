@@ -18,16 +18,24 @@ from hwtypes.modifiers import strip_modifiers, is_modified
 class FixConsts(Transformer):
     def __init__(self, peak_fc, nodes):
         input_t = peak_fc.Py.input_t
-        self.const_fields = set()
+        self.const_fields = {}
         for field, T in input_t.field_dict.items():
             if issubclass(T, Const):
-                self.const_fields.add(field)
-        self.const_node = nodes.dag_nodes["coreir.const"]
+                self.const_fields[field] = strip_modifiers(T)
+        self.nodes = nodes
 
     def visit_Select(self, node : Select):
         Transformer.generic_visit(self, node)
         if isinstance(node.children()[0], Input) and node.field in self.const_fields:
-            const = self.const_node(node)
+
+            T = self.const_fields[node.field]
+            if T is fam().PyFamily().Bit:
+                const_node = self.nodes.dag_nodes["corebit.const"]
+            elif T is fam().PyFamily().BitVector[16]:
+                const_node = self.nodes.dag_nodes["coreir.const"]
+            else:
+                raise ValueError(T)
+            const = const_node(node)
             return const.select("out")
 
 def flatten(cmod: coreir.Module):
@@ -44,7 +52,7 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     # 1) Either peak_fc will already be a single node in nodes, so just need to simply wrap it
     # 2) peak_fc needs to be compiled into a coreir module where each instance within the module should correspond to a node in Nodes
     node_name = nodes.name_from_peak(peak_fc)
-
+    #print("peak_to_dag node_name : ", node_name)
     #case 2
     if node_name is None:
         cmod = peak_to_coreir(peak_fc)
@@ -103,8 +111,8 @@ def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
             asm.width,
             HashableDict(asm.layout),
             instr_magma_type,
-            wrapped_name= "Wrapped"+peak_m.name
-            #wrapped_name = "WrappedPE"
+            # wrapped_name= "Wrapped"+peak_m.name
+            wrapped_name = "WrappedPE"
         )
 
     #TODO This  compilation is sometimes cached.

@@ -59,11 +59,14 @@ class DagNode(Visited):
         raise NotImplementedError()
 
     @lru_cache(None)
-    def select(self, field):
+    def select(self, field, original=None):
         self._selects.add(field)
-        if field not in self.type.field_dict:
-            raise ValueError(f"{field} not in {list(self.type.field_dict.items())}")
-        return Select(self, field=field, type=self.type.field_dict[field])
+        if original is None:
+            original = field
+        if original not in self.type.field_dict:
+            raise ValueError(f"{original} not in {list(self.type.field_dict.items())}")
+        return Select(self, field=field, type=self.type.field_dict[original])
+
 
     def copy(self):
         args = self.children()
@@ -169,6 +172,13 @@ class Nodes:
         self.peak_nodes[node_name] = peak_node
         self.coreir_modules[node_name] = cmod
         self._node_names.add(node_name)
+
+    #add a copy of nodes[node_name] to self
+    def copy(self, nodes, node_name):
+        peak_node = nodes.peak_nodes[node_name]
+        cmod = nodes.coreir_modules[node_name]
+        dag_nodes = nodes.dag_nodes[node_name]
+        self.add(node_name, peak_node, cmod, dag_nodes)
 
     #TODO just change staticattrs to pass in input_t and output_t
     #Have that indicate whether there is dynamic type or not
