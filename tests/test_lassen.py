@@ -25,7 +25,7 @@ def test_app(arch, app):
     file_name = f"examples/clockwork/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cutil.load_from_json(file_name, libraries=["cgralib"]) 
+    cutil.load_from_json(file_name) 
     kernels = dict(c.global_namespace.modules)
 
     arch_fc = lassen_fc
@@ -43,7 +43,7 @@ def test_app(arch, app):
         print(kname)
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
+        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
 
     print(f"Num PEs used: {mapper.num_pes}")
     output_file = f"build/{app}_mapped.json"
