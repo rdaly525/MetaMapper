@@ -14,7 +14,8 @@ setup(
     ],
     install_requires=[
         "coreir >= 2.0.1",
-        "peak"
+        "peak",
+        "DagVisitor",
     ],
     python_requires='>=3.6'
 )
