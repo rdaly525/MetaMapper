@@ -18,5 +18,7 @@ install:
 - pip install python-coveralls
 - pip install -e .
 - cd /home/travis/virtualenv/python3.7.1/src/peak/peak && ln -s ../examples . && cd -
+- ls ./src/lassen
+- ls ./src/lassen/scripts/rewrite_rules/
 script:
 - pytest -s -x tests/

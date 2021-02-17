@@ -10,8 +10,8 @@ from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
 
-
-lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+#Assumes rules are in the src dir created by pip install -r requirements.txt
+lassen_rules = "./src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
 @pytest.mark.parametrize("arch", [
     ("Lassen", lassen_fc, {}),
