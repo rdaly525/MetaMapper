@@ -8,7 +8,7 @@ def CoreIRContext(reset=False) -> coreir.Context:
         return _cache
     if reset:
         magma.frontend.coreir_.ResetCoreIR()
-    c = magma.backend.coreir_.CoreIRContextSingleton().get_instance()
+    c = magma.backend.coreir.coreir_runtime.coreir_context()
     if reset:
         c.load_library("commonlib")
         _cache = c
