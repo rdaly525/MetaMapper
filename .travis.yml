@@ -17,6 +17,6 @@ install:
 - pip install pytest-cov
 - pip install python-coveralls
 - pip install -e .
-- cd /home/travis/virtualenv/python3.7.1/src/peak/peak && ln -s ../examples . && cd -
+- cd ./src/peak/peak && ln -s ../examples . && cd -
 script:
 - pytest -s -x tests/
