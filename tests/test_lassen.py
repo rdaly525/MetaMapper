@@ -16,23 +16,24 @@ lassen_rules = "./src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 @pytest.mark.parametrize("arch", [
     ("Lassen", lassen_fc, {}),
 ])
-@pytest.mark.parametrize("app", ["camera_pipeline_compute", "harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
-                               "resnet_block_compute", "resnet_compute"])
+# @pytest.mark.parametrize("app", ["camera_pipeline_compute", "harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
+#                                "resnet_block_compute", "resnet_compute"])
+@pytest.mark.parametrize("app", ["pointwise_to_metamapper"])
 
 def test_app(arch, app):
     print("STARTING TEST")
     c = CoreIRContext(reset=True)
-    file_name = f"examples/clockwork/{app}.json"
-    cutil.load_libs(["commonlib"])
-    CoreIRNodes = gen_CoreIRNodes(16)
-    cutil.load_from_json(file_name) 
-    kernels = dict(c.global_namespace.modules)
-
     arch_fc = lassen_fc
     rule_file = lassen_rules
 
     ArchNodes = Nodes("Arch")
     putil.load_from_peak(ArchNodes, arch_fc)
+    file_name = f"examples/clockwork/{app}.json"
+    cutil.load_libs(["commonlib", "cgralib"])
+    CoreIRNodes = gen_CoreIRNodes(16)
+    cutil.load_from_json(file_name) 
+    kernels = dict(c.global_namespace.modules)
+
     mr = "memory.rom2"
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
