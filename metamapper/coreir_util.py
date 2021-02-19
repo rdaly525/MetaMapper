@@ -490,7 +490,6 @@ class FixSelects(Transformer):
         assert type(child) in self.field_map, str(child)
         replace_field = fix_keyword_from_coreir(self.field_map[type(child)][node.field])
         return child.select(replace_field, original=node.field)
-
         # Create a map from field to coreir field
 
 #This will construct a new coreir module from the dag with ref_type
