@@ -88,7 +88,7 @@ def magma_to_coreir(mod):
     magma.compile(f.name, mod, output="coreir")
     cname = mod.coreir_name
     crt = magma.backend.coreir.coreir_runtime
-    return crt.module_map()[crt.coreir_context()][cname]
+    return crt.module_map()[crt.coreir_context()]["global"][cname]
     ##backend.compile(mod)
     #return backend.modules[cname]
 
