@@ -89,8 +89,6 @@ def magma_to_coreir(mod):
     cname = mod.coreir_name
     crt = magma.backend.coreir.coreir_runtime
     return crt.module_map()[crt.coreir_context()]['global'][cname]
-    ##backend.compile(mod)
-    #return backend.modules[cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
     peak_m = peak_fc(fam().MagmaFamily())
