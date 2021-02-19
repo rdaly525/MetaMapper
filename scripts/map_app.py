@@ -48,7 +48,7 @@ kernels = dict(c.global_namespace.modules)
 
 
 ArchNodes = Nodes("Arch")
-putil.load_from_peak(ArchNodes, arch_fc)
+# putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)

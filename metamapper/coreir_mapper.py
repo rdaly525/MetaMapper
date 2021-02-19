@@ -3,6 +3,7 @@ from metamapper.common_passes import VerifyNodes, print_dag, count_pes, Simplify
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
+from metamapper.delay_matching import DelayMatching
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
@@ -48,6 +49,7 @@ class Mapper:
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
+        self._history_ = []
 
         if not lazy and rule_file is None and len(ops) == 0:
             raise ValueError("If not lazy, need ops specified!")
@@ -99,7 +101,7 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
 
-    def do_mapping(self, dag, convert_unbound=True, prove_mapping=True) -> coreir.Module:
+    def do_mapping(self, dag, convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
         #print("premapped")
@@ -121,6 +123,12 @@ class Mapper:
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
+        
+        if node_latencies is not None:
+            RegT = self.CoreIRNodes.dag_nodes["coreir.reg"]
+            DelayMatching(RegT, node_latencies).run(mapped_dag)
+        self._history_.append(mapped_dag)
+
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
