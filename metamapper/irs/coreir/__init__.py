@@ -48,6 +48,12 @@ def gen_CoreIRNodes(width):
     cmod = c.get_namespace("coreir").generators["reg"](width=width)
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.reg", stateful=True, modparams=("clk_posedge", "init"))
 
+    name = f"coreir.pipeline_reg"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["reg"](width=width)
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.pipeline_reg", stateful=False)
+    
+
     class Rom(DagNode):
         def __init__(self, raddr, ren, *, init, iname):
             super().__init__(raddr, ren, init=init, iname=iname)

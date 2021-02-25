@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from graphviz import Digraph
 from DagVisitor import Visitor, Transformer
 from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
 from .family import fam
@@ -286,6 +287,16 @@ class Printer(Visitor):
         self.res += f"{node._id_}<Combine:{list(node.type.field_dict.keys())}>({child_ids})\n"
 
 
+class DagToPdf(Visitor):
+    def __init__(self):
+        self.graph = Digraph()
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        self.graph.node(str(node._id_), f"{node.node_name}\n{node.iname}")
+        for child in node.children():
+            self.graph.edge(str(child._id_), str(node._id_))
+
 class BindsToCombines(Transformer):
     def gen_combine(self, node: Bind):
         if len(node.paths) == 1 and len(node.paths[0]) == 0:
@@ -380,6 +391,10 @@ def print_dag(dag: Dag):
 def count_pes(dag: Dag):
     print(CountPEs().run(dag).res)
     return CountPEs().run(dag).res
+
+def dag_to_pdf(dag: Dag, filename):
+    AddID().run(dag)
+    DagToPdf().run(dag).graph.render(filename, view=False)
 
 class CheckIfTree(Visitor):
     def __init__(self):

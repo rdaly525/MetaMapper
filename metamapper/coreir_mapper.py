@@ -10,34 +10,6 @@ import typing as tp
 import coreir
 import json
 
-#conv_ops = (
-#    "corebit.const",
-#    "coreir.add",
-#    "coreir.mul",
-#    "coreir.const",
-#)
-#camera_ops = (
-#    "corebit.const",
-#    "corebit.or_",
-#    "corebit.and_",
-#    "coreir.add",
-#    "coreir.and_",
-#    "coreir.ashr",
-#    "coreir.const",
-#    "coreir.eq",
-#    "coreir.lshr",
-#    "coreir.mul",
-#    "coreir.mux",
-#    "coreir.slt",
-#    "coreir.sub",
-#    "coreir.ult",
-#    "commonlib.abs",
-#    "commonlib.smax",
-#    "commonlib.smin",
-#    "commonlib.umax",
-#    "commonlib.umin",
-#)
-
 
 class Mapper:
     # Lazy # Discover at mapping time
@@ -125,7 +97,7 @@ class Mapper:
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
         
         if node_latencies is not None:
-            RegT = self.CoreIRNodes.dag_nodes["coreir.reg"]
+            RegT = self.CoreIRNodes.dag_nodes["coreir.pipeline_reg"]
             DelayMatching(RegT, node_latencies).run(mapped_dag)
         self._history_.append(mapped_dag)
 

@@ -136,6 +136,17 @@ def gen_peak_CoreIR(width):
 
     CoreIR.add_instruction("coreir.reg", reg_fc)
 
+    @family_closure
+    def pipeline_reg_fc(family):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class pipeline_reg(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, value: Data) -> Data:
+                return value
+        return pipeline_reg
+
+    CoreIR.add_instruction("coreir.pipeline_reg", pipeline_reg_fc)
 
 
     class UnaryInput(Product):

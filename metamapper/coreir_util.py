@@ -410,6 +410,10 @@ class ToCoreir(Visitor):
             rom_mod = self.nodes.coreir_modules["memory.rom2"]
             config = CoreIRContext().new_values(dict(init=node.init))
             inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
+        elif type(node).node_name == "coreir.pipeline_reg":
+            reg_mod = self.nodes.coreir_modules["coreir.pipeline_reg"]
+            config = CoreIRContext().new_values()
+            inst = self.def_.add_module_instance(node.iname, reg_mod, config=config)
         else:
             inst = self.create_instance(node)
         inst_inputs = list(self.nodes.peak_nodes[node.node_name].Py.input_t.field_dict.keys())
@@ -417,7 +421,7 @@ class ToCoreir(Visitor):
         #Get only the non-modparam children
         children = node.children() if len(node.modparams)==0 else list(node.children())[:-len(node.modparams)]
         for port, child in zip(inst_inputs, children):
-            if type(node).node_name == "coreir_reg" and port == "in0":
+            if type(node).node_name == "coreir_reg" and port == "in0" or type(node).node_name == 'coreir.pipeline_reg':
                 port = "in"
             child_inst = self.node_to_inst[child]
             if child_inst is not None:
@@ -515,7 +519,7 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> c
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
     def_ = mod.new_definition()
-    print("I", inputs)
+    # print("I", inputs)
     ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
     mod.print_()

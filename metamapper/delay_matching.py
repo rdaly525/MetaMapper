@@ -8,6 +8,7 @@ class DelayMatching(Transformer):
         self.aggregate_latencies = {}
 
     def generic_visit(self, node):
+        print(node.node_name, node.children())
         if len(node.children()) == 0:
             self.aggregate_latencies[node] = 0
             return
@@ -17,6 +18,9 @@ class DelayMatching(Transformer):
         max_latency = max(latencies)
         new_children = [child for child in node.children()]
         for i, child in enumerate(node.children()):
+            if child.node_name == "Constant" and node.node_name == "PE":
+                # print("TEST")
+                continue
             latency = latencies[i]
             diff = max_latency - latency
             if diff == 0:
