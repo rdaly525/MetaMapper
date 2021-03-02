@@ -24,7 +24,7 @@ class _ArchLatency:
 # @pytest.mark.parametrize("app", ["camera_pipeline_compute", "harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
                             #    "resnet_block_compute", "resnet_compute"])
 
-@pytest.mark.parametrize("app", ['gaussian_compute'])
+@pytest.mark.parametrize("app", ['harris_compute'])
 
 def test_app(app):
     print("STARTING TEST")
@@ -52,15 +52,19 @@ def test_app(app):
     for kname, kmod in kernels.items():
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), prove_mapping=False)
-        mapped_dag = mapper._history_[0]
+        # mapped_dag = mapper._history_[0]
         dag_to_pdf(mapped_dag, kname)
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
+        mod.add_metadata("latency", "2")
+    
+    
 
     # print_dag(mapped_dag)
 
-    # output_file = f"build/{app}_mapped.json"
-    # print(f"saving to {output_file}")
-    # c.save_to_file(output_file)
+    output_file = f"examples/clockwork/{app}_mapped.json"
+    print(f"saving to {output_file}")
+    # c.set_top(mod)
+    c.save_to_file(output_file)
 
     # c.run_passes(["wireclocks-clk"])
     # c.run_passes(["wireclocks-arst"])

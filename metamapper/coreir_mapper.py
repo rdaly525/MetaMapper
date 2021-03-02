@@ -99,7 +99,6 @@ class Mapper:
         if node_latencies is not None:
             RegT = self.CoreIRNodes.dag_nodes["coreir.pipeline_reg"]
             DelayMatching(RegT, node_latencies).run(mapped_dag)
-        self._history_.append(mapped_dag)
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)

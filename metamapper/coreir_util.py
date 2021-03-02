@@ -492,6 +492,7 @@ class FixSelects(Transformer):
         if isinstance(child, (Source, Combine, Select)):
             return None
         assert type(child) in self.field_map, str(child)
+        print(child, node, node.field)
         replace_field = fix_keyword_from_coreir(self.field_map[type(child)][node.field])
         return child.select(replace_field, original=node.field)
         # Create a map from field to coreir field
@@ -511,6 +512,7 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unboun
 #This will construct a new coreir module from the dag with ref_type
 def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> coreir.ModuleDef:
     VerifyUniqueIname().run(dag)
+    print_dag(dag)
     FixSelects(nodes).run(dag)
     c = CoreIRContext()
     #construct coreir type

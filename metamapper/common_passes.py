@@ -293,7 +293,7 @@ class DagToPdf(Visitor):
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
-        self.graph.node(str(node._id_), f"{node.node_name}\n{node.iname}")
+        self.graph.node(str(node._id_), f"{node.node_name}")
         for child in node.children():
             self.graph.edge(str(child._id_), str(node._id_))
 

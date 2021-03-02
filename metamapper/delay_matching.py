@@ -18,8 +18,7 @@ class DelayMatching(Transformer):
         max_latency = max(latencies)
         new_children = [child for child in node.children()]
         for i, child in enumerate(node.children()):
-            if child.node_name == "Constant" and node.node_name == "PE":
-                # print("TEST")
+            if child.node_name == "Constant":
                 continue
             latency = latencies[i]
             diff = max_latency - latency
@@ -27,7 +26,7 @@ class DelayMatching(Transformer):
                 continue
             new_child = child
             for reg_index in range(diff):  # diff = number of pipeline reg
-                new_child = self.RegT(new_child)
+                new_child = self.RegT(new_child).select('out')
             new_children[i] = new_child
         node.set_children(*new_children)
         this_latency = self.node_latencies.get(node)
