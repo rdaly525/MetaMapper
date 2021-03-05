@@ -22,10 +22,10 @@ class _ArchLatency:
         
         return 0
 
-# @pytest.mark.parametrize("app", ["camera_pipeline_compute", "harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
-                            #    "resnet_block_compute", "resnet_compute"])
+@pytest.mark.parametrize("app", ["harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
+                               "resnet_block_compute", "resnet_compute"])
 
-@pytest.mark.parametrize("app", ["camera_pipeline_compute"])
+# @pytest.mark.parametrize("app", ["camera_pipeline_compute"]) # not working yet
 
 def test_app(app):
     print("STARTING TEST")
@@ -35,7 +35,6 @@ def test_app(app):
     CoreIRNodes = gen_CoreIRNodes(16)
     cutil.load_from_json(file_name) 
     kernels = dict(c.global_namespace.modules)
-    # pb_dags = cutil.preprocess(CoreIRNodes, cmod)
 
     arch_fc = lassen_fc
     rule_file = lassen_rules
@@ -55,7 +54,6 @@ def test_app(app):
     for kname, kmod in kernels.items():
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), prove_mapping=False)
-        # mapped_dag = mapper._history_[0]
         dag_to_pdf(mapped_dag, "mapped_dag")
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
         # mod.add_metadata("latency", "2")
@@ -69,16 +67,16 @@ def test_app(app):
     # c.set_top(mod)
     c.save_to_file(output_file)
 
-    # c.run_passes(["wireclocks-clk"])
-    # c.run_passes(["wireclocks-arst"])
-    # c.run_passes(["markdirty"])
+    c.run_passes(["wireclocks-clk"])
+    c.run_passes(["wireclocks-arst"])
+    c.run_passes(["markdirty"])
 
 
-    # #Test syntax of serialized json
-    # res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    # assert not res.return_code, res.out + res.err
+    #Test syntax of serialized json
+    res = delegator.run(f"coreir -i {output_file} -l commonlib cgralib")
+    assert not res.return_code, res.out + res.err
 
-    # #Test serializing to verilog
-    # res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
-    # assert not res.return_code, res.out + res.err
+    #Test serializing to verilog
+    res = delegator.run(f'coreir -i {output_file} -l commonlib cgralib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
+    assert not res.return_code, res.out + res.err
 
