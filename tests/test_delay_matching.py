@@ -17,14 +17,15 @@ class _ArchLatency:
     def get(self, node):
         kind = node.kind()[0]
         print(kind)
-        if kind == "PE":
+        if kind == "PE" or kind == "Rom":
             return 1
+        
         return 0
 
 # @pytest.mark.parametrize("app", ["camera_pipeline_compute", "harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
                             #    "resnet_block_compute", "resnet_compute"])
 
-@pytest.mark.parametrize("app", ['harris_compute'])
+@pytest.mark.parametrize("app", ["camera_pipeline_compute"])
 
 def test_app(app):
     print("STARTING TEST")
@@ -45,6 +46,8 @@ def test_app(app):
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
     reg = "coreir.pipeline_reg"
     ArchNodes.add(reg, CoreIRNodes.peak_nodes[reg], CoreIRNodes.coreir_modules[reg], CoreIRNodes.dag_nodes[reg])
+    reg1 = "corebit.pipeline_reg"
+    ArchNodes.add(reg1, CoreIRNodes.peak_nodes[reg1], CoreIRNodes.coreir_modules[reg1], CoreIRNodes.dag_nodes[reg1])
 
 
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
@@ -53,9 +56,9 @@ def test_app(app):
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), prove_mapping=False)
         # mapped_dag = mapper._history_[0]
-        dag_to_pdf(mapped_dag, kname)
+        dag_to_pdf(mapped_dag, "mapped_dag")
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
-        mod.add_metadata("latency", "2")
+        # mod.add_metadata("latency", "2")
     
     
 

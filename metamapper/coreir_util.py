@@ -25,6 +25,7 @@ def select(inst, name):
 
 
 
+
 def fix_keyword_from_coreir(val:str):
     if val.isdigit():
         return int(val)
@@ -384,7 +385,10 @@ class ToCoreir(Visitor):
     def create_instance(self, node):
         if node in self.node_to_inst:
             return self.node_to_inst[node]
-        cmod_t = self.nodes.coreir_modules[type(node).node_name]
+        try:
+            cmod_t = self.nodes.coreir_modules[type(node).node_name]
+        except:
+            breakpoint()
         # create new instance
         #create modparams
         children = list(node.children())
@@ -414,6 +418,10 @@ class ToCoreir(Visitor):
             reg_mod = self.nodes.coreir_modules["coreir.pipeline_reg"]
             config = CoreIRContext().new_values()
             inst = self.def_.add_module_instance(node.iname, reg_mod, config=config)
+        elif type(node).node_name == "corebit.pipeline_reg":
+            reg_mod = self.nodes.coreir_modules["corebit.pipeline_reg"]
+            config = CoreIRContext().new_values()
+            inst = self.def_.add_module_instance(node.iname, reg_mod, config=config)
         else:
             inst = self.create_instance(node)
         inst_inputs = list(self.nodes.peak_nodes[node.node_name].Py.input_t.field_dict.keys())
@@ -421,7 +429,7 @@ class ToCoreir(Visitor):
         #Get only the non-modparam children
         children = node.children() if len(node.modparams)==0 else list(node.children())[:-len(node.modparams)]
         for port, child in zip(inst_inputs, children):
-            if type(node).node_name == "coreir_reg" and port == "in0" or type(node).node_name == 'coreir.pipeline_reg':
+            if type(node).node_name == "coreir_reg" and port == "in0" or type(node).node_name == 'coreir.pipeline_reg' or type(node).node_name == 'corebit.pipeline_reg':
                 port = "in"
             child_inst = self.node_to_inst[child]
             if child_inst is not None:

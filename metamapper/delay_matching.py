@@ -1,9 +1,10 @@
 from DagVisitor import Transformer
-
+from hwtypes import bit_vector 
 
 class DelayMatching(Transformer):
-    def __init__(self, RegT, node_latencies):
+    def __init__(self, RegT, BitRegT, node_latencies):
         self.RegT = RegT
+        self.BitRegT = BitRegT
         self.node_latencies = node_latencies
         self.aggregate_latencies = {}
 
@@ -26,7 +27,10 @@ class DelayMatching(Transformer):
                 continue
             new_child = child
             for reg_index in range(diff):  # diff = number of pipeline reg
-                new_child = self.RegT(new_child).select('out')
+                if new_child.type == bit_vector.Bit:
+                    new_child = self.BitRegT(new_child).select('out')
+                else:
+                    new_child = self.RegT(new_child).select('out')
             new_children[i] = new_child
         node.set_children(*new_children)
         this_latency = self.node_latencies.get(node)
