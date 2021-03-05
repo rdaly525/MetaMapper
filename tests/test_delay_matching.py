@@ -54,7 +54,7 @@ def test_app(app):
     for kname, kmod in kernels.items():
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
         mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), prove_mapping=False)
-        dag_to_pdf(mapped_dag, "mapped_dag")
+        # dag_to_pdf(mapped_dag, "mapped_dag")
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
         # mod.add_metadata("latency", "2")
     
