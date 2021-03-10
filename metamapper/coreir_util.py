@@ -385,10 +385,7 @@ class ToCoreir(Visitor):
     def create_instance(self, node):
         if node in self.node_to_inst:
             return self.node_to_inst[node]
-        try:
-            cmod_t = self.nodes.coreir_modules[type(node).node_name]
-        except:
-            breakpoint()
+        cmod_t = self.nodes.coreir_modules[type(node).node_name]
         # create new instance
         #create modparams
         children = list(node.children())

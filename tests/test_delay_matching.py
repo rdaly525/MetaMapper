@@ -17,15 +17,15 @@ class _ArchLatency:
     def get(self, node):
         kind = node.kind()[0]
         print(kind)
-        if kind == "PE" or kind == "Rom":
+        if kind == "Rom":
             return 1
         
         return 0
 
-@pytest.mark.parametrize("app", ["harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
-                               "resnet_block_compute", "resnet_compute"])
-
-# @pytest.mark.parametrize("app", ["camera_pipeline_compute"]) # not working yet
+# @pytest.mark.parametrize("app", ["harris_compute", "gaussian_compute", "laplacian_pyramid_compute", "cascade_compute",
+#                                "resnet_block_compute", "resnet_compute"])
+# @pytest.mark.parametrize("app", ["gaussian_compute"])
+@pytest.mark.parametrize("app", ["camera_pipeline_compute"]) # not working yet
 
 def test_app(app):
     print("STARTING TEST")
@@ -53,8 +53,9 @@ def test_app(app):
 
     for kname, kmod in kernels.items():
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-        mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), prove_mapping=False)
-        # dag_to_pdf(mapped_dag, "mapped_dag")
+        mapped_dag = mapper.do_mapping(dag, prove_mapping=False)
+        print(mapped_dag)
+        dag_to_pdf(dag, "mapped_dag")
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=True)
         # mod.add_metadata("latency", "2")
     
