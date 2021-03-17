@@ -173,6 +173,14 @@ class Nodes:
         self.coreir_modules[node_name] = cmod
         self._node_names.add(node_name)
 
+
+
+
+
+
+    def add_from_nodes(self, nodes, node_name):
+        self.add(node_name, nodes.peak_nodes[node_name], nodes.coreir_modules[node_name], nodes.dag_nodes[node_name])
+
     #add a copy of nodes[node_name] to self
     def copy(self, nodes, node_name):
         peak_node = nodes.peak_nodes[node_name]
@@ -312,6 +320,8 @@ class Combine(DagNode):
             if tu_field not in type.field_dict:
                 raise ValueError(f"{tu_field} not in {type}")
             self.tu_field = tu_field
+        else:
+            self.tu_field = None
 
     @property
     def num_children(self):

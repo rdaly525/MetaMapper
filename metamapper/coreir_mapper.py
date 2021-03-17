@@ -37,7 +37,6 @@ import json
 #    "commonlib.umin",
 #)
 
-
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
