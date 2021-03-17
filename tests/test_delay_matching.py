@@ -32,7 +32,7 @@ def test_app(app):
     file_name = f"examples/clockwork/{app}.json"
     cutil.load_libs(["commonlib"])
     CoreIRNodes = gen_CoreIRNodes(16)
-    cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
+    cutil.load_from_json(file_name) #libraries=["lakelib"])
     kernels = dict(c.global_namespace.modules)
 
     arch_fc = lassen_fc

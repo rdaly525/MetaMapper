@@ -28,8 +28,22 @@ import os
 from lassen.sim import PE_fc as lassen_fc 
 
 
+class _ArchLatency:
+    def get(self, node):
+        kind = node.kind()[0]
+        print(kind)
+        if kind == "Rom":
+            return 1
+        elif kind == "PE":
+            return latency
+        
+        return 0
     
 app = str(sys.argv[1])
+if len(sys.argv) > 2:
+    latency = int(sys.argv[2])
+else:
+    latency = 0
 
 
 lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
@@ -37,7 +51,7 @@ arch_fc = lassen_fc
 rule_file = lassen_rules
 
 
-verilog = False
+verilog = True
 print("STARTING TEST")
 c = CoreIRContext(reset=True)
 file_name = f"examples/clockwork/{app}.json"
@@ -51,6 +65,12 @@ ArchNodes = Nodes("Arch")
 putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
+reg = "coreir.pipeline_reg"
+ArchNodes.add(reg, CoreIRNodes.peak_nodes[reg], CoreIRNodes.coreir_modules[reg], CoreIRNodes.dag_nodes[reg])
+reg1 = "corebit.pipeline_reg"
+ArchNodes.add(reg1, CoreIRNodes.peak_nodes[reg1], CoreIRNodes.coreir_modules[reg1], CoreIRNodes.dag_nodes[reg1])
+
+
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
 
 c.run_passes(["rungenerators", "deletedeadinstances"])
@@ -60,12 +80,9 @@ for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     print_dag(dag)
-    mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-    #print("Mapped",flush=True)
+    mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
     print_dag(mapped_dag)
-    #mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-    #mod.print_()
 
 print(f"Num PEs used: {mapper.num_pes}")
 output_file = f"examples/clockwork/{app}_mapped.json"

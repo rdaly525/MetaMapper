@@ -4,7 +4,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import  print_dag
+from metamapper.common_passes import  print_dag, dag_to_pdf
 
 from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
@@ -18,7 +18,23 @@ import importlib
 import jsonpickle
 import sys, os
 
+
+class _ArchLatency:
+    def get(self, node):
+        kind = node.kind()[0]
+        print(kind)
+        if kind == "Rom":
+            return 1
+        elif kind == "PE":
+            return latency
+        
+        return 0
+
 app = str(sys.argv[1])
+if len(sys.argv) > 2:
+    latency = int(sys.argv[2])
+else:
+    latency = 0
 
 DSE_PE_location = "../DSEGraphAnalysis/outputs"
 
@@ -59,7 +75,7 @@ def gen_rrules():
 
 
 
-verilog = False
+verilog = True
 print("STARTING TEST")
 c = CoreIRContext(reset=True)
 file_name = f"examples/clockwork/{app}.json"
@@ -71,9 +87,14 @@ kernels = dict(c.global_namespace.modules)
 arch_fc, rrules = gen_rrules()
 
 ArchNodes = Nodes("Arch")
-putil.load_from_peak(ArchNodes, arch_fc, name="TESTEST")
+putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
+reg = "coreir.pipeline_reg"
+ArchNodes.add(reg, CoreIRNodes.peak_nodes[reg], CoreIRNodes.coreir_modules[reg], CoreIRNodes.dag_nodes[reg])
+reg1 = "corebit.pipeline_reg"
+ArchNodes.add(reg1, CoreIRNodes.peak_nodes[reg1], CoreIRNodes.coreir_modules[reg1], CoreIRNodes.dag_nodes[reg1])
+
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
 
 c.run_passes(["rungenerators", "deletedeadinstances"])
@@ -83,22 +104,14 @@ for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     print_dag(dag)
-    mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-    #print("Mapped",flush=True)
-    print_dag(mapped_dag)
-    #mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
+    mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-    #mod.print_()
 
+dag_to_pdf(mapped_dag, "mapped_dag")
 print(kname)
 dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-#print_dag(dag)
-mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-#print("Mapped",flush=True)
-#print_dag(mapped_dag)
-#mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
+mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
 mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mappedd", convert_unbounds=verilog)
-#mod.print_()
 print(f"Num PEs used: {mapper.num_pes}")
 output_file = f"examples/clockwork/{app}_mapped.json"
 print(f"saving to {output_file}")
