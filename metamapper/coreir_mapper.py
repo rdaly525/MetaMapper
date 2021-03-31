@@ -3,7 +3,7 @@ from metamapper.common_passes import VerifyNodes, print_dag, count_pes, Simplify
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
-from metamapper.delay_matching import DelayMatching
+from metamapper.delay_matching import DelayMatching, KernelDelay
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
@@ -21,7 +21,7 @@ class Mapper:
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
-        self._history_ = []
+        self.kernel_latencies = {}
 
         if not lazy and rule_file is None and len(ops) == 0:
             raise ValueError("If not lazy, need ops specified!")
@@ -73,11 +73,12 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
 
-    def do_mapping(self, dag, convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
         #print("premapped")
         #print_dag(dag)
+
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
 
@@ -100,6 +101,7 @@ class Mapper:
             RegT = self.CoreIRNodes.dag_nodes["coreir.pipeline_reg"]
             BitRegT = self.CoreIRNodes.dag_nodes["corebit.pipeline_reg"]
             DelayMatching(RegT, BitRegT, node_latencies).run(mapped_dag)
+            self.kernel_latencies[kname] = KernelDelay(node_latencies).run(mapped_dag).kernal_latency
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)

@@ -17,7 +17,7 @@ import glob
 import importlib
 import jsonpickle
 import sys, os
-
+import json
 
 class _ArchLatency:
     def get(self, node):
@@ -25,7 +25,7 @@ class _ArchLatency:
         print(kind)
         if kind == "Rom":
             return 1
-        elif kind == "PE":
+        elif kind == "PE_wrapped":
             return latency
         
         return 0
@@ -103,19 +103,22 @@ c.run_passes(["rungenerators", "deletedeadinstances"])
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-    print_dag(dag)
-    mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
+    # print_dag(dag)
+    mapped_dag = mapper.do_mapping(dag, kname = kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
 
-dag_to_pdf(mapped_dag, "mapped_dag")
+    dag_to_pdf(mapped_dag, kname)
 print(kname)
 dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
 mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
 mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mappedd", convert_unbounds=verilog)
 print(f"Num PEs used: {mapper.num_pes}")
-output_file = f"examples/clockwork/{app}_mapped.json"
+output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.save_to_file(output_file)
+
+with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
+    json.dump(mapper.kernel_latencies, outfile)
 
 if verilog:
     c.run_passes(["wireclocks-clk"])

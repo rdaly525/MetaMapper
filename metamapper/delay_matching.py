@@ -1,4 +1,4 @@
-from DagVisitor import Transformer
+from DagVisitor import Transformer, Visitor
 from hwtypes import bit_vector 
 
 class DelayMatching(Transformer):
@@ -9,7 +9,6 @@ class DelayMatching(Transformer):
         self.aggregate_latencies = {}
 
     def generic_visit(self, node):
-        print(node.node_name, node.children())
         if len(node.children()) == 0:
             self.aggregate_latencies[node] = 0
             return
@@ -36,3 +35,32 @@ class DelayMatching(Transformer):
         this_latency = self.node_latencies.get(node)
         self.aggregate_latencies[node] = max_latency + this_latency
         return node
+
+class KernelDelay(Visitor):
+    def __init__(self, node_latencies):
+        self.node_latencies = node_latencies
+        self.aggregate_latencies = {}
+        self.kernal_latency = 0
+
+    def generic_visit(self, node):
+        if len(node.children()) == 0:
+            self.aggregate_latencies[node] = 0
+            return
+        Visitor.generic_visit(self, node)
+        latencies = [self.aggregate_latencies[child]
+                     for child in node.children()]
+        max_latency = max(latencies)
+        this_latency = self.node_latencies.get(node)
+        self.aggregate_latencies[node] = max_latency + this_latency
+
+    def visit_Output(self, node):
+        Visitor.generic_visit(self, node)
+        if len(node.children()) == 0:
+            self.aggregate_latencies[node] = 0
+            return
+        Visitor.generic_visit(self, node)
+        latencies = [self.aggregate_latencies[child]
+                     for child in node.children()]
+        max_latency = max(latencies)
+        this_latency = self.node_latencies.get(node)
+        self.kernal_latency = max_latency + this_latency
