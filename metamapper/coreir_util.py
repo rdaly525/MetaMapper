@@ -7,7 +7,7 @@ import typing as tp
 from .family import fam
 from peak.mapper import Unbound
 from peak.assembler import AssembledADT, Assembler, AssembledADTRecursor
-from .common_passes import print_dag
+from .common_passes import print_dag, Clone
 from hwtypes.adt import Product, Enum, Tuple
 import os
 import keyword
@@ -557,6 +557,7 @@ class FixSelects(Transformer):
 
 #This will construct a new coreir module from the dag with ref_type
 def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unbounds=True) -> coreir.ModuleDef:
+    dag = Clone().clone(dag)
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     #remove everything from old definition
@@ -569,6 +570,7 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unboun
 
 #This will construct a new coreir module from the dag with ref_type
 def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> coreir.ModuleDef:
+    dag = Clone().clone(dag)
     VerifyUniqueIname().run(dag)
     FixSelects(nodes).run(dag)
     c = CoreIRContext()

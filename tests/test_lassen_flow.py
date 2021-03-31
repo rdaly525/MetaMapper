@@ -9,6 +9,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
+import coreir
 
 import delegator
 import pytest
@@ -18,35 +19,48 @@ lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 #The problem is that there is a mapping problem between coreir port names and hwtypes port names
 #I need a generic solution to be able to easily go between each of these.
 
-@pytest.mark.parametrize("arch", [
-    #("PE_lut", gen_PE_lut(16), {}),
-    ("Lassen", lassen_fc, {}),
-    #("ALU", gen_ALU(16), {}),
-])
-#@pytest.mark.parametrize("app", ["camera_pipeine"])#, "add2", "add1_const", "add4", "add3_const"])
-#@pytest.mark.parametrize("app", ["conv_3_3"])#, "add2", "add1_const", "add4", "add3_const"])
-#@pytest.mark.parametrize("app", ["add4_pipe"])
+
+
+lassen_header = "build/lassen_header.json"
+lassen_def = "build/lassen_def.json"
+
+#Compiles
+def compile_PE_spec(arch_fc: "peak_fc", header_file: str, def_file: str):
+    cmod = putil.peak_to_coreir(arch_fc)
+    c = CoreIRContext()
+    c.save_header(header_file, [cmod.ref_name])
+    c.save_definitions(def_file, [cmod.ref_name])
+
+#Loads a coreir header file, associates each coreir file with a peak_fc, creates a dag_node in nodes
+def load_and_link_peak(nodes: Nodes, header_file: str, peak_dict: dict):
+    c = CoreIRContext()
+    header_modules = c.load_header(header_file)
+    for cmod in header_modules:
+        if cmod.ref_name not in peak_dict:
+            raise ValueError(f"{cmod.ref_name} does not have an associated peak_dict")
+        peak_fc = peak_dict[cmod.ref_name]
+        node_name = putil.load_from_peak(nodes, peak_fc, stateful=False, cmod=cmod, name=cmod.ref_name)
+        assert node_name == cmod.ref_name
+
+
 @pytest.mark.parametrize("app", ["add3_const"])
-def test_app(arch, app):
-    print("STARTING TEST")
+def test_app(app):
+
+    #Done once during spec generation
     c = CoreIRContext(reset=True)
-    file_name = f"examples/coreir/{app}.jsontest_full.py"
-    cutil.load_libs(["commonlib"])
-    CoreIRNodes = gen_CoreIRNodes(16)
+    compile_PE_spec(lassen_fc, lassen_header, lassen_def)
+
+    #Loading
+    c = CoreIRContext(reset=True)
     cmod = cutil.load_from_json(file_name)
+
+    CoreIRNodes = gen_CoreIRNodes(16)
     app_name = cmod.name
     dag = cutil.coreir_to_dag(CoreIRNodes, cmod)
     name, arch_fc, constraints = arch
-    #if name == "ALU" and app == "add_or":
-    #    pytest.skip()
-    if name == "Lassen":
-        rule_file = lassen_rules
-    else:
-        rule_file = None
+    rule_file = lassen_rules
     ArchNodes = Nodes("Arch")
-    print("1")
     putil.load_from_peak(ArchNodes, arch_fc)
-    print("2")
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=rule_file)
     mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
     print_dag(mapped_dag)
