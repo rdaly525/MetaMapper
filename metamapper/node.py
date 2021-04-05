@@ -61,6 +61,11 @@ class DagNode(Visited):
 
     @lru_cache(None)
     def select(self, field, original=None):
+
+        key_list = {f"O{i}": k for i, k in enumerate(self.type.field_dict.keys())}
+        new_field = key_list.get(field)
+        if original is None and new_field is not None:
+            field = new_field
         self._selects.add(field)
         if original is None:
             original = field
@@ -173,10 +178,6 @@ class Nodes:
         self.peak_nodes[node_name] = peak_node
         self.coreir_modules[node_name] = cmod
         self._node_names.add(node_name)
-
-
-
-
 
 
     def add_from_nodes(self, nodes, node_name):

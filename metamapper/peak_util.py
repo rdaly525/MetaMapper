@@ -171,4 +171,3 @@ def load_and_link_peak(nodes: Nodes, header_file: str, peak_dict: dict):
         node_name = load_from_peak(nodes, peak_fc, stateful=False, cmod=cmod, name=cmod.ref_name)
         assert node_name == cmod.ref_name
 
-
