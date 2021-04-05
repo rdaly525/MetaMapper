@@ -51,13 +51,13 @@ arch_fc = lassen_fc
 rule_file = lassen_rules
 
 
-verilog = True
+verilog = False
 print("STARTING TEST")
 c = CoreIRContext(reset=True)
 file_name = f"examples/clockwork/{app}.json"
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)
-cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
+cutil.load_from_json(file_name) #libraries=["lakelib"])
 kernels = dict(c.global_namespace.modules)
 
 

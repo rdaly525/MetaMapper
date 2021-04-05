@@ -4,7 +4,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import  print_dag, dag_to_pdf
+from metamapper.common_passes import  print_dag
 
 from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
@@ -75,13 +75,13 @@ def gen_rrules():
 
 
 
-verilog = True
+verilog = False
 print("STARTING TEST")
 c = CoreIRContext(reset=True)
 file_name = f"examples/clockwork/{app}.json"
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)
-cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
+cutil.load_from_json(file_name) #libraries=["lakelib"])
 kernels = dict(c.global_namespace.modules)
 
 arch_fc, rrules = gen_rrules()
@@ -107,7 +107,7 @@ for kname, kmod in kernels.items():
     mapped_dag = mapper.do_mapping(dag, kname = kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
 
-    dag_to_pdf(mapped_dag, kname)
+    
 print(kname)
 dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
 mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
