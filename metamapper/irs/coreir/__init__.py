@@ -9,6 +9,7 @@ def strip_trailing(op):
     if op[-1] == "_":
         return op[:-1]
     return op
+
 def gen_CoreIRNodes(width):
     CoreIRNodes = Nodes("CoreIR")
     peak_ir = gen_peak_CoreIR(width)

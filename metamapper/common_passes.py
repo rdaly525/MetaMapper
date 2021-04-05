@@ -7,6 +7,22 @@ from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
 from .node import DagNode
+import hwtypes as ht
+
+
+#Translates DagNode
+class Constant2CoreIRConstant(Transformer):
+    def __init__(self, nodes: Nodes):
+        self.nodes = nodes
+
+    def visit_Constant(self, node: Constant):
+        if node.type == ht.BitVector[16]:
+            node_t = self.nodes.dag_nodes["coreir.const"]
+        elif node.type == ht.Bit:
+            node_t = self.nodes.dag_nodes["corebit.const"]
+        else:
+            return
+        return node_t(node).select("out")
 
 
 class Riscv2_Riscv(Transformer):

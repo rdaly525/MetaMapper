@@ -12,8 +12,19 @@ from hwtypes.adt import Product, Enum, Tuple
 import os
 import keyword
 from hwtypes.adt import Product
+import hwtypes as ht
 from hwtypes.modifiers import strip_modifiers, is_modified
 import random
+
+def create_bv_const(width, value):
+    bv = ht.BitVector[width]
+    return Constant(type=bv, value=bv(value))
+
+def create_bit_const(value):
+    return Constant(type=ht.Bit, value=ht.Bit(value))
+
+def is_const(cmod: coreir.Module):
+    return cmod.ref_name.split(".")[1] =="const"
 
 #There is a hack where names aliasing with python keywords need to get remapped
 #Use this function to select into coreir instances
@@ -134,11 +145,14 @@ class Loader:
         source_nodes = [Input(iname="self", type=input_adt)]
         stateful_instances = {cmod.definition.interface: output_adt}
         for inst in cmod.definition.instances:
+
             node_name = self.nodes.name_from_coreir(inst.module)
             #print("node_name: ", node_name, inst.module.name)
             source_node_t = None
             if node_name is None:
-                if allow_unknown_instances:
+                if is_const(inst.module):
+                    source_node_t = None
+                elif allow_unknown_instances:
                     print("Warning:", inst.module.name)
                     inst.module.print_()
                     print("end")
@@ -169,7 +183,26 @@ class Loader:
             sink_nodes.append(sink_node)
         self.dag = Dag(source_nodes, sink_nodes)
 
+    def add_const(self, inst: coreir.Instance):
+        mref = inst.module
+
+        if mref.ref_name == "coreir.const":
+            width = mref.generator_args["width"].value
+            value = inst.config["value"].value
+            return create_bv_const(width, value)
+        elif mref.ref_name == "corebit.const":
+            value = inst.config["value"].value
+            return create_bit_const(value)
+        else:
+            return None
+
     def add_node(self, inst: coreir.Instance, sink_t=None, sink_adt=None):
+
+        const_node = self.add_const(inst)
+        if const_node is not None:
+            print("CONST", const_node)
+            return const_node
+
         print("Adding inst", inst)
         if sink_t is None and inst in self.node_map:
             return self.node_map[inst]
@@ -199,13 +232,16 @@ class Loader:
                         children.append(Constant(value=Unbound, type=None))
                     else:
                         child_node = self.add_node(child_inst)
-                        child = child_node
-                        #ROSS TODO
-                        ##sel_path = child_node._nodes_.csp_to_asp(sel_path)
-                        for sel in sel_path:
-                            sel = fix_keyword_from_coreir(sel)
-                            child = child.select(sel)
-                        children.append(child)
+                        if isinstance(child_node, Constant):
+                            children.append(child_node)
+                        else:
+                            child = child_node
+                            #ROSS TODO
+                            ##sel_path = child_node._nodes_.csp_to_asp(sel_path)
+                            for sel in sel_path:
+                                sel = fix_keyword_from_coreir(sel)
+                                child = child.select(sel)
+                            children.append(child)
                 else:
                     sub_w: coreir.Wireable = driver
                     if len(sub_w.connected_wireables) > 0:
@@ -251,6 +287,7 @@ class Loader:
                 else:
                     node = node_t(*children, iname=iname, type=sink_adt)
                 return node
+
         inst_node = type_recurse(inst)
         return inst_node
 

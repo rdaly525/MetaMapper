@@ -7,6 +7,7 @@ import coreir
 
 from hwtypes.modifiers import is_modified
 from hwtypes.adt import Product, Tuple, Sum, TaggedUnion
+import hwtypes as ht
 from . import CoreIRContext
 
 #Passes will be run on this
@@ -268,6 +269,7 @@ class ConstAssemble:
         else:
             val = aadt(family.BitVector[aadt._assembler_.width](value))
         return val
+
 
 Constant = Common.create_dag_node("Constant", 0, False, attrs=("value",), parents=(ConstAssemble,))
 

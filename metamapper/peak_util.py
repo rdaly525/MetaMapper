@@ -158,3 +158,17 @@ def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, 
     check_ports(dag_node, cmod)
     nodes.add(node_name, peak_fc, cmod, dag_node)
     return node_name
+
+
+#Loads a coreir header file, associates each coreir file with a peak_fc, creates a dag_node in nodes
+def load_and_link_peak(nodes: Nodes, header_file: str, peak_dict: dict):
+    c = CoreIRContext()
+    header_modules = c.load_header(header_file)
+    for cmod in header_modules:
+        if cmod.ref_name not in peak_dict:
+            raise ValueError(f"{cmod.ref_name} does not have an associated peak_dict")
+        peak_fc = peak_dict[cmod.ref_name]
+        node_name = load_from_peak(nodes, peak_fc, stateful=False, cmod=cmod, name=cmod.ref_name)
+        assert node_name == cmod.ref_name
+
+
