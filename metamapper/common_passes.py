@@ -248,8 +248,9 @@ class CountPEs(Visitor):
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
-        if node.node_name == "global.PE":
-            self.res += 1
+        if hasattr(node, "node_name"):
+            if node.node_name == "global.PE":
+                self.res += 1
         
 
     def visit_PE(self, node):
