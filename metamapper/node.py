@@ -113,7 +113,28 @@ class Dag(AbstractDag):
     def output(self):
         return self.sinks[0]
 
+#Allows arbitrary number of inputs and outputs
+class IODag(AbstractDag):
+    def __init__(self, inputs, outputs, sources: tp.List[Visited] = [], sinks: tp.List[Visited] = []):
+        if len(sources) != len(sinks):
+            raise ValueError("each source must have a matching sink")
+        if not all(isinstance(i, Input) for i in inputs):
+            raise ValueError("Each input needs to be instance of Input")
+        if not all(isinstance(o, Output) for o in outputs):
+            raise ValueError("Each output needs to be instance of Output")
+        if not all(isinstance(source, Source) for source in sources):
+            raise ValueError("Each source needs to be instance of Source")
+        if not all(isinstance(sink, Sink) for sink in sinks):
+            raise ValueError("Each sink needs to be instance of Sink")
+        for source, sink in zip(sources, sinks):
+            source.set_sink(sink)
+            sink.set_source(source)
 
+        self.inputs = inputs
+        self.outputs = outputs
+        self.sources = [*inputs, *sources]
+        self.sinks = [*outputs, *sinks]
+        super().__init__(*self.sinks)
 #A container for all the kinds of nodes (DagNodes, peakNodes, and modules)
 #Each container has a particular name (CoreIR, Lassen, etc...) and has an associated unique DagNode Class <class CoreIR(DagNode): pass>
 class Nodes:
@@ -315,8 +336,11 @@ class Bind(DagNode):
 #The inputs of this node are specified using the selects tuple
 #selects = (path0, path1, ..., pathn)
 class Combine(DagNode):
-    def __init__(self, *children, iname, type, tu_field=None):
-        super().__init__(*children, type=type, iname=iname,)
+    def __init__(self, *children, type, iname = None, tu_field=None):
+        if iname is None:
+            super().__init__(*children, type=type)
+        else:
+            super().__init__(*children, type=type, iname=iname,)
         if issubclass(type, (Sum, TaggedUnion)):
             if tu_field is None:
                 raise ValueError("Combine Tagged union must have a field")

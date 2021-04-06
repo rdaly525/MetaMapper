@@ -41,7 +41,7 @@ def gen_CoreIRNodes(width):
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
-            print(f"Loaded {name}!")
+            #print(f"Loaded {name}!")
 
     #Load reg
     name = f"coreir.reg"

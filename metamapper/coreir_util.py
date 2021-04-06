@@ -177,7 +177,7 @@ class Loader:
         sink_nodes = []
         for source, (inst, sink_adt) in zip(source_nodes, stateful_instances.items()):
             sink_t = type(source).sink_t
-            print("ADDING SINK", sink_t, sink_adt)
+            #print("ADDING SINK", sink_t, sink_adt)
             sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
@@ -200,10 +200,9 @@ class Loader:
 
         const_node = self.add_const(inst)
         if const_node is not None:
-            print("CONST", const_node)
             return const_node
 
-        print("Adding inst", inst)
+        #print("Adding inst", inst)
         if sink_t is None and inst in self.node_map:
             return self.node_map[inst]
         if sink_t is None:
@@ -351,6 +350,8 @@ class Loader:
                 drivers.append(port)
         return drivers
 
+
+
 #Takes in a coreir module and translates it into a dag
 # inline=True means to find instances of modules not defined in 'nodes' and inline them
 # If they are not inlineable then raise an error
@@ -369,9 +370,9 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
                 #if mod_name in ("counter", "reshape", "absd", "umax", "umin", "smax", "smin", "abs", "sle"):
                 #    to_inline.append(inst)
             for inst in to_inline:
-                print("inlining", inst.name, inst.module.name)
+                #print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
-    cmod.print_()
+    #cmod.print_()
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 
 #returns module, and map from instances to dags
