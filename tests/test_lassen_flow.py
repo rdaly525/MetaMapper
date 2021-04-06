@@ -7,6 +7,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
+from metamapper.lake_mem import gen_MEM_fc
 
 import pytest
 
@@ -14,7 +15,7 @@ lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
 lassen_header = "libs/lassen_header.json"
 lassen_def = "libs/lassen_def.json"
-
+mem_header = "libs/mem_header.json"
 
 @pytest.mark.parametrize("app", ["add3_const"])
 #@pytest.mark.parametrize("app", ["add4_pipe", "add3_const"])
@@ -56,14 +57,20 @@ def test_app(app):
 
 
 
-@pytest.mark.parametrize("app", ["add3_const"])
+@pytest.mark.parametrize("app", [
+    "add3_const_mapped",
+    "pointwise_to_metamapper",
+    "gaussian_to_metamapper",
+    "harris_to_metamapper",
+])
 def test_post_mapped(app):
     base = "examples/post_mapping"
-    app_file = f"{base}/{app}_mapped.json"
+    app_file = f"{base}/{app}.json"
     c = CoreIRContext(reset=True)
     cmod = cutil.load_from_json(app_file)
     cmod.print_()
 
+    MEM_fc = gen_MEM_fc()
     # Contains an empty nodes
     IRNodes = gen_CoreIRNodes(16)
     putil.load_and_link_peak(
@@ -71,10 +78,15 @@ def test_post_mapped(app):
         lassen_header,
         {"global.PE": lassen_fc},
     )
+    putil.load_and_link_peak(
+        IRNodes,
+        mem_header,
+        {"global.MEM": MEM_fc},
+    )
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
     print_dag(dag)
-
+    return
     arch_fc = lassen_fc
     ArchNodes = Nodes("Arch")
     putil.load_and_link_peak(ArchNodes, lassen_header, {"global.PE": arch_fc})

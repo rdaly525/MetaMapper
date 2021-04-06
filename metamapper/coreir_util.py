@@ -132,7 +132,7 @@ def fields_to_adt(inputs: dict, name):
     return Product.from_fields(name, {field:ctype_to_adt(CT) for field, CT in inputs.items()})
 
 class Loader:
-    def __init__(self, cmod: coreir.Module, nodes: Nodes, allow_unknown_instances=True):
+    def __init__(self, cmod: coreir.Module, nodes: Nodes, allow_unknown_instances=False):
         self.cmod = cmod
         self.nodes = nodes
         self.c = cmod.context
