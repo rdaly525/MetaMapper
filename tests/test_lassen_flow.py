@@ -1,6 +1,6 @@
 from lassen import PE_fc as lassen_fc
 
-from metamapper.common_passes import print_dag, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, Constant2CoreIRConstant, gen_dag_img
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
@@ -17,10 +17,9 @@ lassen_header = "libs/lassen_header.json"
 lassen_def = "libs/lassen_def.json"
 mem_header = "libs/mem_header.json"
 
-@pytest.mark.parametrize("app", ["add3_const"])
-#@pytest.mark.parametrize("app", ["add4_pipe", "add3_const"])
+#@pytest.mark.parametrize("app", ["add3_const"])
+@pytest.mark.parametrize("app", ["add4_pipe"])
 def test_app(app):
-    #Jack: THIS TEST
     base = "examples/coreir"
     app_file = f"{base}/{app}.json"
     c = CoreIRContext(reset=True)
@@ -31,7 +30,10 @@ def test_app(app):
 
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
-    print_dag(dag)
+
+    #print_dag(dag)
+    gen_dag_img(dag, f"img/{app}")
+
     Constant2CoreIRConstant(IRNodes).run(dag)
     print_dag(dag)
 
@@ -49,6 +51,7 @@ def test_app(app):
     mapper = Mapper(IRNodes, ArchNodes, lazy=True, rule_file=rule_file)
     mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
     print_dag(mapped_dag)
+    gen_dag_img(mapped_dag, f"img/{app}_mapped")
 
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{app_name}_mapped", convert_unbounds=False)
     mod.print_()
@@ -59,6 +62,7 @@ def test_app(app):
 
 @pytest.mark.parametrize("app", [
     "add3_const_mapped",
+    #"add4_pipe_mapped",
     "pointwise_to_metamapper",
     "gaussian_to_metamapper",
     "harris_to_metamapper",
@@ -86,6 +90,10 @@ def test_post_mapped(app):
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
     print_dag(dag)
+    graph = DagToPdf().doit(dag)
+    graph = graph.unflatten(stagger=3)
+    print(graph.source)
+    graph.render(filename=f"img/{app}")
     return
     arch_fc = lassen_fc
     ArchNodes = Nodes("Arch")

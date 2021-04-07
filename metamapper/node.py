@@ -21,6 +21,9 @@ class DagNode(Visited):
         self.set_children(*args)
         self._selects = set()
 
+    def __str__(self):
+        return f"{type(self).__name__}"
+
     def set_children(self, *children):
         expected_children = self.num_children
         if expected_children >=0 and len(children) != expected_children:
@@ -268,6 +271,8 @@ class Nodes:
 
 Common = Nodes("Common")
 Select = Common.create_dag_node("Select", 1, False, ("field",))
+Select.__str__ = lambda self: f"Select<{self.field}>"
+
 
 from hwtypes import AbstractBitVector, AbstractBit
 from peak.mapper.utils import rebind_type
@@ -294,6 +299,7 @@ class ConstAssemble:
 
 
 Constant = Common.create_dag_node("Constant", 0, False, attrs=("value",), parents=(ConstAssemble,))
+#Constant.__str__ = lambda self: f"Constant<{self.value}>"
 
 class State(object): pass
 class Source(State):
