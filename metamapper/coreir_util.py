@@ -286,8 +286,13 @@ class Loader:
                 else:
                     node = node_t(*children, iname=iname, type=sink_adt)
                 return node
-
         inst_node = type_recurse(inst)
+        if isinstance(inst, coreir.Instance):
+            md = inst.metadata
+            print("Metadat:", md)
+            if len(md) > 0:
+                inst_node._metadata_ = md
+
         return inst_node
 
     def inst_from_name(self, iname):

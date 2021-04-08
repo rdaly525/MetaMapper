@@ -61,11 +61,11 @@ def test_app(app):
 
 
 @pytest.mark.parametrize("app", [
-    "add3_const_mapped",
+    #"add3_const_mapped",
     #"add4_pipe_mapped",
     "pointwise_to_metamapper",
-    "gaussian_to_metamapper",
-    "harris_to_metamapper",
+    #"gaussian_to_metamapper",
+    #"harris_to_metamapper",
 ])
 def test_post_mapped(app):
     base = "examples/post_mapping"
@@ -89,11 +89,8 @@ def test_post_mapped(app):
     )
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
+    gen_dag_img(dag, f"img/{app}_mapped")
     print_dag(dag)
-    graph = DagToPdf().doit(dag)
-    graph = graph.unflatten(stagger=3)
-    print(graph.source)
-    graph.render(filename=f"img/{app}")
     return
     arch_fc = lassen_fc
     ArchNodes = Nodes("Arch")

@@ -49,6 +49,9 @@ class DagNode(Visited):
         for attr, val in self.static_attributes.items():
             setattr(self, attr, val)
 
+    def add_metadata(self, md):
+        self._metadata_ = md
+
     def children(self):
         return self._children
 
@@ -80,7 +83,10 @@ class DagNode(Visited):
     def copy(self):
         args = self.children()
         kwargs = {attr:getattr(self, attr) for attr in self.attributes}
-        return type(self)(*args, **kwargs)
+        node = type(self)(*args, **kwargs)
+        if hasattr(self, "_metadata_"):
+            node.add_metadata(self._metadata_)
+        return node
 
 
 #This holds a single RTL dag. The first source/sink pair represents the interface whereas the rest represent instances with state
