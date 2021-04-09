@@ -289,9 +289,8 @@ class Loader:
         inst_node = type_recurse(inst)
         if isinstance(inst, coreir.Instance):
             md = inst.metadata
-            print("Metadat:", md)
             if len(md) > 0:
-                inst_node._metadata_ = md
+                inst_node.add_metadata(md)
 
         return inst_node
 
@@ -608,7 +607,6 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unboun
     def_ = mod.new_definition()
     ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
-    mod.print_()
     return mod
 
 #This will construct a new coreir module from the dag with ref_type
@@ -623,8 +621,6 @@ def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> c
     type = CoreIRContext().Record({**inputs, **outputs})
     mod = CoreIRContext().global_namespace.new_module(name, type)
     def_ = mod.new_definition()
-    print("I", inputs)
     ToCoreir(nodes, def_, convert_unbounds=convert_unbounds).doit(dag)
     mod.definition = def_
-    mod.print_()
     return mod
