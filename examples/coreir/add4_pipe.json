@@ -43,7 +43,8 @@
             ["r00.out","i1.in0"],
             ["i01.out","r01.in"],
             ["r01.out","i1.in1"],
-            ["i1.out","self.out"]
+            ["i1.out","r1.in"],
+            ["r1.out","self.out"]
           ]
         }
       }

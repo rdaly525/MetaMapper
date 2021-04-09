@@ -4,6 +4,7 @@ from metamapper import CoreIRContext
 from metamapper.irs.coreir import gen_CoreIRNodes
 import pytest
 
+
 examples_coreir = [
     "add2",
     "multi",
@@ -30,6 +31,8 @@ def test_examples_coreir(name):
         cutil.dag_to_coreir(CoreIRNodes, dag, f"{kname}_copy")
     out_name = f"build/{name}_copy.json"
     c.save_to_file(out_name)
+
+
 
 
 full_apps = [

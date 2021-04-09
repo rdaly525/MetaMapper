@@ -11,6 +11,12 @@ import coreir
 import json
 
 
+class DefaultLatency:
+
+    @staticmethod
+    def get(node):
+        return 0
+
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
@@ -53,9 +59,9 @@ class Mapper:
                     else:
                         print(f"  Found!")
         elif rrules is None:
-            
+
             for arch_name in self.ArchNodes._node_names:
-                if arch_name != "PE":
+                if arch_name != "global.PE":
                     continue
                 arch_fc = self.ArchNodes.peak_nodes[arch_name]
                 with open(rule_file, "r") as read_file:
@@ -73,7 +79,7 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
 
-    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_latencies=DefaultLatency) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
         #print("premapped")
@@ -96,12 +102,11 @@ class Mapper:
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
-        
-        if node_latencies is not None:
-            RegT = self.CoreIRNodes.dag_nodes["coreir.pipeline_reg"]
-            BitRegT = self.CoreIRNodes.dag_nodes["corebit.pipeline_reg"]
-            DelayMatching(RegT, BitRegT, node_latencies).run(mapped_dag)
-            self.kernel_latencies[kname] = KernelDelay(node_latencies).run(mapped_dag).kernal_latency
+
+        RegT = self.CoreIRNodes.dag_nodes["coreir.pipeline_reg"]
+        BitRegT = self.CoreIRNodes.dag_nodes["corebit.pipeline_reg"]
+        DelayMatching(RegT, BitRegT, node_latencies).run(mapped_dag)
+        self.kernel_latencies[kname] = KernelDelay(node_latencies).run(mapped_dag).kernal_latency
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)

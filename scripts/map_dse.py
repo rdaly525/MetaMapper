@@ -41,7 +41,7 @@ DSE_PE_location = "../DSEGraphAnalysis/outputs"
 def gen_rrules():
 
     arch = read_arch(f"{DSE_PE_location}/PE.json")
-    PE_fc = wrapped_peak_class(arch, debug=True)
+    PE_fc = wrapped_peak_class(arch)
 
     mapping_funcs = []
     rrules = []
@@ -78,6 +78,10 @@ def gen_rrules():
 verilog = False
 print("STARTING TEST")
 c = CoreIRContext(reset=True)
+arch_fc, rrules = gen_rrules()
+
+ArchNodes = Nodes("Arch")
+putil.load_from_peak(ArchNodes, arch_fc)
 file_name = f"examples/clockwork/{app}.json"
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)

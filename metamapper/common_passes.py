@@ -8,6 +8,51 @@ from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
 from .node import DagNode
+import hwtypes as ht
+from graphviz import Digraph
+
+
+
+
+def is_unbound_const(node):
+    return isinstance(node, Constant) and node.value is Unbound
+
+class DagToPdf(Visitor):
+    def __init__(self, no_unbound):
+        self.no_unbound = no_unbound
+
+    def doit(self, dag: Dag):
+        AddID().run(dag)
+        self.graph = Digraph(format='png')
+        self.run(dag)
+        return self.graph
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        def n2s(node):
+            return f"{str(node)}_{node._id_}"
+        if self.no_unbound and not is_unbound_const(node):
+            self.graph.node(n2s(node))
+        for child in node.children():
+            if self.no_unbound and not is_unbound_const(child):
+                self.graph.edge(n2s(child), n2s(node))
+
+def gen_dag_img(dag, file, no_unbound=True):
+    DagToPdf(no_unbound).doit(dag).render(filename=file)
+
+#Translates DagNode
+class Constant2CoreIRConstant(Transformer):
+    def __init__(self, nodes: Nodes):
+        self.nodes = nodes
+
+    def visit_Constant(self, node: Constant):
+        if node.type == ht.BitVector[16]:
+            node_t = self.nodes.dag_nodes["coreir.const"]
+        elif node.type == ht.Bit:
+            node_t = self.nodes.dag_nodes["corebit.const"]
+        else:
+            return
+        return node_t(node).select("out")
 
 
 class Riscv2_Riscv(Transformer):
@@ -233,6 +278,10 @@ class CountPEs(Visitor):
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
+        if hasattr(node, "node_name"):
+            if node.node_name == "global.PE":
+                self.res += 1
+        
 
     def visit_PE(self, node):
         Visitor.generic_visit(self, node)
@@ -285,17 +334,6 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<Combine:{list(node.type.field_dict.keys())}>({child_ids})\n"
-
-
-class DagToPdf(Visitor):
-    def __init__(self):
-        self.graph = Digraph()
-
-    def generic_visit(self, node):
-        Visitor.generic_visit(self, node)
-        self.graph.node(str(node._id_), f"{node.node_name}")
-        for child in node.children():
-            self.graph.edge(str(child._id_), str(node._id_))
 
 class BindsToCombines(Transformer):
     def gen_combine(self, node: Bind):
@@ -389,7 +427,6 @@ def print_dag(dag: Dag):
     print(Printer().run(dag).res)
 
 def count_pes(dag: Dag):
-    print(CountPEs().run(dag).res)
     return CountPEs().run(dag).res
 
 def dag_to_pdf(dag: Dag, filename):
@@ -442,7 +479,6 @@ class Clone(Visitor):
         pass
 
     def generic_visit(self, node):
-        # print("Visiting", node)
         Visitor.generic_visit(self, node)
         new_node = node.copy()
         children = (self.node_map[child] for child in node.children())
