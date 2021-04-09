@@ -47,5 +47,3 @@ def test_post_mapped_loading(app):
     )
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
-    gen_dag_img(dag, f"img/{app}_mapped")
-    print_dag(dag)
