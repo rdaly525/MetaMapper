@@ -7,6 +7,7 @@ import coreir
 
 from hwtypes.modifiers import is_modified
 from hwtypes.adt import Product, Tuple, Sum, TaggedUnion
+import hwtypes as ht
 from . import CoreIRContext
 
 #Passes will be run on this
@@ -19,6 +20,9 @@ class DagNode(Visited):
         self.set_kwargs(**kwargs)
         self.set_children(*args)
         self._selects = set()
+
+    def __str__(self):
+        return f"{type(self).__name__}"
 
     def set_children(self, *children):
         expected_children = self.num_children
@@ -45,6 +49,9 @@ class DagNode(Visited):
         for attr, val in self.static_attributes.items():
             setattr(self, attr, val)
 
+    def add_metadata(self, md):
+        self._metadata_ = md
+
     def children(self):
         return self._children
 
@@ -60,6 +67,11 @@ class DagNode(Visited):
 
     @lru_cache(None)
     def select(self, field, original=None):
+
+        key_list = {f"O{i}": k for i, k in enumerate(self.type.field_dict.keys())}
+        new_field = key_list.get(field)
+        if original is None and new_field is not None:
+            field = new_field
         self._selects.add(field)
         if original is None:
             original = field
@@ -71,7 +83,10 @@ class DagNode(Visited):
     def copy(self):
         args = self.children()
         kwargs = {attr:getattr(self, attr) for attr in self.attributes}
-        return type(self)(*args, **kwargs)
+        node = type(self)(*args, **kwargs)
+        if hasattr(self, "_metadata_"):
+            node.add_metadata(self._metadata_)
+        return node
 
 
 #This holds a single RTL dag. The first source/sink pair represents the interface whereas the rest represent instances with state
@@ -107,7 +122,28 @@ class Dag(AbstractDag):
     def output(self):
         return self.sinks[0]
 
+#Allows arbitrary number of inputs and outputs
+class IODag(AbstractDag):
+    def __init__(self, inputs, outputs, sources: tp.List[Visited] = [], sinks: tp.List[Visited] = []):
+        if len(sources) != len(sinks):
+            raise ValueError("each source must have a matching sink")
+        if not all(isinstance(i, Input) for i in inputs):
+            raise ValueError("Each input needs to be instance of Input")
+        if not all(isinstance(o, Output) for o in outputs):
+            raise ValueError("Each output needs to be instance of Output")
+        if not all(isinstance(source, Source) for source in sources):
+            raise ValueError("Each source needs to be instance of Source")
+        if not all(isinstance(sink, Sink) for sink in sinks):
+            raise ValueError("Each sink needs to be instance of Sink")
+        for source, sink in zip(sources, sinks):
+            source.set_sink(sink)
+            sink.set_source(source)
 
+        self.inputs = inputs
+        self.outputs = outputs
+        self.sources = [*inputs, *sources]
+        self.sinks = [*outputs, *sinks]
+        super().__init__(*self.sinks)
 #A container for all the kinds of nodes (DagNodes, peakNodes, and modules)
 #Each container has a particular name (CoreIR, Lassen, etc...) and has an associated unique DagNode Class <class CoreIR(DagNode): pass>
 class Nodes:
@@ -173,6 +209,10 @@ class Nodes:
         self.coreir_modules[node_name] = cmod
         self._node_names.add(node_name)
 
+
+    def add_from_nodes(self, nodes, node_name):
+        self.add(node_name, nodes.peak_nodes[node_name], nodes.coreir_modules[node_name], nodes.dag_nodes[node_name])
+
     #add a copy of nodes[node_name] to self
     def copy(self, nodes, node_name):
         peak_node = nodes.peak_nodes[node_name]
@@ -237,6 +277,8 @@ class Nodes:
 
 Common = Nodes("Common")
 Select = Common.create_dag_node("Select", 1, False, ("field",))
+Select.__str__ = lambda self: f"Select<{self.field}>"
+
 
 from hwtypes import AbstractBitVector, AbstractBit
 from peak.mapper.utils import rebind_type
@@ -261,7 +303,9 @@ class ConstAssemble:
             val = aadt(family.BitVector[aadt._assembler_.width](value))
         return val
 
+
 Constant = Common.create_dag_node("Constant", 0, False, attrs=("value",), parents=(ConstAssemble,))
+#Constant.__str__ = lambda self: f"Constant<{self.value}>"
 
 class State(object): pass
 class Source(State):
@@ -304,14 +348,19 @@ class Bind(DagNode):
 #The inputs of this node are specified using the selects tuple
 #selects = (path0, path1, ..., pathn)
 class Combine(DagNode):
-    def __init__(self, *children, iname, type, tu_field=None):
-        super().__init__(*children, type=type, iname=iname,)
+    def __init__(self, *children, type, iname = None, tu_field=None):
+        if iname is None:
+            super().__init__(*children, type=type)
+        else:
+            super().__init__(*children, type=type, iname=iname,)
         if issubclass(type, (Sum, TaggedUnion)):
             if tu_field is None:
                 raise ValueError("Combine Tagged union must have a field")
             if tu_field not in type.field_dict:
                 raise ValueError(f"{tu_field} not in {type}")
             self.tu_field = tu_field
+        else:
+            self.tu_field = None
 
     @property
     def num_children(self):

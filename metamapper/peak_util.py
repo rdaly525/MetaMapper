@@ -147,9 +147,27 @@ def peak_to_node(nodes: Nodes, peak_fc, stateful, name=None, modparams=()) -> (D
         static_attrs = dict(type=strip_modifiers(peak_bv.output_t))
     return nodes.create_dag_node(name, len(inputs), stateful=stateful, static_attrs=static_attrs, modparams=modparams), name
 
-def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, modparams=(), wasm=False) -> str:
-    if cmod is None and not wasm:
+def check_ports(node: DagNode, cmod: coreir.Module):
+    #TODO implement this function
+    return True
+
+def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, modparams=()) -> str:
+    if cmod is None:
         cmod = peak_to_coreir(peak_fc, wrap=True)
     dag_node, node_name = peak_to_node(nodes, peak_fc, stateful=stateful, name=name, modparams=modparams)
+    check_ports(dag_node, cmod)
     nodes.add(node_name, peak_fc, cmod, dag_node)
     return node_name
+
+
+#Loads a coreir header file, associates each coreir file with a peak_fc, creates a dag_node in nodes
+def load_and_link_peak(nodes: Nodes, header_file: str, peak_dict: dict):
+    c = CoreIRContext()
+    header_modules = c.load_header(header_file)
+    for cmod in header_modules:
+        if cmod.ref_name not in peak_dict:
+            raise ValueError(f"{cmod.ref_name} does not have an associated peak_dict")
+        peak_fc = peak_dict[cmod.ref_name]
+        node_name = load_from_peak(nodes, peak_fc, stateful=False, cmod=cmod, name=cmod.ref_name)
+        assert node_name == cmod.ref_name
+

@@ -37,7 +37,6 @@ import json
 #    "commonlib.umin",
 #)
 
-
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
@@ -81,7 +80,7 @@ class Mapper:
         elif rrules is None:
             
             for arch_name in self.ArchNodes._node_names:
-                if arch_name != "PE":
+                if arch_name != "global.PE":
                     continue
                 arch_fc = self.ArchNodes.peak_nodes[arch_name]
                 with open(rule_file, "r") as read_file:

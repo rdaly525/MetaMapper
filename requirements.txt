@@ -4,6 +4,7 @@ DagVisitor
 -e git+git://github.com/leonardt/fault#egg=fault
 -e git+git://github.com/phanrahan/mantle#egg=mantle
 -e git://github.com/StanfordAHA/lassen.git#egg=lassen
+-e git+https://github.com/StanfordAHA/lake#egg=lake
 cosa
 -e git+git://github.com/leonardt/hwtypes#egg=hwtypes
 -e git+git://github.com/jack-melchert/peak_generator#egg=peak_gen
