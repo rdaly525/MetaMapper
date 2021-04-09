@@ -23,9 +23,7 @@ lassen_header = "libs/lassen_header.json"
 lassen_def = "libs/lassen_def.json"
 mem_header = "libs/mem_header.json"
 
-
 @pytest.mark.parametrize("app", [
-    "add2",
     "add3_const"
 ])
 #@pytest.mark.parametrize("app", ["add4_pipe"])
@@ -67,8 +65,6 @@ def test_kernel_mapping(app):
 
 @pytest.mark.parametrize("app", [
     "add3_const_mapped",
-    #"add4_pipe_mapped",
-
 ])
 def test_post_mapped_loading(app):
     base = "examples/post_mapping"
