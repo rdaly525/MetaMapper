@@ -148,6 +148,8 @@ class IODag(AbstractDag):
             source.set_sink(sink)
             sink.set_source(source)
 
+        self.non_input_sources = sources
+        self.non_output_sinks = sinks
         self.inputs = inputs
         self.outputs = outputs
         self.sources = [*inputs, *sources]
