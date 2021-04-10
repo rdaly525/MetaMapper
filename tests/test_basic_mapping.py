@@ -42,7 +42,7 @@ def test_kernel_mapping(app):
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
     #print_dag(dag)
-    gen_dag_img(dag, f"img/{app}")
+    #gen_dag_img(dag, f"img/{app}")
 
     Constant2CoreIRConstant(IRNodes).run(dag)
 
@@ -89,7 +89,7 @@ def test_kernel_mapping_with_delay(app):
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
 
-    gen_dag_img(dag, f"img/{app}")
+    #gen_dag_img(dag, f"img/{app}")
 
     Constant2CoreIRConstant(IRNodes).run(dag)
     print_dag(dag)
@@ -105,7 +105,7 @@ def test_kernel_mapping_with_delay(app):
     mapper = Mapper(IRNodes, ArchNodes, lazy=True, rule_file=lassen_rules)
     mapped_dag = mapper.do_mapping(dag, node_latencies=LatencyInfo, convert_unbound=False, prove_mapping=False)
 
-    gen_dag_img(mapped_dag, f"img/{app}_mapped")
+    #gen_dag_img(mapped_dag, f"img/{app}_mapped")
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{app_name}_mapped", convert_unbounds=False)
     c.serialize_definitions(build_file, [mod])
 
