@@ -4,7 +4,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import  print_dag
+from metamapper.common_passes import print_dag, Constant2CoreIRConstant
 
 from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
@@ -25,7 +25,7 @@ class _ArchLatency:
         print(kind)
         if kind == "Rom":
             return 1
-        elif kind == "PE_wrapped":
+        elif kind == "global.PE":
             return latency
         
         return 0
@@ -37,12 +37,17 @@ else:
     latency = 0
 
 DSE_PE_location = "../DSEGraphAnalysis/outputs"
+pe_header = "./libs/pe_header.json"
+pe_def = "./libs/pe_def.json"
 
 def gen_rrules():
 
     arch = read_arch(f"{DSE_PE_location}/PE.json")
-    PE_fc = wrapped_peak_class(arch)
-
+    PE_fc = wrapped_peak_class(arch, debug=True)
+    c = CoreIRContext()
+    cmod = putil.peak_to_coreir(PE_fc)
+    c.serialize_header(pe_header, [cmod])
+    # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
 
@@ -75,51 +80,48 @@ def gen_rrules():
 
 
 
+arch_fc, rrules = gen_rrules()
 verilog = False
 print("STARTING TEST")
-c = CoreIRContext(reset=True)
-arch_fc, rrules = gen_rrules()
+base = "examples/clockwork"
+file_name = f"{base}/{app}.json"
 
-ArchNodes = Nodes("Arch")
-putil.load_from_peak(ArchNodes, arch_fc)
-file_name = f"examples/clockwork/{app}.json"
+c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)
 cutil.load_from_json(file_name) #libraries=["lakelib"])
 kernels = dict(c.global_namespace.modules)
 
-arch_fc, rrules = gen_rrules()
 
 ArchNodes = Nodes("Arch")
+# putil.load_and_link_peak(
+#     ArchNodes,
+#     pe_header,
+#     {"global.PE": arch_fc}
+# )
 putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
-reg = "coreir.pipeline_reg"
-ArchNodes.add(reg, CoreIRNodes.peak_nodes[reg], CoreIRNodes.coreir_modules[reg], CoreIRNodes.dag_nodes[reg])
-reg1 = "corebit.pipeline_reg"
-ArchNodes.add(reg1, CoreIRNodes.peak_nodes[reg1], CoreIRNodes.coreir_modules[reg1], CoreIRNodes.dag_nodes[reg1])
+
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
 
 c.run_passes(["rungenerators", "deletedeadinstances"])
 
-
+mods = []
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-    # print_dag(dag)
-    mapped_dag = mapper.do_mapping(dag, kname = kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
+    Constant2CoreIRConstant(CoreIRNodes).run(dag)
+    mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-
+    mods.append(mod)
     
-print(kname)
-dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
-mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mappedd", convert_unbounds=verilog)
 print(f"Num PEs used: {mapper.num_pes}")
 output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")
-c.save_to_file(output_file)
+c.serialize_definitions(output_file, mods)
+
 
 with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
     json.dump(mapper.kernel_latencies, outfile)
