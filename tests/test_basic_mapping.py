@@ -112,16 +112,15 @@ def test_kernel_mapping_with_delay(app):
 
 
 @pytest.mark.parametrize("app", [
-    "add3_const_mapped",
-    "add4_pipe_mapped"
+    "add3_const",
+    "add4_pipe",
+    "branch"
 ])
 def test_post_mapped_loading(app):
     base = "examples/post_mapping"
-    app_file = f"{base}/{app}.json"
+    app_file = f"{base}/{app}_mapped.json"
     c = CoreIRContext(reset=True)
     cmod = cutil.load_from_json(app_file)
-    cmod.print_()
-
     MEM_fc = gen_MEM_fc()
     # Contains an empty nodes
     IRNodes = gen_CoreIRNodes(16)
@@ -135,8 +134,7 @@ def test_post_mapped_loading(app):
         mem_header,
         {"global.MEM": MEM_fc},
     )
-    app_name = cmod.name
 
-
-
-
+    dag = cutil.coreir_to_dag(IRNodes, cmod)
+    #print_dag(dag)
+    #gen_dag_img(dag, f"img/{app}_mapped_loaded")

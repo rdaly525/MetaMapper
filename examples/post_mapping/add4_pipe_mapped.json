@@ -1,4 +1,4 @@
-{"top":"global.add4_mapped",
+{"top":"global.add4_pipe_mapped",
   "namespaces":{
   "coreir":{
     "generators":{
@@ -74,7 +74,7 @@
           ["ASYNCRESET",["Named","coreir.arstIn"]]
         ]]
       },
-      "add4_mapped":{
+      "add4_pipe_mapped":{
         "type":["Record",[
           ["in",["Array",4,["Array",16,"BitIn"]]],
           ["out",["Array",16,"Bit"]]

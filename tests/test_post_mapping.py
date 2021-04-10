@@ -43,7 +43,9 @@ def test_post_mapped_loading(app):
     putil.load_and_link_peak(
         IRNodes,
         mem_header,
-        {"global.MEM": MEM_fc},
+        {"global.MEM": (MEM_fc, True)},
     )
     app_name = cmod.name
     dag = cutil.coreir_to_dag(IRNodes, cmod)
+    gen_dag_img(dag, f"img/{app}")
+

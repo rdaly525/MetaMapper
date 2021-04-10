@@ -250,7 +250,7 @@ class Loader:
                     #   b) When there are things connected at a different level of hierarchy (wireable)
                     #   c) at leaf type with normal connection (other_inst, ports)
                     if (child_inst, sel_path) == (None, None):
-                        children.append(Constant(value=Unbound, type=None))
+                        children.append(Constant(value=Unbound, type=ht.Bit))
                     else:
                         child_node = self.add_node(child_inst)
                         if isinstance(child_node, Constant):
