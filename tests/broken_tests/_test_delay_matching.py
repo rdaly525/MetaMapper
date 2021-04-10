@@ -14,7 +14,8 @@ lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
 
 class _ArchLatency:
-    def get(self, node):
+    @staticmethod
+    def get(node):
         kind = node.kind()[0]
         print(kind)
         if kind == "PE" or kind == "Rom":
