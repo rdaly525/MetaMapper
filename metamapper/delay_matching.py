@@ -1,66 +1,79 @@
 from DagVisitor import Transformer, Visitor
-from hwtypes import bit_vector 
+from metamapper.node import Constant, PipelineRegister
+
 
 class DelayMatching(Transformer):
-    def __init__(self, RegT, BitRegT, node_latencies):
-        self.RegT = RegT
-        self.BitRegT = BitRegT
+    def __init__(self, node_latencies):
         self.node_latencies = node_latencies
         self.aggregate_latencies = {}
 
+    def visit_Constant(self, node):
+        self.aggregate_latencies[node] = 0
+
+    def visit_Source(self, node):
+        self.aggregate_latencies[node] = 0
+
     def generic_visit(self, node):
-        if len(node.children()) == 0:
-            self.aggregate_latencies[node] = 0
-            return
         Transformer.generic_visit(self, node)
         latencies = [self.aggregate_latencies[child]
                      for child in node.children()]
         max_latency = max(latencies)
         new_children = [child for child in node.children()]
         for i, child in enumerate(node.children()):
-            if child.node_name == "Constant":
+            if isinstance(child, Constant):
                 continue
             latency = latencies[i]
             diff = max_latency - latency
             if diff == 0:
                 continue
             new_child = child
+            pipeline_type = child.type
             for reg_index in range(diff):  # diff = number of pipeline reg
-                if new_child.type == bit_vector.Bit:
-                    new_child = self.BitRegT(new_child).select('out')
-                else:
-                    new_child = self.RegT(new_child).select('out')
+                new_child = PipelineRegister(new_child, type=pipeline_type)
             new_children[i] = new_child
         node.set_children(*new_children)
         this_latency = self.node_latencies.get(node)
         self.aggregate_latencies[node] = max_latency + this_latency
         return node
 
+#Verifies that a kernel is branch-delay matched
 class KernelDelay(Visitor):
     def __init__(self, node_latencies):
         self.node_latencies = node_latencies
+
+    def doit(self, dag):
         self.aggregate_latencies = {}
-        self.kernal_latency = 0
+        self.run(dag)
+        output_latencies = [self.aggregate_latencies[root] for root in dag.roots()]
+        if not all(output_latencies[0] == l for l in output_latencies):
+            raise ValueError("Mismatched output latencies")
+        return output_latencies[0]
+
+    def visit_Constant(self, node):
+        self.aggregate_latencies[node] = None
+
+    def visit_Source(self, node):
+        self.aggregate_latencies[node] = 0
 
     def generic_visit(self, node):
-        if len(node.children()) == 0:
-            self.aggregate_latencies[node] = 0
-            return
         Visitor.generic_visit(self, node)
         latencies = [self.aggregate_latencies[child]
                      for child in node.children()]
-        max_latency = max(latencies)
-        this_latency = self.node_latencies.get(node)
-        self.aggregate_latencies[node] = max_latency + this_latency
+        if len(latencies) == 0:
+            return
+        unique_latencies = set(latencies)
+        if None in unique_latencies:
+            unique_latencies.remove(None)
+        if len(unique_latencies)==0:
+            self.aggregate_latencies[node] = None
+        elif len(unique_latencies) == 1:
+            child_latency = unique_latencies.pop()
+            this_latency = self.node_latencies.get(node)
+            self.aggregate_latencies[node] = child_latency + this_latency
+        else:
+            raise ValueError("Dag is not delay matched", unique_latencies)
 
-    def visit_Output(self, node):
+    def visit_PipelineRegister(self, node):
         Visitor.generic_visit(self, node)
-        if len(node.children()) == 0:
-            self.aggregate_latencies[node] = 0
-            return
-        Visitor.generic_visit(self, node)
-        latencies = [self.aggregate_latencies[child]
-                     for child in node.children()]
-        max_latency = max(latencies)
-        this_latency = self.node_latencies.get(node)
-        self.kernal_latency = max_latency + this_latency
+        child = list(node.children())[0]
+        self.aggregate_latencies[node] = self.aggregate_latencies[child] + 1

@@ -1,5 +1,5 @@
 from metamapper.common_passes import VerifyNodes, print_dag, count_pes, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const
+    Clone, ExtractNames, Unbound2Const, gen_dag_img
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -103,10 +103,9 @@ class Mapper:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
-        RegT = self.CoreIRNodes.dag_nodes["coreir.pipeline_reg"]
-        BitRegT = self.CoreIRNodes.dag_nodes["corebit.pipeline_reg"]
-        DelayMatching(RegT, BitRegT, node_latencies).run(mapped_dag)
-        self.kernel_latencies[kname] = KernelDelay(node_latencies).run(mapped_dag).kernal_latency
+        DelayMatching(node_latencies).run(mapped_dag)
+
+        self.kernel_latencies[kname] = KernelDelay(node_latencies).doit(mapped_dag)
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)

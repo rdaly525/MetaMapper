@@ -301,6 +301,18 @@ class Printer(Visitor):
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<{node.kind()[0]}:{node._id_}, {list(T.field_dict.keys())}>({child_ids})\n"
 
+    def visit_PipelineRegister(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<PipelineRegister>({node.child._id_})"
+
+    def visit_RegisterSource(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<Register>"
+
+    def visit_RegisterSink(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<Register>({node.child._id_})"
+
     def visit_Bind(self, node):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])

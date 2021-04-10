@@ -43,21 +43,21 @@ def gen_CoreIRNodes(width):
             assert CoreIRNodes.name_from_coreir(cmod) == name
             #print(f"Loaded {name}!")
 
-    #Load reg
-    name = f"coreir.reg"
-    peak_fc = peak_ir.instructions[name]
-    cmod = c.get_namespace("coreir").generators["reg"](width=width)
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.reg", stateful=True, modparams=("clk_posedge", "init"))
+    ##Load reg
+    #name = f"coreir.reg"
+    #peak_fc = peak_ir.instructions[name]
+    #cmod = c.get_namespace("coreir").generators["reg"](width=width)
+    #name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.reg", stateful=True, modparams=("clk_posedge", "init"))
 
-    name = f"coreir.pipeline_reg"
-    peak_fc = peak_ir.instructions[name]
-    cmod = c.get_namespace("coreir").generators["reg"](width=width)
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.pipeline_reg", stateful=False)
-    
-    name = f"corebit.pipeline_reg"
-    peak_fc = peak_ir.instructions[name]
-    cmod = c.get_namespace("corebit").modules["reg"]
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="corebit.pipeline_reg", stateful=False)
+    #name = f"coreir.pipeline_reg"
+    #peak_fc = peak_ir.instructions[name]
+    #cmod = c.get_namespace("coreir").generators["reg"](width=width)
+    #name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.pipeline_reg", stateful=False)
+    #
+    #name = f"corebit.pipeline_reg"
+    #peak_fc = peak_ir.instructions[name]
+    #cmod = c.get_namespace("corebit").modules["reg"]
+    #name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="corebit.pipeline_reg", stateful=False)
     
 
     class Rom(DagNode):
