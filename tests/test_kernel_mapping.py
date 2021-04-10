@@ -31,13 +31,13 @@ class _ArchLatency:
     #_ArchLatency
 ])
 @pytest.mark.parametrize("app", [
-    #"gaussian",
-    #"harris",
-    #"camera_pipeline",
+    "gaussian",
+    "harris",
+    "camera_pipeline",
     "laplacian_pyramid",
     "cascade",
-    "resnet_block",
-    "resnet"
+    #"resnet_block",
+    #"resnet"
 ])
 def test_kernel_mapping(lat, app):
 
