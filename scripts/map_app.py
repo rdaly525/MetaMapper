@@ -72,11 +72,6 @@ putil.load_and_link_peak(
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
-reg = "coreir.pipeline_reg"
-ArchNodes.add(reg, CoreIRNodes.peak_nodes[reg], CoreIRNodes.coreir_modules[reg], CoreIRNodes.dag_nodes[reg])
-reg1 = "corebit.pipeline_reg"
-ArchNodes.add(reg1, CoreIRNodes.peak_nodes[reg1], CoreIRNodes.coreir_modules[reg1], CoreIRNodes.dag_nodes[reg1])
-
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=lassen_rules)
 
