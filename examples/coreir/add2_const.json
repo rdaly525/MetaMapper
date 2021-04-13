@@ -1,0 +1,42 @@
+{"top":"global.add3_const",
+"namespaces":{
+  "global":{
+    "modules":{
+      "add3_const":{
+        "type":["Record",[
+          ["in", ["Array", 3, ["Array",16,"BitIn"]]],
+          ["out",["Array", 1, ["Array",16,"Bit"]]]
+        ]],
+        "instances":{
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"value":[["BitVector", 16], "16'h55"]}
+          },
+          "add00":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "add01":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "add1":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          }
+        },
+        "connections":[
+          ["self.in.0","add00.in0"],
+          ["self.in.1","add00.in1"],
+          ["add1.in0","add00.out"],
+          ["self.in.2","add01.in0"],
+          ["c1.out","add01.in1"],
+          ["add1.in1","add01.out"],
+          ["self.out.0","add1.out"]
+        ]
+      }
+    }
+  }
+}
+}
