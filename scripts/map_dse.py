@@ -4,7 +4,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, Constant2CoreIRConstant, gen_dag_img
 
 from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
@@ -90,30 +90,29 @@ c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)
 cutil.load_from_json(file_name) #libraries=["lakelib"])
+c.run_passes(["rungenerators"])
 kernels = dict(c.global_namespace.modules)
 
 
 ArchNodes = Nodes("Arch")
-putil.load_and_link_peak(
-    ArchNodes,
-    pe_header,
-    {"global.PE": arch_fc}
-)
-# putil.load_from_peak(ArchNodes, arch_fc)
+# putil.load_and_link_peak(
+#     ArchNodes,
+#     pe_header,
+#     {"global.PE": arch_fc}
+# )
+putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
-
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
-
-c.run_passes(["rungenerators", "deletedeadinstances"])
 
 mods = []
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
+    gen_dag_img(dag, "dag")
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-    mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
     

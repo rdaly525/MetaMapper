@@ -80,7 +80,7 @@ def gen_CoreIRNodes(width):
         num_children = 2
         type = Product.from_fields("Output",{"rdata":BitVector[16]})
 
-    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=1024, width=width)
+    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
 
     CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
     assert "memory.rom2" in CoreIRNodes.dag_nodes

@@ -99,12 +99,13 @@ class Mapper:
         #print_dag(mapped_dag)
         self.num_pes += count_pes(mapped_dag)
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
+        
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
-        if node_latencies is not None:
-            DelayMatching(node_latencies).run(mapped_dag)
-            self.kernel_latencies[kname] = KernelDelay(node_latencies).doit(mapped_dag)
+
+        DelayMatching(node_latencies).run(mapped_dag)
+        self.kernel_latencies[kname] = KernelDelay(node_latencies).doit(mapped_dag)
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)

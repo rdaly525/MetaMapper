@@ -26,7 +26,7 @@ import inspect
 import importlib
 import os
 from lassen.sim import PE_fc as lassen_fc
-
+import json
 
 class _ArchLatency:
     def get(self, node):
@@ -83,7 +83,7 @@ for kname, kmod in kernels.items():
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
-    mapped_dag = mapper.do_mapping(dag, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
@@ -92,6 +92,8 @@ output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
+with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
+    json.dump(mapper.kernel_latencies, outfile)
 
 if verilog:
     c.run_passes(["wireclocks-clk"])

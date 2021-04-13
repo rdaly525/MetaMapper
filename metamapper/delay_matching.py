@@ -44,7 +44,7 @@ class KernelDelay(Visitor):
     def doit(self, dag):
         self.aggregate_latencies = {}
         self.run(dag)
-        output_latencies = [self.aggregate_latencies[root] for root in dag.roots()]
+        output_latencies = [self.aggregate_latencies[root] if self.aggregate_latencies[root] != None else 0 for root in dag.roots()]
         if not all(output_latencies[0] == l for l in output_latencies):
             raise ValueError("Mismatched output latencies")
         return output_latencies[0]

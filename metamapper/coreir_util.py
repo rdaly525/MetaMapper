@@ -148,6 +148,7 @@ class Loader:
         self.nodes = nodes
         self.c = cmod.context
         self.node_map: tp.Mapping[coreir.Instance, str] = {}
+        self.const_cache = {}
 
         inputs, outputs = parse_rtype(cmod.type)
         input_adt = fields_to_adt(inputs, "Input")
@@ -202,17 +203,23 @@ class Loader:
         self.dag = Dag(source_nodes, sink_nodes)
 
     def add_const(self, inst: coreir.Instance):
+        if inst in self.const_cache:
+            return self.const_cache[inst]
         mref = inst.module
 
         if mref.ref_name == "coreir.const":
             width = mref.generator_args["width"].value
             value = inst.config["value"].value
-            return create_bv_const(width, value)
+            
+            const_node = create_bv_const(width, value)
         elif mref.ref_name == "corebit.const":
             value = inst.config["value"].value
-            return create_bit_const(value)
+            const_node =  create_bit_const(value)
         else:
             return None
+
+        self.const_cache[inst] = const_node
+        return const_node
 
     #Cases
     # 1) Const: ignore sink_t and sink_adt
@@ -405,12 +412,11 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
                 if is_const(inst.module) or is_reg(inst.module):
                     continue
                 node_name = nodes.name_from_coreir(inst.module)
+
                 if node_name is None:
                     to_inline.append(inst)
-                #if mod_name in ("counter", "reshape", "absd", "umax", "umin", "smax", "smin", "abs", "sle"):
-                #    to_inline.append(inst)
             for inst in to_inline:
-                #print("inlining", inst.name, inst.module.name)
+                print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 
