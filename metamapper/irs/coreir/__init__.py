@@ -21,8 +21,8 @@ def gen_CoreIRNodes(width):
     commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
     for namespace, ops, is_module in (
         ("coreir", basic + other, False),
-        ("corebit", bit_ops, True),
-        ("commonlib", commonlib_ops, False)
+        ("corebit", bit_ops, True)
+        # ("commonlib", commonlib_ops, False)
     ):
         for op in ops:
             assert c.get_namespace(namespace) is c.get_namespace(namespace)

@@ -77,7 +77,7 @@ class Mapper:
                         self.table.add_peak_rule(new_rewrite_rule)
         else:
             for ind, peak_rule in enumerate(rrules):
-                self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
+                self.table.add_peak_rule(peak_rule, str(ind))
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
@@ -98,6 +98,7 @@ class Mapper:
         #print("RemovedSelects")
         #print_dag(mapped_dag)
         self.num_pes += count_pes(mapped_dag)
+        print(count_pes(mapped_dag))
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         
         if unmapped is not None:

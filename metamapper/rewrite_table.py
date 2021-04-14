@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from hwtypes.modifiers import strip_modifiers
-from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
@@ -57,6 +57,7 @@ class RewriteTable:
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
+        # if name == "7": gen_dag_img(from_dag, name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
         #print("from_dag")

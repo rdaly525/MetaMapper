@@ -30,19 +30,19 @@ class _ArchLatency:
         
         return 0
 
-app = str(sys.argv[1])
+app = "camera_pipeline_compute"
 if len(sys.argv) > 2:
     latency = int(sys.argv[2])
 else:
     latency = 0
 
-DSE_PE_location = "../DSEGraphAnalysis/outputs"
+# DSE_PE_location = "../DSEGraphAnalysis/outputs"
 pe_header = "./libs/pe_header.json"
 pe_def = "./libs/pe_def.json"
 
 def gen_rrules():
 
-    arch = read_arch(f"{DSE_PE_location}/PE.json")
+    arch = read_arch(f"examples/PE.json")
     PE_fc = wrapped_peak_class(arch, debug=True)
     c = CoreIRContext()
     cmod = putil.peak_to_coreir(PE_fc)
@@ -51,24 +51,19 @@ def gen_rrules():
     mapping_funcs = []
     rrules = []
 
-    num_rrules = len(glob.glob(f'{DSE_PE_location}/rewrite_rules/*.json'))
+    num_rrules = len(glob.glob(f'examples/peak_gen/rewrite_rules/*.json'))
 
-    if not os.path.exists('examples/peak_gen'):
-        os.makedirs('examples/peak_gen')
 
     for ind in range(num_rrules):
 
-        with open(f"{DSE_PE_location}/peak_eqs/peak_eq_" + str(ind) + ".py", "r") as file:
-            with open("examples/peak_gen/peak_eq_" + str(ind) + ".py", "w") as outfile:
-                for line in file:
-                    outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
+       
 
         peak_eq = importlib.import_module("examples.peak_gen.peak_eq_" + str(ind))
 
         ir_fc = getattr(peak_eq, "mapping_function_" + str(ind) + "_fc")
         mapping_funcs.append(ir_fc)
 
-        with open(f"{DSE_PE_location}/rewrite_rules/rewrite_rule_" + str(ind) + ".json", "r") as json_file:
+        with open(f"examples/peak_gen/rewrite_rules/rewrite_rule_" + str(ind) + ".json", "r") as json_file:
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, PE_fc)
