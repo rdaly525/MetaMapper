@@ -327,6 +327,7 @@ class ConstAssemble:
 
 
 Constant = Common.create_dag_node("Constant", 0, False, attrs=("value",), parents=(ConstAssemble,))
+Constant.__str__ = lambda self: f"C<{self.value}>"
 
 class State(object): pass
 class Source(State):

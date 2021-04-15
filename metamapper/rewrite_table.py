@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from hwtypes.modifiers import strip_modifiers
-from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img, Constant2CoreIRConstant
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
@@ -51,6 +51,7 @@ class RewriteTable:
             raise ValueError("rule is not a Rewrite Rule")
         #Verify from from rule
         VerifyNodes(self.from_).run(rr.tile)
+        Constant2CoreIRConstant(self.from_).run(rr.tile)
         self.rules.append(rr)
 
     def add_peak_rule(self, rule: PeakRule, name=None):

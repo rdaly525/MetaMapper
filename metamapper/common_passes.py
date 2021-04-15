@@ -33,9 +33,9 @@ class DagToPdf(Visitor):
             return f"{str(node)}_{node._id_}"
         if self.no_unbound and not is_unbound_const(node):
             self.graph.node(n2s(node))
-        for child in node.children():
+        for i, child in enumerate(node.children()):
             if self.no_unbound and not is_unbound_const(child):
-                self.graph.edge(n2s(child), n2s(node))
+                self.graph.edge(n2s(child), n2s(node), label=str(i))
 
 def gen_dag_img(dag, file, no_unbound=True):
     DagToPdf(no_unbound).doit(dag).render(filename=file)
