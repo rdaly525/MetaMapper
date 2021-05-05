@@ -108,16 +108,13 @@ mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
 
 mods = []
 for kname, kmod in kernels.items():
-    # if kname == "hcompute_demosaicked_1_stencil":
-        print(kname)
-        dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-        gen_dag_img(dag, "dag2")
-        Constant2CoreIRConstant(CoreIRNodes).run(dag)
-        mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
-        gen_dag_img(mapped_dag, "mapped_dag2")
-        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-        mods.append(mod)
-    
+    print(kname)
+    dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
+    Constant2CoreIRConstant(CoreIRNodes).run(dag)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
+    mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
+    mods.append(mod)
+
 print(f"Num PEs used: {mapper.num_pes}")
 output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")

@@ -193,7 +193,6 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                 circ_outputs = self.circ(**circ_inputs)
 
                 outputs = {}
-
                 for port, circ_output in zip(output_attrs, circ_outputs):
                     print("test", port, type(circ_output))
                     outputs[port] = circ_output

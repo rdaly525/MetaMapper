@@ -23,7 +23,7 @@ class DagToPdf(Visitor):
 
     def doit(self, dag: Dag):
         AddID().run(dag)
-        self.graph = Digraph(format='png')
+        self.graph = Digraph()
         self.run(dag)
         return self.graph
 
