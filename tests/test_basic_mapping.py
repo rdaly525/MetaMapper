@@ -28,7 +28,6 @@ mem_header = "libs/mem_header.json"
     "add4_pipe",
     "add3_const",
 ])
-#@pytest.mark.parametrize("app", ["add4_pipe"])
 def test_kernel_mapping(app):
     base = "examples/coreir"
     app_file = f"{base}/{app}.json"
