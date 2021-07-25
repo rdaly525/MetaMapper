@@ -28,31 +28,34 @@ import os
 from lassen.sim import PE_fc as lassen_fc
 import json
 
+
 class _ArchLatency:
     def get(self, node):
         kind = node.kind()[0]
-        print(kind)
         if kind == "Rom":
             return 1
-        elif kind == "PE":
+        elif kind == "global.PE":
             return latency
         return 0
 
 
-app = str(sys.argv[1])
+file_name = str(sys.argv[1])
 if len(sys.argv) > 2:
     latency = int(sys.argv[2])
 else:
     latency = 0
 
-lassen_rules = "../lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
-lassen_header = "libs/lassen_header.json"
-lassen_def = "libs/lassen_def.json"
+if latency != 0:
+    lassen_rules = "/aha/lassen/scripts/rewrite_rules/lassen_rewrite_rules_pipelined.json"
+else:
+    lassen_rules = "/aha/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+
+lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
+lassen_def = "/aha/MetaMapper/libs/lassen_def.json"
 
 verilog = False
-print("STARTING TEST")
-base = "examples/clockwork"
-file_name = f"{base}/{app}.json"
+app = os.path.basename(file_name).split(".json")[0]
+output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
@@ -69,6 +72,7 @@ putil.load_and_link_peak(
     lassen_header,
     {"global.PE": arch_fc}
 )
+#putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
@@ -79,7 +83,7 @@ c.run_passes(["rungenerators", "deletedeadinstances"])
 mods = []
 
 for kname, kmod in kernels.items():
-    print(kname)
+    print(f"Mapping kernel {kname}")
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
@@ -88,23 +92,10 @@ for kname, kmod in kernels.items():
     mods.append(mod)
 
 print(f"Num PEs used: {mapper.num_pes}")
-output_file = f"outputs/{app}_mapped.json"
+output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
-with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
+with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
     json.dump(mapper.kernel_latencies, outfile)
 
-if verilog:
-    c.run_passes(["wireclocks-clk"])
-    c.run_passes(["wireclocks-arst"])
-    c.run_passes(["markdirty"])
-
-
-    #Test syntax of serialized json
-    res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    assert not res.return_code, res.out + res.err
-
-    #Test serializing to verilog
-    res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
-    assert not res.return_code, res.out + res.err
