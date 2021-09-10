@@ -5,6 +5,7 @@ from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
 from metamapper.delay_matching import DelayMatching, KernelDelay
 from metamapper.instruction_selection import GreedyCovering
+from metamapper.irs.coreir.ir import mult_const_fc
 from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
 import coreir
@@ -29,8 +30,8 @@ class Mapper:
         self.num_pes = 0
         self.kernel_latencies = {}
 
-        if not lazy and rule_file is None and len(ops) == 0:
-            raise ValueError("If not lazy, need ops specified!")
+        # if not lazy and rule_file is None and len(ops) == 0:
+        #     raise ValueError("If not lazy, need ops specified!")
         if lazy and len(ops) > 0:
             raise ValueError("if lazy, needs no ops specified!")
 
@@ -67,13 +68,17 @@ class Mapper:
                 with open(rule_file, "r") as read_file:
                     rrs = json.loads(read_file.read())
                     for op, rr in rrs.items():
-                        ir_fc = self.CoreIRNodes.peak_nodes[op]
+                        print(op)
+                        if op == "coreir.mult_const":
+                            ir_fc = mult_const_fc
+                        else:
+                            ir_fc = self.CoreIRNodes.peak_nodes[op]
                         new_rewrite_rule = read_serialized_bindings(rr, ir_fc, arch_fc)
                         counter_example = new_rewrite_rule.verify()
-
+                     
                         if counter_example is not None:
                             print(counter_example)
-                            raise ValueError(f"RR for {op} fails with ^ Counter Example")
+                            # raise ValueError(f"RR for {op} fails with ^ Counter Example")
                         self.table.add_peak_rule(new_rewrite_rule)
         else:
             for ind, peak_rule in enumerate(rrules):
@@ -82,20 +87,20 @@ class Mapper:
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
-        #print("premapped")
+        # print("premapped")
         #print_dag(dag)
 
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
 
         mapped_dag = self.inst_sel(dag)
-        #print("postmapped")
+        # print("postmapped")
         #print_dag(mapped_dag)
         SimplifyCombines().run(mapped_dag)
-        #print("simplifyCombines")
+        # print("simplifyCombines")
         #print_dag(mapped_dag)
         RemoveSelects().run(mapped_dag)
-        #print("RemovedSelects")
+        # print("RemovedSelects")
         #print_dag(mapped_dag)
         self.num_pes += count_pes(mapped_dag)
         print(count_pes(mapped_dag))

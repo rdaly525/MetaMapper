@@ -40,8 +40,8 @@ class ToMagma(Visitor):
         inst = NodeCircuit()
         #Wire all the children (inputs)
         for port, child in zip(node.input_names(), node.children()):
-            print(port, getattr(inst, port))
-            print(self.node_to_inst[child])
+            # print(port, getattr(inst, port))
+            # print(self.node_to_inst[child])
             m.wire(getattr(inst, port), self.node_to_inst[child])
 
         #TODO assuming single output

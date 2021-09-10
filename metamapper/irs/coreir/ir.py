@@ -3,9 +3,36 @@ from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
 from peak import Peak, name_outputs, family_closure, Const
 from peak.family import AbstractFamily
+# from lassen.float.fpu import float_lib, RoundingMode
+
+@family_closure
+def mult_const_fc(family: AbstractFamily):
+    Data = family.BitVector[16]
+    @family.assemble(locals(), globals())
+    class mult_const(Peak):
+        @name_outputs(out=Data)
+        def __call__(self, in0: Data, in1: Const(Data)) -> Data:
+            return in0 * in1
+    return mult_const
 
 def gen_peak_CoreIR(width):
     CoreIR = IR()
+
+
+    # CoreIR.add_instruction("float.add", float_lib.const_rm(RoundingMode.RNE).Add_fc)
+    # CoreIR.add_instruction("float.mul", float_lib.const_rm(RoundingMode.RNE).Mul_fc)
+    @family_closure
+    def mult_const_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        @family.assemble(locals(), globals())
+        class mult_const(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data, in1: Const(Data)) -> Data:
+                return in0 * in1
+        return mult_const
+
+    CoreIR.add_instruction("coreir.mult_const", mult_const_fc)
+
 
     @family_closure
     def rom_fc(family: AbstractFamily):
@@ -95,6 +122,22 @@ def gen_peak_CoreIR(width):
 
     CoreIR.add_instruction("commonlib.umin", umin_fc)
 
+    @family_closure
+    def mult_middle_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        Data32 = family.BitVector[32]
+        class mult_middle(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return Data(Data32(in0) * Data32(in1) >> 8)
+        return mult_middle
+
+    CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
+
+
+
+    # CoreIR.add_instruction("coreir.mulconst", mult_const_fc)
+
 
     @family_closure
     def const_fc(family):
@@ -149,6 +192,44 @@ def gen_peak_CoreIR(width):
     CoreIR.add_instruction("coreir.pipeline_reg", pipeline_reg_fc)
 
     @family_closure
+    def mul32_fc(family):
+        Data = family.BitVector[32]
+        Bit = family.Bit
+        class mul32(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                return in0 * in1
+        return mul32
+
+    CoreIR.add_instruction("coreir.mul32", mul32_fc)
+
+    @family_closure
+    def slice_fc(family):
+        Data32 = family.BitVector[32]
+        Data = family.BitVector[16]
+        Bit = family.Bit
+        class slice(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data32) -> Data:
+                return in0[8:24]
+        return slice
+
+    CoreIR.add_instruction("coreir.slice", slice_fc)
+
+    @family_closure
+    def sext_fc(family):
+        Data32 = family.BitVector[32]
+        Data = family.BitVector[16]
+        Bit = family.Bit
+        class sext(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data) -> Data32:
+                return Data32(in0)
+        return sext
+
+    CoreIR.add_instruction("coreir.sext", sext_fc)
+
+    @family_closure
     def pipeline_reg_bit_fc(family):
         Bit = family.Bit
         class pipeline_reg_1_bit(Peak):
@@ -162,6 +243,9 @@ def gen_peak_CoreIR(width):
 
     class UnaryInput(Product):
         in___ = BitVector[width]
+
+    class UnaryInput32(Product):
+        in___ = BitVector[32]
 
     class UnaryInputBit(Product):
         in___=Bit
@@ -186,6 +270,9 @@ def gen_peak_CoreIR(width):
 
     class OutputBV(Product):
         out=BitVector[width]
+
+    class OutputBV32(Product):
+        out=BitVector[32]
 
     class OutputBit(Product):
         out=Bit
@@ -252,6 +339,8 @@ def gen_peak_CoreIR(width):
 
     CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
     CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
+
+    # CoreIR.add_peak_instruction("coreir.sext", UnaryInput, OutputBV32, lambda f, x: x, cls_name="sext")
 
     return CoreIR
 

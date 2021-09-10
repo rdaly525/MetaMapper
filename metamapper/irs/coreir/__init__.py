@@ -1,7 +1,7 @@
 from .ir import gen_peak_CoreIR
 from ...node import Nodes, Constant, DagNode, Select
 from ... import CoreIRContext
-from ...peak_util import load_from_peak
+from ...peak_util import load_from_peak, peak_to_coreir
 import coreir
 from hwtypes import BitVector, Product
 
@@ -15,14 +15,16 @@ def gen_CoreIRNodes(width):
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
 
-    basic = ("mul", "add", "const", "and_", "or_", "neg")
-    other = ("ashr", "eq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
+    basic = ("mul", "add", "const", "and_", "or_", "neg", "xor")
+    other = ("ashr", "eq", "neq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
     bit_ops = ("const", "or_", "and_", "xor", "not_", "mux")
     commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
+    # float_ops = ("add", "mul")
     for namespace, ops, is_module in (
         ("coreir", basic + other, False),
         ("corebit", bit_ops, True),
         ("commonlib", commonlib_ops, False)
+                # ("float", float_ops, False)
     ):
         for op in ops:
             assert c.get_namespace(namespace) is c.get_namespace(namespace)
@@ -33,6 +35,7 @@ def gen_CoreIRNodes(width):
                 cmod = c.get_namespace(namespace).modules[coreir_op]
             else:
                 gen = c.get_namespace(namespace).generators[coreir_op]
+                
                 cmod = gen(width=width)
             modparams = ()
             if op == "const":
@@ -48,7 +51,11 @@ def gen_CoreIRNodes(width):
     #peak_fc = peak_ir.instructions[name]
     #cmod = c.get_namespace("coreir").generators["reg"](width=width)
     #name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.reg", stateful=True, modparams=("clk_posedge", "init"))
-
+    name = f"coreir.mult_const"
+    peak_fc = peak_ir.instructions[name]
+    cmod = peak_to_coreir(peak_fc)
+    CoreIRNodes.peak_nodes[name] = peak_fc
+    #name_ = load_from_peak(CoreIRNodes, peak_fc,  cmod=cmod, name="coreir.mult_const", modparams=())
     #name = f"coreir.pipeline_reg"
     #peak_fc = peak_ir.instructions[name]
     #cmod = c.get_namespace("coreir").generators["reg"](width=width)
@@ -59,6 +66,25 @@ def gen_CoreIRNodes(width):
     #cmod = c.get_namespace("corebit").modules["reg"]
     #name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="corebit.pipeline_reg", stateful=False)
     
+    # name = f"coreir.mult_const"
+    # peak_fc = peak_ir.instructions[name]
+    # cmod = c.get_namespace("coreir").generators["mul"](width=16)
+    # name_ = load_from_peak(CoreIRNodes, peak_fc,  name="coreir.mult_const", stateful=False)
+
+    name = f"coreir.mul32"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["mul"](width=32)
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.mul32", stateful=False)
+
+    name = f"coreir.sext"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["sext"](width_in=16, width_out=32)
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.sext", stateful=False)
+
+    name = f"coreir.slice"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["slice"](width=32, lo= 8, hi=24)
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.slice", stateful=False)
 
     class Rom(DagNode):
         def __init__(self, raddr, ren, *, init, iname):

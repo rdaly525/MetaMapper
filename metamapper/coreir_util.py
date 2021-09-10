@@ -687,7 +687,7 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unboun
 def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> coreir.ModuleDef:
     dag = Clone().clone(dag)
     VerifyUniqueIname().run(dag)
-    print_dag(dag)
+    # print_dag(dag)
     FixSelects(nodes).run(dag)
     c = CoreIRContext()
     #construct coreir type

@@ -186,6 +186,8 @@ class Nodes:
     #returns Node name from coreir module name
     def name_from_coreir(self, cmod) -> str:
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
+        if len(names) > 1:
+            breakpoint()
         assert len(names) <2
         if len(names) == 1:
             return names[0]
