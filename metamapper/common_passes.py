@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from graphviz import Digraph
 from DagVisitor import Visitor, Transformer
 from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
 from .family import fam
@@ -22,7 +23,7 @@ class DagToPdf(Visitor):
 
     def doit(self, dag: Dag):
         AddID().run(dag)
-        self.graph = Digraph(format='png')
+        self.graph = Digraph()
         self.run(dag)
         return self.graph
 
@@ -32,9 +33,9 @@ class DagToPdf(Visitor):
             return f"{str(node)}_{node._id_}"
         if self.no_unbound and not is_unbound_const(node):
             self.graph.node(n2s(node))
-        for child in node.children():
+        for i, child in enumerate(node.children()):
             if self.no_unbound and not is_unbound_const(child):
-                self.graph.edge(n2s(child), n2s(node))
+                self.graph.edge(n2s(child), n2s(node), label=str(i))
 
 def gen_dag_img(dag, file, no_unbound=True):
     DagToPdf(no_unbound).doit(dag).render(filename=file)
@@ -300,6 +301,18 @@ class Printer(Visitor):
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<{node.kind()[0]}:{node._id_}, {list(T.field_dict.keys())}>({child_ids})\n"
 
+    def visit_PipelineRegister(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<PipelineRegister>({node.child._id_})"
+
+    def visit_RegisterSource(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<Register>"
+
+    def visit_RegisterSink(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<Register>({node.child._id_})"
+
     def visit_Bind(self, node):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
@@ -333,7 +346,6 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<Combine:{list(node.type.field_dict.keys())}>({child_ids})\n"
-
 
 class BindsToCombines(Transformer):
     def gen_combine(self, node: Bind):
@@ -428,6 +440,10 @@ def print_dag(dag: Dag):
 
 def count_pes(dag: Dag):
     return CountPEs().run(dag).res
+
+def dag_to_pdf(dag: Dag, filename):
+    AddID().run(dag)
+    DagToPdf().run(dag).graph.render(filename, view=False)
 
 class CheckIfTree(Visitor):
     def __init__(self):

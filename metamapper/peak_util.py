@@ -88,9 +88,7 @@ def magma_to_coreir(mod):
     magma.compile(f.name, mod, output="coreir")
     cname = mod.coreir_name
     crt = magma.backend.coreir.coreir_runtime
-    return crt.module_map()[crt.coreir_context()]["global"][cname]
-    ##backend.compile(mod)
-    #return backend.modules[cname]
+    return crt.module_map()[crt.coreir_context()]['global'][cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
     peak_m = peak_fc(fam().MagmaFamily())
@@ -168,6 +166,9 @@ def load_and_link_peak(nodes: Nodes, header_file: str, peak_dict: dict):
         if cmod.ref_name not in peak_dict:
             raise ValueError(f"{cmod.ref_name} does not have an associated peak_dict")
         peak_fc = peak_dict[cmod.ref_name]
-        node_name = load_from_peak(nodes, peak_fc, stateful=False, cmod=cmod, name=cmod.ref_name)
+        stateful = False
+        if isinstance(peak_fc, tuple):
+            peak_fc, stateful = peak_fc
+        node_name = load_from_peak(nodes, peak_fc, stateful=stateful, cmod=cmod, name=cmod.ref_name)
         assert node_name == cmod.ref_name
 

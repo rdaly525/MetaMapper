@@ -4,7 +4,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import  print_dag
+from metamapper.common_passes import print_dag, Constant2CoreIRConstant, gen_dag_img
 
 from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
@@ -17,16 +17,36 @@ import glob
 import importlib
 import jsonpickle
 import sys, os
+import json
+
+class _ArchLatency:
+    def get(self, node):
+        kind = node.kind()[0]
+        if kind == "Rom":
+            return 1
+        elif kind == "global.PE":
+            return latency
+        
+        return 0
 
 app = str(sys.argv[1])
+if len(sys.argv) > 2:
+    latency = int(sys.argv[2])
+else:
+    latency = 0
 
 DSE_PE_location = "../DSEGraphAnalysis/outputs"
+pe_header = "./libs/pe_header.json"
+pe_def = "./libs/pe_def.json"
 
 def gen_rrules():
 
     arch = read_arch(f"{DSE_PE_location}/PE.json")
-    PE_fc = wrapped_peak_class(arch)
-
+    PE_fc = wrapped_peak_class(arch, debug=True)
+    c = CoreIRContext()
+    cmod = putil.peak_to_coreir(PE_fc)
+    c.serialize_header(pe_header, [cmod])
+    # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
 
@@ -59,50 +79,58 @@ def gen_rrules():
 
 
 
+arch_fc, rrules = gen_rrules()
 verilog = False
 print("STARTING TEST")
-c = CoreIRContext(reset=True)
-arch_fc, rrules = gen_rrules()
+base = "examples/clockwork"
+file_name = f"{base}/{app}.json"
 
-ArchNodes = Nodes("Arch")
-putil.load_from_peak(ArchNodes, arch_fc)
-file_name = f"examples/clockwork/{app}.json"
+c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)
-cutil.load_from_json(file_name, libraries=["cgralib"]) #libraries=["lakelib"])
+cutil.load_from_json(file_name) #libraries=["lakelib"])
+c.run_passes(["rungenerators"])
 kernels = dict(c.global_namespace.modules)
 
+
+ArchNodes = Nodes("Arch")
+putil.load_and_link_peak(
+    ArchNodes,
+    pe_header,
+    {"global.PE": arch_fc}
+)
+# putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
-mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
 
-c.run_passes(["rungenerators", "deletedeadinstances"])
+mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, rrules=rrules)
 
-
+mods = []
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-    print_dag(dag)
-    mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-    #print("Mapped",flush=True)
-    print_dag(mapped_dag)
-    #mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
+    Constant2CoreIRConstant(CoreIRNodes).run(dag)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)       
+    # if kname == "hcompute_conv_stencil_30" :
+    gen_dag_img(dag, f"{kname}_premapped")
+    gen_dag_img(mapped_dag, f"{kname}_postmapped")
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-    #mod.print_()
+    mods.append(mod)
 
-print(kname)
-dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
-#print_dag(dag)
-mapped_dag = mapper.do_mapping(dag, convert_unbound=False, prove_mapping=False)
-#print("Mapped",flush=True)
-#print_dag(mapped_dag)
-#mod = cutil.dag_to_coreir_def(ArchNodes, mapped_dag, kmod)
-mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mappedd", convert_unbounds=verilog)
-#mod.print_()
 print(f"Num PEs used: {mapper.num_pes}")
-output_file = f"examples/clockwork/{app}_mapped.json"
+output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")
-c.save_to_file(output_file)
+c.serialize_definitions(output_file, mods)
+
+total_latency = 0
+for kname, latency in mapper.kernel_latencies.items():
+    print(kname, latency)
+    total_latency += latency
+
+print("Total latency:", total_latency)
+
+with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
+    json.dump(mapper.kernel_latencies, outfile)
 
 if verilog:
     c.run_passes(["wireclocks-clk"])

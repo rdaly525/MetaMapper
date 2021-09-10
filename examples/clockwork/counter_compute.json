@@ -1,0 +1,59 @@
+{
+"namespaces":{
+  "global":{
+    "modules":{
+      "hcompute_hw_input_global_wrapper_stencil":{
+        "type":["Record",[
+          ["out_hw_input_global_wrapper_stencil",["Array",16,"Bit"]],
+          ["in0_hw_input_stencil",["Array",1,["Array",16,"BitIn"]]]
+        ]],
+        "connections":[
+          ["self.out_hw_input_global_wrapper_stencil","self.in0_hw_input_stencil.0"]
+        ]
+      },
+      "hcompute_hw_output_stencil":{
+        "type":["Record",[
+          ["out_hw_output_stencil",["Array",16,"Bit"]],
+          ["in0_hw_input_global_wrapper_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["hw_output_s0_x_xi",["Array",16,"BitIn"]],
+          ["hw_output_s0_y_yi",["Array",16,"BitIn"]]
+        ]],
+        "instances":{
+          "add_265_266_267":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "add_hw_input_global_wrapper_stencil_1_264_265":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "add_hw_input_global_wrapper_stencil_1_267_268":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "rom_roma0":{
+            "genref":"memory.rom2",
+            "genargs":{"depth":["Int",64], "width":["Int",16]},
+            "modargs":{"init":["Json",[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]}
+          },
+          "rom_roma0_ren":{
+            "modref":"corebit.const",
+            "modargs":{"value":["Bool",true]}
+          }
+        },
+        "connections":[
+          ["add_hw_input_global_wrapper_stencil_1_264_265.out","add_265_266_267.in0"],
+          ["self.hw_output_s0_x_xi","add_265_266_267.in1"],
+          ["add_hw_input_global_wrapper_stencil_1_267_268.in1","add_265_266_267.out"],
+          ["self.in0_hw_input_global_wrapper_stencil.0","add_hw_input_global_wrapper_stencil_1_264_265.in0"],
+          ["rom_roma0.rdata","add_hw_input_global_wrapper_stencil_1_264_265.in1"],
+          ["self.in0_hw_input_global_wrapper_stencil.0","add_hw_input_global_wrapper_stencil_1_267_268.in0"],
+          ["self.out_hw_output_stencil","add_hw_input_global_wrapper_stencil_1_267_268.out"],
+          ["self.hw_output_s0_y_yi","rom_roma0.raddr"],
+          ["rom_roma0_ren.out","rom_roma0.ren"]
+        ]
+      }
+    }
+  }
+}
+}
