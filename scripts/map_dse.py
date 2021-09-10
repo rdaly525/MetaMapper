@@ -22,7 +22,6 @@ import json
 class _ArchLatency:
     def get(self, node):
         kind = node.kind()[0]
-        print(kind)
         if kind == "Rom":
             return 1
         elif kind == "global.PE":
@@ -104,14 +103,17 @@ putil.load_and_link_peak(
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
-mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
+mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, rrules=rrules)
 
 mods = []
 for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)       
+    # if kname == "hcompute_conv_stencil_30" :
+    gen_dag_img(dag, f"{kname}_premapped")
+    gen_dag_img(mapped_dag, f"{kname}_postmapped")
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
@@ -120,6 +122,12 @@ output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
+total_latency = 0
+for kname, latency in mapper.kernel_latencies.items():
+    print(kname, latency)
+    total_latency += latency
+
+print("Total latency:", total_latency)
 
 with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
     json.dump(mapper.kernel_latencies, outfile)

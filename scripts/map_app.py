@@ -6,7 +6,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, Constant2CoreIRConstant, gen_dag_img
 
 import delegator
 import pytest
@@ -31,10 +31,9 @@ import json
 class _ArchLatency:
     def get(self, node):
         kind = node.kind()[0]
-        print(kind)
         if kind == "Rom":
             return 1
-        elif kind == "PE":
+        elif kind == "global.PE":
             return latency
         return 0
 
@@ -73,7 +72,7 @@ mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 
-mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=lassen_rules)
+mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, rule_file=lassen_rules)
 
 c.run_passes(["rungenerators", "deletedeadinstances"])
 mods = []
@@ -84,13 +83,23 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
-    mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
-    mods.append(mod)
+    gen_dag_img(dag, f"{kname}_premapped")
+    gen_dag_img(mapped_dag, f"{kname}_postmapped")
+#    mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
+#    mods.append(mod)
 
 print(f"Num PEs used: {mapper.num_pes}")
 output_file = f"outputs/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
+
+
+total_latency = 0
+for kname, latency in mapper.kernel_latencies.items():
+    print(kname, latency)
+    total_latency += latency
+
+print("Total latency:", total_latency)
 
 with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
     json.dump(mapper.kernel_latencies, outfile)
