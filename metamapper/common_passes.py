@@ -40,6 +40,40 @@ class DagToPdf(Visitor):
 def gen_dag_img(dag, file, no_unbound=True):
     DagToPdf(no_unbound).doit(dag).render(filename=file)
 
+class DagToPdfSimp(Visitor):
+    def doit(self, dag: Dag):
+        AddID().run(dag)
+        self.plotted_nodes = {"global.PE", "Input", "Output","PipelineRegister"}
+        self.child_list = []
+        self.graph = Digraph()
+        self.run(dag)
+        return self.graph
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        def n2s(node):
+            op = node.iname.split("_")[0]
+            return f"{str(node)}_{node._id_}\n{op}"
+
+        def find_child(node):
+            if len(node.children()) == 0:
+                return
+            for child in node.children():
+                if str(child) in self.plotted_nodes:      
+                    self.child_list.append(child)
+                else:
+                    child_f = find_child(child)
+
+        if str(node) in self.plotted_nodes:      
+            find_child(node)
+            for child in self.child_list:
+                self.graph.edge(n2s(child), n2s(node))
+            self.child_list = []
+
+
+def gen_dag_img_simp(dag, file):
+    DagToPdfSimp().doit(dag).render(filename=file)
+
 #Translates DagNode
 class Constant2CoreIRConstant(Transformer):
     def __init__(self, nodes: Nodes):

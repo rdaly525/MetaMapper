@@ -6,8 +6,8 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, Constant2CoreIRConstant
-
+from metamapper.common_passes import print_dag, gen_dag_img_simp, Constant2CoreIRConstant
+from metamapper.delay_matching import STA
 import delegator
 import pytest
 from hwtypes import BitVector, Tuple, Bit, bit_vector
@@ -29,29 +29,29 @@ from lassen.sim import PE_fc as lassen_fc
 import json
 
 
-class _ArchLatency:
+class _ArchCycles:
     def get(self, node):
         kind = node.kind()[0]
         if kind == "Rom":
             return 1
         elif kind == "global.PE":
-            return latency
+            return pe_cycles
         return 0
 
 
 file_name = str(sys.argv[1])
 if len(sys.argv) > 2:
-    latency = int(sys.argv[2])
+    pe_cycles = int(sys.argv[2])
 else:
-    latency = 0
+    pe_cycles = 0
 
-if latency != 0:
-    lassen_rules = "/aha/lassen/scripts/rewrite_rules/lassen_rewrite_rules_pipelined.json"
+if pe_cycles != 0:
+    lassen_rules = "/nobackup/melchert/lassen/scripts/rewrite_rules/lassen_rewrite_rules_pipelined.json"
 else:
-    lassen_rules = "/aha/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+    lassen_rules = "/nobackup/melchert/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
-lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
-lassen_def = "/aha/MetaMapper/libs/lassen_def.json"
+lassen_header = "/nobackup/melchert/MetaMapper/libs/lassen_header.json"
+lassen_def = "/nobackup/melchert/MetaMapper/libs/lassen_def.json"
 
 verilog = False
 app = os.path.basename(file_name).split(".json")[0]
@@ -87,7 +87,9 @@ for kname, kmod in kernels.items():
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
-    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
+    gen_dag_img_simp(mapped_dag, f"img/{kname}")
+    print(STA(pe_cycles).doit(mapped_dag))
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
@@ -97,5 +99,5 @@ print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
 with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
-    json.dump(mapper.kernel_latencies, outfile)
+    json.dump(mapper.kernel_cycles, outfile)
 

@@ -27,7 +27,7 @@ class Mapper:
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
-        self.kernel_latencies = {}
+        self.kernel_cycles = {}
 
         if not lazy and rule_file is None and len(ops) == 0:
             raise ValueError("If not lazy, need ops specified!")
@@ -67,19 +67,20 @@ class Mapper:
                 with open(rule_file, "r") as read_file:
                     rrs = json.loads(read_file.read())
                     for op, rr in rrs.items():
-                        ir_fc = self.CoreIRNodes.peak_nodes[op]
-                        new_rewrite_rule = read_serialized_bindings(rr, ir_fc, arch_fc)
-                        counter_example = new_rewrite_rule.verify()
+                        if op in self.CoreIRNodes.peak_nodes:
+                            ir_fc = self.CoreIRNodes.peak_nodes[op]
+                            new_rewrite_rule = read_serialized_bindings(rr, ir_fc, arch_fc)
+                            counter_example = new_rewrite_rule.verify()
 
-                        #if counter_example is not None:
-                            #print(counter_example)
-                            #raise ValueError(f"RR for {op} fails with ^ Counter Example")
-                        self.table.add_peak_rule(new_rewrite_rule)
+                            #if counter_example is not None:
+                                #print(counter_example)
+                                #raise ValueError(f"RR for {op} fails with ^ Counter Example")
+                            self.table.add_peak_rule(new_rewrite_rule, op)
         else:
             for ind, peak_rule in enumerate(rrules):
                 self.table.add_peak_rule(peak_rule, str(ind))
 
-    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_latencies=None) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
         #print("premapped")
@@ -105,9 +106,9 @@ class Mapper:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
-        if node_latencies is not None:
-            DelayMatching(node_latencies).run(mapped_dag)
-            self.kernel_latencies[kname] = KernelDelay(node_latencies).doit(mapped_dag)
+        if node_cycles is not None:
+            DelayMatching(node_cycles).run(mapped_dag)
+            self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)
