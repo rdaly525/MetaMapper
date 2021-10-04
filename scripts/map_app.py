@@ -46,12 +46,12 @@ else:
     pe_cycles = 0
 
 if pe_cycles != 0:
-    lassen_rules = "/nobackup/melchert/lassen/scripts/rewrite_rules/lassen_rewrite_rules_pipelined.json"
+    lassen_rules = "/aha/lassen/scripts/rewrite_rules/lassen_rewrite_rules_pipelined.json"
 else:
-    lassen_rules = "/nobackup/melchert/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+    lassen_rules = "/aha/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
 
-lassen_header = "/nobackup/melchert/MetaMapper/libs/lassen_header.json"
-lassen_def = "/nobackup/melchert/MetaMapper/libs/lassen_def.json"
+lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
+lassen_def = "/aha/MetaMapper/libs/lassen_def.json"
 
 verilog = False
 app = os.path.basename(file_name).split(".json")[0]
