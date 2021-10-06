@@ -8,6 +8,19 @@ def gen_peak_CoreIR(width):
     CoreIR = IR()
 
     @family_closure
+    def mult_middle_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.BitVector[32]
+        class mult_middle(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data, in1: Data) -> Data:
+                res = Data32(in0) * Data32(in1) >> 8
+                return Data(res[8:24])
+        return mult_middle
+
+    CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
+
+    @family_closure
     def rom_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         Bit = family.Bit

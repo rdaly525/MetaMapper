@@ -18,7 +18,7 @@ def gen_CoreIRNodes(width):
     basic = ("mul", "add", "const", "and_", "or_", "neg")
     other = ("ashr", "eq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
     bit_ops = ("const", "or_", "and_", "xor", "not_", "mux")
-    commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
+    commonlib_ops = ("mult_middle", "abs", "smax", "smin", "umin", "umax")
     for namespace, ops, is_module in (
         ("coreir", basic + other, False),
         ("corebit", bit_ops, True),
@@ -27,6 +27,7 @@ def gen_CoreIRNodes(width):
         for op in ops:
             assert c.get_namespace(namespace) is c.get_namespace(namespace)
             name = f"{namespace}.{op}"
+#            print(name)
             peak_fc = peak_ir.instructions[name]
             coreir_op = strip_trailing(op)
             if is_module:
@@ -41,7 +42,7 @@ def gen_CoreIRNodes(width):
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
-            #print(f"Loaded {name}!")
+            print(f"Loaded {name}!")
 
     ##Load reg
     #name = f"coreir.reg"
@@ -80,7 +81,7 @@ def gen_CoreIRNodes(width):
         num_children = 2
         type = Product.from_fields("Output",{"rdata":BitVector[16]})
 
-    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
+    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=1024, width=width)
 
     CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
     assert "memory.rom2" in CoreIRNodes.dag_nodes
