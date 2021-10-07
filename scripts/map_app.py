@@ -27,14 +27,14 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-pe_header = "./libs/lassen_header.json"
 lassen_location = "/nobackup/melchert/lassen"
+lassen_header = "./libs/lassen_header.json"
 
 def gen_rrules():
 
     c = CoreIRContext()
     cmod = putil.peak_to_coreir(lassen_fc)
-    c.serialize_header(pe_header, [cmod])
+    c.serialize_header(lassen_header, [cmod])
     # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
@@ -43,7 +43,6 @@ def gen_rrules():
 
     for rrule in rrule_files:
         rule_name = Path(rrule).stem
-        print(rule_name)
 
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
 
@@ -54,7 +53,9 @@ def gen_rrules():
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        counter_example = rewrite_rule.verify()
+        # counter_example = rewrite_rule.verify()
+        # assert counter_example == None, f"{rule_name} failed"
+        # print(rule_name, "passed")
         rrules.append(rewrite_rule)
 
     return rrules
@@ -67,13 +68,6 @@ if len(sys.argv) > 2:
 else:
     pe_cycles = 0
 
-if pe_cycles != 0:
-    lassen_rules = f"{lassen_location}/scripts/rewrite_rules/lassen_rewrite_rules_pipelined.json"
-else:
-    lassen_rules = f"{lassen_location}/scripts/rewrite_rules/lassen_rewrite_rules.json"
-
-lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
-lassen_def = "/aha/MetaMapper/libs/lassen_def.json"
 
 verilog = False
 app = os.path.basename(file_name).split(".json")[0]
@@ -94,7 +88,7 @@ putil.load_and_link_peak(
     lassen_header,
     {"global.PE": arch_fc}
 )
-#putil.load_from_peak(ArchNodes, arch_fc)
+# putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
