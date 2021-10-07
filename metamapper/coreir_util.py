@@ -24,7 +24,9 @@ def create_bit_const(value):
     return Constant(type=ht.Bit, value=ht.Bit(value))
 
 def is_const(cmod: coreir.Module):
-    return cmod.ref_name.split(".")[1] =="const"
+    namespace, name = cmod.ref_name.split(".")
+
+    return namespace in ["coreir", "corebit"] and name == "const"
 
 def is_reg(cmod: coreir.Module):
     return cmod.ref_name.split(".")[1] =="reg"
@@ -182,7 +184,6 @@ class Loader:
                 continue
 
             #Absolutely stateful
-
             source_node_t, _ = self.nodes.dag_nodes[node_name]
             inputs, outputs = parse_rtype(inst.module.type)
             sink_adt = fields_to_adt(inputs, f"{inst.name}_sink")
@@ -197,6 +198,8 @@ class Loader:
         for source, (inst, sink_adt) in zip(source_nodes, stateful_instances.items()):
             sink_t = type(source).sink_t
             sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
+            if not isinstance(sink_node, DagNode):
+                breakpoint()
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
 

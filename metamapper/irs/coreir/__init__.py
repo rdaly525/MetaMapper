@@ -20,14 +20,13 @@ def gen_CoreIRNodes(width):
     bit_ops = ("const", "or_", "and_", "xor", "not_", "mux")
     commonlib_ops = ("mult_middle", "abs", "smax", "smin", "umin", "umax")
     for namespace, ops, is_module in (
-        ("coreir", basic + other, False),
         ("corebit", bit_ops, True),
+        ("coreir", basic + other, False),
         ("commonlib", commonlib_ops, False)
     ):
         for op in ops:
             assert c.get_namespace(namespace) is c.get_namespace(namespace)
             name = f"{namespace}.{op}"
-#            print(name)
             peak_fc = peak_ir.instructions[name]
             coreir_op = strip_trailing(op)
             if is_module:
@@ -42,8 +41,19 @@ def gen_CoreIRNodes(width):
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
-            print(f"Loaded {name}!")
+            # print(f"Loaded {name}!")
 
+
+    name = f"coreir.mul32"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["mul"](width=32)
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.mul32", modparams=())
+
+    name = f"coreir.lshr32"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["lshr"](width=32)
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.lshr32", modparams=())
+    
     ##Load reg
     #name = f"coreir.reg"
     #peak_fc = peak_ir.instructions[name]
@@ -86,5 +96,11 @@ def gen_CoreIRNodes(width):
     CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
     assert "memory.rom2" in CoreIRNodes.dag_nodes
     assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
+
+
+    # rom256 = CoreIRContext().get_namespace("memory").generators["rom256"](depth=256, width=width)
+    # CoreIRNodes.add("memory.rom256", peak_ir.instructions["memory.rom256"], rom256, Rom)
+    # assert "memory.rom256" in CoreIRNodes.dag_nodes
+    # assert CoreIRNodes.dag_nodes["memory.rom256"] is not None
     return CoreIRNodes
 

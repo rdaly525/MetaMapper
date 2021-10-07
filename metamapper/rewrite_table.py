@@ -58,11 +58,11 @@ class RewriteTable:
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
         from_dag = peak_to_dag(self.from_, rule.ir_fc)
-        # if name == "7": gen_dag_img(from_dag, name)
+        # if name == "11": gen_dag_img(from_dag, name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-        #print("from_dag")
-        #print_dag(from_dag)
+        # print("from_dag")
+        # print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 

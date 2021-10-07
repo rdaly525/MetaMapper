@@ -21,6 +21,33 @@ def gen_peak_CoreIR(width):
     CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
 
     @family_closure
+    def mul32_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.BitVector[32]
+        class mul32(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data32, in1: Data32) -> Data32:
+                res = Data32(in0) * Data32(in1)
+                return Data32(res)
+        return mul32
+
+    CoreIR.add_instruction("coreir.mul32", mul32_fc)
+
+
+    @family_closure
+    def lshr32_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.BitVector[32]
+        class lshr32(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data32, in1: Data32) -> Data32:
+                res = Data32(in0) >> Data32(in1)
+                return Data32(res)
+        return lshr32
+
+    CoreIR.add_instruction("coreir.lshr32", lshr32_fc)
+
+    @family_closure
     def rom_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         Bit = family.Bit
@@ -31,6 +58,8 @@ def gen_peak_CoreIR(width):
         return rom
 
     CoreIR.add_instruction("memory.rom2", rom_fc)
+
+    # CoreIR.add_instruction("memory.rom256", rom_fc)
     
     @family_closure
     def abs_fc(family: AbstractFamily):

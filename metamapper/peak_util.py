@@ -52,11 +52,11 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     # 1) Either peak_fc will already be a single node in nodes, so just need to simply wrap it
     # 2) peak_fc needs to be compiled into a coreir module where each instance within the module should correspond to a node in Nodes
     node_name = nodes.name_from_peak(peak_fc)
-    #print("peak_to_dag node_name : ", node_name)
     #case 2
     if node_name is None:
         cmod = peak_to_coreir(peak_fc)
         flatten(cmod)
+        print(cmod.print_())
         dag = coreir_to_dag(nodes, cmod)
         #print("pre-fix")
         #print_dag(dag)
@@ -87,7 +87,7 @@ def magma_to_coreir(mod):
     f = tempfile.NamedTemporaryFile(delete=False)
     magma.compile(f.name, mod, output="coreir")
     cname = mod.coreir_name
-    crt = magma.backend.coreir.coreir_runtime
+    crt = magma.backend.coreir.coreir_runtime 
     return crt.module_map()[crt.coreir_context()]['global'][cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
