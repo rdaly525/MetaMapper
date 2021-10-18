@@ -29,24 +29,15 @@ class Mapper:
         self.num_pes = 0
         self.kernel_cycles = {}
 
-        if not lazy and rule_file is None and len(ops) == 0:
-            raise ValueError("If not lazy, need ops specified!")
-        if lazy and len(ops) > 0:
-            raise ValueError("if lazy, needs no ops specified!")
 
-        if not lazy:
-            self.gen_rules(ops, rule_file, rrules)
-            self.compile_time_rule_gen = lambda dag : None
-        else:
-            def lazy_rule_gen(dag: Dag):
-                op_dict = ExtractNames(self.CoreIRNodes).extract(dag)
-                ops = list(op_dict.keys())
-                self.gen_rules(ops, rule_file, rrules)
-            self.compile_time_rule_gen = lazy_rule_gen
-
+        
+        self.gen_rules(ops, rule_file, rrules)
+        self.compile_time_rule_gen = lambda dag : None
+        
         self.inst_sel = alg(self.table)
 
     def gen_rules(self, ops, rule_file=None, rrules=None):
+
         if rule_file is None and rrules is None:
             for node_name in self.ArchNodes._node_names:
                 # auto discover the rules for CoreIR
@@ -73,8 +64,8 @@ class Mapper:
                             new_rewrite_rule = read_serialized_bindings(rr, ir_fc, arch_fc)
                             counter_example = new_rewrite_rule.verify()
 
-                            #if counter_example is not None:
-                                #print(counter_example)
+                            if counter_example is not None:
+                                print(counter_example)
                                 #raise ValueError(f"RR for {op} fails with ^ Counter Example")
                             self.table.add_peak_rule(new_rewrite_rule, op)
         else:

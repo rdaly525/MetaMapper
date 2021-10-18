@@ -77,7 +77,7 @@ mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 
-mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rule_file=lassen_rules)
+mapper = Mapper(CoreIRNodes, ArchNodes, rule_file=lassen_rules)
 
 c.run_passes(["rungenerators", "deletedeadinstances"])
 mods = []
