@@ -56,9 +56,9 @@ def gen_rrules():
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        counter_example = rewrite_rule.verify()
-        assert counter_example == None, f"{rule_name} failed"
-        print(rule_name, "passed")
+        # counter_example = rewrite_rule.verify()
+        # assert counter_example == None, f"{rule_name} failed"
+        # print(rule_name, "passed")
         rrules.append(rewrite_rule)
 
     return rrules, ops
@@ -107,8 +107,8 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    gen_dag_img_simp(mapped_dag, f"img/{kname}")
-    print(STA(pe_cycles).doit(mapped_dag))
+    # gen_dag_img_simp(mapped_dag, f"img/{kname}")
+    # print(STA(pe_cycles).doit(mapped_dag))
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 

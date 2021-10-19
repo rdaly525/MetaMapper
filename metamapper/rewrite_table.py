@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from hwtypes.modifiers import strip_modifiers
-from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img, Constant2CoreIRConstant
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img, Constant2CoreIRConstant, DagNumNodes
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
@@ -170,3 +170,13 @@ class RewriteTable:
         rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 
+
+    def sort_rules(self):
+        rule_nodes = []
+        for rule in self.rules:
+            dag = rule.tile
+            num_nodes = DagNumNodes().doit(dag)
+            rule_nodes.append(num_nodes)
+
+        keydict = dict(zip(self.rules, rule_nodes))
+        self.rules.sort(key=keydict.get, reverse=True)

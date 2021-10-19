@@ -64,8 +64,8 @@ class GreedyReplace(Transformer):
         #What this is doing is pointing the matched inputs of the dag to the body of the tile.
         #Then replacing the body of the tile to this node
         #TODO verify and call with the matched dag
-        # rr_name = self.rr.name.split(".")[1]
-        replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{node.iname}_")
+        rr_name = self.rr.name
+        replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{rr_name}_{node.iname}_")
         ReplaceInputs(matched_inputs).run(replace_dag_copy)
         return replace_dag_copy.output.children()[0]
 
