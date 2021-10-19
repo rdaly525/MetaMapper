@@ -178,6 +178,8 @@ class Loader:
 
             node_name = self.nodes.name_from_coreir(inst.module)
             if node_name is None:
+                print(self.nodes.coreir_modules[f'coreir.{inst.module.name}'].print_())
+                print(inst.module.print_())
                 raise ValueError(f"Unknown module {inst.module.name}")
 
             if not self.nodes.is_stateful(node_name):
@@ -198,8 +200,7 @@ class Loader:
         for source, (inst, sink_adt) in zip(source_nodes, stateful_instances.items()):
             sink_t = type(source).sink_t
             sink_node = self.add_node(inst, sink_t=sink_t, sink_adt=sink_adt)
-            if not isinstance(sink_node, DagNode):
-                breakpoint()
+
             assert isinstance(sink_node, DagNode)
             sink_nodes.append(sink_node)
 

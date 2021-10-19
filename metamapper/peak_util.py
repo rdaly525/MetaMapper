@@ -55,8 +55,9 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     #case 2
     if node_name is None:
         cmod = peak_to_coreir(peak_fc)
+        # print(cmod.print_())
         flatten(cmod)
-        print(cmod.print_())
+        # print(cmod.print_())
         dag = coreir_to_dag(nodes, cmod)
         #print("pre-fix")
         #print_dag(dag)

@@ -1,7 +1,7 @@
 from .ir import gen_peak_CoreIR
 from ...node import Nodes, Constant, DagNode, Select
 from ... import CoreIRContext
-from ...peak_util import load_from_peak
+from ...peak_util import load_from_peak, peak_to_coreir
 import coreir
 from hwtypes import BitVector, Product
 
@@ -53,7 +53,17 @@ def gen_CoreIRNodes(width):
     peak_fc = peak_ir.instructions[name]
     cmod = c.get_namespace("coreir").generators["lshr"](width=32)
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.lshr32", modparams=())
+
+    name = f"coreir.sext"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["sext"](width_in=16, width_out=32)      
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.sext", modparams=())
     
+
+    name = f"coreir.slice"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace("coreir").generators["slice"](hi=24, lo=8, width=32)      
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.slice", modparams=())
     ##Load reg
     #name = f"coreir.reg"
     #peak_fc = peak_ir.instructions[name]
@@ -91,7 +101,7 @@ def gen_CoreIRNodes(width):
         num_children = 2
         type = Product.from_fields("Output",{"rdata":BitVector[16]})
 
-    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=1024, width=width)
+    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
 
     CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
     assert "memory.rom2" in CoreIRNodes.dag_nodes

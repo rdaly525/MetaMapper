@@ -79,13 +79,14 @@ class Mapper:
                             self.table.add_peak_rule(new_rewrite_rule, op)
         else:
             for ind, peak_rule in enumerate(rrules):
-                self.table.add_peak_rule(peak_rule, str(ind))
+                self.table.add_peak_rule(peak_rule, ops[ind])
+            
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
-        #print("premapped")
-        #print_dag(dag)
+        print("premapped")
+        print_dag(dag)
 
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")

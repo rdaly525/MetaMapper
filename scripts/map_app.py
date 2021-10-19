@@ -38,11 +38,14 @@ def gen_rrules():
     # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
+    ops = []
 
     rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
 
-    for rrule in rrule_files:
+    for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
+        print(idx, rule_name)
+        ops.append(rule_name)
 
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
 
@@ -53,14 +56,14 @@ def gen_rrules():
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        # counter_example = rewrite_rule.verify()
-        # assert counter_example == None, f"{rule_name} failed"
-        # print(rule_name, "passed")
+        counter_example = rewrite_rule.verify()
+        assert counter_example == None, f"{rule_name} failed"
+        print(rule_name, "passed")
         rrules.append(rewrite_rule)
 
-    return rrules
+    return rrules, ops
 
-rrules = gen_rrules()
+rrules, ops = gen_rrules()
 
 file_name = str(sys.argv[1])
 if len(sys.argv) > 2:
@@ -93,7 +96,7 @@ mr = "memory.rom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 
-mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
+mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
 
 c.run_passes(["rungenerators", "deletedeadinstances"])
 mods = []
