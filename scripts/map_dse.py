@@ -36,9 +36,9 @@ if len(sys.argv) > 2:
 else:
     latency = 0
 
-DSE_PE_location = "../DSEGraphAnalysis/outputs"
-pe_header = "./libs/pe_header.json"
-pe_def = "./libs/pe_def.json"
+DSE_PE_location = "/aha/DSEGraphAnalysis/outputs"
+pe_header = "/aha/MetaMapper/libs/pe_header.json"
+pe_def = "/aha/MetaMapper/libs/pe_def.json"
 
 def gen_rrules():
 
@@ -83,8 +83,10 @@ def gen_rrules():
 arch_fc, rrules = gen_rrules()
 verilog = False
 print("STARTING TEST")
-base = "examples/clockwork"
-file_name = f"{base}/{app}.json"
+
+file_name = str(sys.argv[1])
+app = os.path.basename(file_name).split(".json")[0]
+output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
@@ -116,25 +118,10 @@ for kname, kmod in kernels.items():
     mods.append(mod)
 
 print(f"Num PEs used: {mapper.num_pes}")
-output_file = f"outputs/{app}_mapped.json"
+output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
 
-with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
-    json.dump(mapper.kernel_latencies, outfile)
-
-if verilog:
-    c.run_passes(["wireclocks-clk"])
-    c.run_passes(["wireclocks-arst"])
-    c.run_passes(["markdirty"])
-
-
-    #Test syntax of serialized json
-    res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    assert not res.return_code, res.out + res.err
-
-    #Test serializing to verilog
-    res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
-    assert not res.return_code, res.out + res.err
-
+with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
+    json.dump(mapper.kernel_cycles, outfile)
