@@ -36,9 +36,10 @@ if len(sys.argv) > 2:
 else:
     latency = 0
 
-DSE_PE_location = "/aha/DSEGraphAnalysis/outputs"
-pe_header = "/aha/MetaMapper/libs/pe_header.json"
-pe_def = "/aha/MetaMapper/libs/pe_def.json"
+metamapper_location = "../MetaMapper"
+DSE_PE_location = "../DSEGraphAnalysis/outputs"
+pe_header = f"{metamapper_location}/libs/pe_header.json"
+pe_def = f"{metamapper_location}/libs/pe_def.json"
 
 def gen_rrules():
 
@@ -53,17 +54,17 @@ def gen_rrules():
 
     num_rrules = len(glob.glob(f'{DSE_PE_location}/rewrite_rules/*.json'))
 
-    if not os.path.exists('examples/peak_gen'):
-        os.makedirs('examples/peak_gen')
+    if not os.path.exists(f'{metamapper_location}/examples/peak_gen'):
+        os.makedirs(f'{metamapper_location}/examples/peak_gen')
 
     for ind in range(num_rrules):
 
         with open(f"{DSE_PE_location}/peak_eqs/peak_eq_" + str(ind) + ".py", "r") as file:
-            with open("examples/peak_gen/peak_eq_" + str(ind) + ".py", "w") as outfile:
+            with open(f"{metamapper_location}/examples/peak_gen/peak_eq_" + str(ind) + ".py", "w") as outfile:
                 for line in file:
                     outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
-
-        peak_eq = importlib.import_module("examples.peak_gen.peak_eq_" + str(ind))
+        breakpoint()
+        peak_eq = importlib.import_module("metamapper.examples.peak_gen.peak_eq_" + str(ind))
 
         ir_fc = getattr(peak_eq, "mapping_function_" + str(ind) + "_fc")
         mapping_funcs.append(ir_fc)
@@ -113,7 +114,7 @@ for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
