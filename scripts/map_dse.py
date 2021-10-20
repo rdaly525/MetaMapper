@@ -36,8 +36,8 @@ if len(sys.argv) > 2:
 else:
     latency = 0
 
-metamapper_location = "../MetaMapper"
-DSE_PE_location = "../DSEGraphAnalysis/outputs"
+metamapper_location = "/aha/MetaMapper"
+DSE_PE_location = "/aha/DSEGraphAnalysis/outputs"
 pe_header = f"{metamapper_location}/libs/pe_header.json"
 pe_def = f"{metamapper_location}/libs/pe_def.json"
 
@@ -63,8 +63,7 @@ def gen_rrules():
             with open(f"{metamapper_location}/examples/peak_gen/peak_eq_" + str(ind) + ".py", "w") as outfile:
                 for line in file:
                     outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
-        breakpoint()
-        peak_eq = importlib.import_module("metamapper.examples.peak_gen.peak_eq_" + str(ind))
+        peak_eq = importlib.import_module("examples.peak_gen.peak_eq_" + str(ind))
 
         ir_fc = getattr(peak_eq, "mapping_function_" + str(ind) + "_fc")
         mapping_funcs.append(ir_fc)
