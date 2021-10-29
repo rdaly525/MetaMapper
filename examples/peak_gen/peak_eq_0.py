@@ -6,14 +6,15 @@ from peak.family import AbstractFamily
 @family_closure
 def mapping_function_0_fc(family: AbstractFamily):
     Data = family.BitVector[16]
+    Data32 = family.Unsigned[32]
     SInt = family.Signed[16]
     UInt = family.Unsigned[16]
     Bit = family.Bit
     @family.assemble(locals(), globals())
     class mapping_function_0(Peak):
-        def __call__(self, data52 : Data, data53 : Data) -> Data:
-            sub0 = SInt(data52 - data53); 
-            return Data((sub0 >= SInt(0)).ite(sub0, (SInt(-1)*sub0)))
+        def __call__(self, data8 : Const(Data), data9 : Data) -> Data:
+            
+            return Data(UInt(data9) * UInt(data8))
     
     return mapping_function_0
     
