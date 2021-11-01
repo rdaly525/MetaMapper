@@ -36,9 +36,10 @@ if len(sys.argv) > 2:
 else:
     latency = 0
 
-DSE_PE_location = "../DSEGraphAnalysis/outputs"
-pe_header = "./libs/pe_header.json"
-pe_def = "./libs/pe_def.json"
+metamapper_location = "/aha/MetaMapper"
+DSE_PE_location = "/aha/DSEGraphAnalysis/outputs"
+pe_header = f"{metamapper_location}/libs/pe_header.json"
+pe_def = f"{metamapper_location}/libs/pe_def.json"
 
 def gen_rrules():
 
@@ -53,16 +54,15 @@ def gen_rrules():
 
     num_rrules = len(glob.glob(f'{DSE_PE_location}/rewrite_rules/*.json'))
 
-    if not os.path.exists('examples/peak_gen'):
-        os.makedirs('examples/peak_gen')
+    if not os.path.exists(f'{metamapper_location}/examples/peak_gen'):
+        os.makedirs(f'{metamapper_location}/examples/peak_gen')
 
     for ind in range(num_rrules):
 
         with open(f"{DSE_PE_location}/peak_eqs/peak_eq_" + str(ind) + ".py", "r") as file:
-            with open("examples/peak_gen/peak_eq_" + str(ind) + ".py", "w") as outfile:
+            with open(f"{metamapper_location}/examples/peak_gen/peak_eq_" + str(ind) + ".py", "w") as outfile:
                 for line in file:
                     outfile.write(line.replace('mapping_function', 'mapping_function_'+str(ind)))
-
         peak_eq = importlib.import_module("examples.peak_gen.peak_eq_" + str(ind))
 
         ir_fc = getattr(peak_eq, "mapping_function_" + str(ind) + "_fc")
@@ -83,8 +83,10 @@ def gen_rrules():
 arch_fc, rrules = gen_rrules()
 verilog = False
 print("STARTING TEST")
-base = "examples/clockwork"
-file_name = f"{base}/{app}.json"
+
+file_name = str(sys.argv[1])
+app = os.path.basename(file_name).split(".json")[0]
+output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
@@ -111,30 +113,15 @@ for kname, kmod in kernels.items():
     print(kname)
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-    mapped_dag = mapper.do_mapping(dag, kname=kname, node_latencies=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
 print(f"Num PEs used: {mapper.num_pes}")
-output_file = f"outputs/{app}_mapped.json"
+output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
 
-with open(f'outputs/{app}_kernel_latencies.json', 'w') as outfile:
-    json.dump(mapper.kernel_latencies, outfile)
-
-if verilog:
-    c.run_passes(["wireclocks-clk"])
-    c.run_passes(["wireclocks-arst"])
-    c.run_passes(["markdirty"])
-
-
-    #Test syntax of serialized json
-    res = delegator.run(f"coreir -i {output_file} -l commonlib")
-    assert not res.return_code, res.out + res.err
-
-    #Test serializing to verilog
-    res = delegator.run(f'coreir -i {output_file} -l commonlib -p "wireclocks-clk; wireclocks-arst" -o build/{app}_mapped.v --inline')
-    assert not res.return_code, res.out + res.err
-
+with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
+    json.dump(mapper.kernel_cycles, outfile)
