@@ -91,7 +91,7 @@ class Mapper:
         #print("RemovedSelects")
         #print_dag(mapped_dag)
         self.num_pes += count_pes(mapped_dag)
-        #print(count_pes(mapped_dag))
+        print(count_pes(mapped_dag))
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         
         if unmapped is not None:

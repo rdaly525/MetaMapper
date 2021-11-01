@@ -406,13 +406,13 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
     c = cmod.context
     assert cmod.definition
     if inline:
-        for _ in range(3):
+        for _ in range(1):
             to_inline = []
             for inst in cmod.definition.instances:
                 if is_const(inst.module) or is_reg(inst.module):
                     continue
                 node_name = nodes.name_from_coreir(inst.module)
-
+                
                 if node_name is None:
                     to_inline.append(inst)
             for inst in to_inline:

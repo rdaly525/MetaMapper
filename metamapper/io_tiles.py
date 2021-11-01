@@ -12,7 +12,7 @@ def IO_fc(family):
     @family.assemble(locals(), globals())
     class IO(Peak):
         @name_outputs(out=BV[16])
-        def __call__(in_: BV[16]) -> (BV[16]):
+        def __call__(self, in_: BV[16]) -> (BV[16]):
             return in_
 
     return IO
@@ -25,9 +25,8 @@ def BitIO_fc(family):
     @family.assemble(locals(), globals())
     class BitIO(Peak):
         @name_outputs(out=Bit)
-        def __call__(in_: Bit) -> (Bit):
+        def __call__(self, in_: Bit) -> (Bit):
             return in_
 
     return BitIO
-
 

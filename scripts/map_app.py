@@ -88,8 +88,8 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    gen_dag_img_simp(mapped_dag, f"img/{kname}")
-    print(STA(pe_cycles).doit(mapped_dag))
+ #   gen_dag_img_simp(mapped_dag, f"img/{kname}")
+#    print(STA(pe_cycles).doit(mapped_dag))
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 

@@ -134,16 +134,6 @@ class Dag(AbstractDag):
 #Allows arbitrary number of inputs and outputs
 class IODag(AbstractDag):
     def __init__(self, inputs, outputs, sources: tp.List[Visited] = [], sinks: tp.List[Visited] = []):
-        if len(sources) != len(sinks):
-            raise ValueError("each source must have a matching sink")
-        if not all(isinstance(i, Input) for i in inputs):
-            raise ValueError("Each input needs to be instance of Input")
-        if not all(isinstance(o, Output) for o in outputs):
-            raise ValueError("Each output needs to be instance of Output")
-        if not all(isinstance(source, Source) for source in sources):
-            raise ValueError("Each source needs to be instance of Source")
-        if not all(isinstance(sink, Sink) for sink in sinks):
-            raise ValueError("Each sink needs to be instance of Sink")
         for source, sink in zip(sources, sinks):
             source.set_sink(sink)
             sink.set_source(source)
