@@ -189,6 +189,8 @@ class Nodes:
         assert len(names) <2
         if len(names) == 1:
             return names[0]
+        if f"{cmod.namespace.name}.{cmod.name}" in self.coreir_modules:
+            return f"{cmod.namespace.name}.{cmod.name}"
         return None
 
     #returns Node name from coreir module name or None if not found

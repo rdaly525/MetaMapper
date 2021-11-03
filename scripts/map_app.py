@@ -27,8 +27,8 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-lassen_location = "/nobackup/melchert/lassen"
-lassen_header = "./libs/lassen_header.json"
+lassen_location = "/aha/lassen"
+lassen_header = "./aha/MetaMapper/libs/lassen_header.json"
 
 def gen_rrules():
 
@@ -44,11 +44,8 @@ def gen_rrules():
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        print(idx, rule_name)
         ops.append(rule_name)
-
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
-
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)
 
@@ -56,9 +53,8 @@ def gen_rrules():
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        # counter_example = rewrite_rule.verify()
-        # assert counter_example == None, f"{rule_name} failed"
-        # print(rule_name, "passed")
+        counter_example = rewrite_rule.verify()
+        assert counter_example == None, f"{rule_name} failed"
         rrules.append(rewrite_rule)
 
     return rrules, ops
@@ -70,7 +66,6 @@ if len(sys.argv) > 2:
     pe_cycles = int(sys.argv[2])
 else:
     pe_cycles = 0
-
 
 verilog = False
 app = os.path.basename(file_name).split(".json")[0]

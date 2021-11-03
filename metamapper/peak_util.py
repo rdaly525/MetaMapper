@@ -39,7 +39,7 @@ class FixConsts(Transformer):
             return const.select("out")
 
 def flatten(cmod: coreir.Module):
-    CoreIRContext().run_passes(["rungenerators"])
+    CoreIRContext().run_passes(["rungenerators"]) 
     d = cmod.definition
     #TODO change this to stop at a fixed point
     for i in range(4):
@@ -47,23 +47,68 @@ def flatten(cmod: coreir.Module):
             coreir.inline_instance(inst)
 
 
-def peak_to_dag(nodes: Nodes, peak_fc):
+def middle_mult_cmod(nodes: Nodes, name):
+    c = coreir.Context()
+    module_typ = c.Record({"in0": c.Array(16, c.BitIn()), "in1": c.Array(16, c.BitIn()), "O": c.Array(16, c.Bit()), "CLK": c.named_types[("coreir", "clkIn")], "ASYNCRESET": c.named_types[("coreir", "arstIn")]})
+    module = c.global_namespace.new_module("mult_middle", module_typ)
+    module_def = module.new_definition()
+  
+    mult_middle = c.load_library("commonlib").generators["mult_middle"]
+    mul = mult_middle(width=16)
+    mult_middle_inst = module_def.add_module_instance("mult_middle", mul)
+
+    mult_middle_in0 = mult_middle_inst.select("in0")
+    mult_middle_in1 = mult_middle_inst.select("in1")
+    mult_middle_out = mult_middle_inst.select("out")
+
+
+    # const = c.get_namespace("coreir").generators["const"](width=16)
+    # const_inst = module_def.add_module_instance("const", const)
+    # const_out = const_inst.select("out")
+
+    interface = module_def.interface
+    in0 = interface.select("in0")
+    in1 = interface.select("in1")
+    output = interface.select("O")
+
+    # if "const_" in name:
+    #     module_def.connect(const_out, mult_middle_in0)
+    #     module_def.connect(in1, mult_middle_in1)
+    #     module_def.connect(output, mult_middle_out)
+    # elif "_const" in name:
+    #     module_def.connect(in0, mult_middle_in0)
+    #     module_def.connect(const_out, mult_middle_in1)
+    #     module_def.connect(output, mult_middle_out)
+    # else:
+    module_def.connect(in0, mult_middle_in0)
+    module_def.connect(in1, mult_middle_in1)
+    module_def.connect(output, mult_middle_out)
+
+    module.definition = module_def
+    c.run_passes(["rungenerators"])
+    # module = nodes.coreir_modules['commonlib.mult_middle']
+    return module
+
+
+def peak_to_dag(nodes: Nodes, peak_fc, name=None):
     # Two cases:
     # 1) Either peak_fc will already be a single node in nodes, so just need to simply wrap it
     # 2) peak_fc needs to be compiled into a coreir module where each instance within the module should correspond to a node in Nodes
     node_name = nodes.name_from_peak(peak_fc)
     #case 2
     if node_name is None:
-        cmod = peak_to_coreir(peak_fc)
-        # print(cmod.print_())
-        flatten(cmod)
-        # print(cmod.print_())
+        if "mult_middle" in name:
+            cmod = middle_mult_cmod(nodes, name)
+        else:
+            cmod = peak_to_coreir(peak_fc)
+            flatten(cmod)
+        # cmod.print_()
         dag = coreir_to_dag(nodes, cmod)
         #print("pre-fix")
         #print_dag(dag)
         FixConsts(peak_fc, nodes).run(dag)
-        #print("post-fix")
-        #print_dag(dag)
+        # print("post-fix")
+        # print_dag(dag)
         return dag
 
     #case 1

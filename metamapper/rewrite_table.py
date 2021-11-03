@@ -39,6 +39,7 @@ class RewriteRule:
             name = "Unnamed"
         self.name = name
 
+
 #This will verify that each ir and arch are only of the apporpriate type
 class RewriteTable:
     def __init__(self, from_: Nodes, to: Nodes):
@@ -54,14 +55,15 @@ class RewriteTable:
         Constant2CoreIRConstant(self.from_).run(rr.tile)
         self.rules.append(rr)
 
-    def add_peak_rule(self, rule: PeakRule, name=None):
+    def add_peak_rule(self, CoreIRNodes: Nodes, rule: PeakRule, name=None):
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
-        from_dag = peak_to_dag(self.from_, rule.ir_fc)
+
+        from_dag = peak_to_dag(self.from_, rule.ir_fc, name=name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-        print("from_dag", name)
-        print_dag(from_dag)
+        # print("from_dag", name)
+        # print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -123,8 +125,8 @@ class RewriteTable:
         to_dag = Dag([to_input], [to_output])
 
 
-        #print("Before combine")
-        #print_dag(to_dag)
+        # print("Before combine")
+        # print_dag(to_dag)
         BindsToCombines().run(to_dag)
         #print("After combine")
         #print_dag(to_dag)

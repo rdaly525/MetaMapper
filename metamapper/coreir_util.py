@@ -413,14 +413,14 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
         for _ in range(3):
             to_inline = []
             for inst in cmod.definition.instances:
-                if is_const(inst.module) or is_reg(inst.module):
+                if is_const(inst.module) or is_reg(inst.module) or inst.module.name == "rom2":
                     continue
                 node_name = nodes.name_from_coreir(inst.module)
 
                 if node_name is None:
                     to_inline.append(inst)
             for inst in to_inline:
-                print("inlining", inst.name, inst.module.name)
+                # print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 
