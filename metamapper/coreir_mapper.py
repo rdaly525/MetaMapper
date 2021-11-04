@@ -49,34 +49,16 @@ class Mapper:
                         pass
                     else:
                         print(f"  Found!")
-        elif rrules is None:
-
-            for arch_name in self.ArchNodes._node_names:
-                if arch_name != "global.PE":
-                    continue
-                arch_fc = self.ArchNodes.peak_nodes[arch_name]
-                with open(rule_file, "r") as read_file:
-                    rrs = json.loads(read_file.read())
-                    for op, rr in rrs.items():
-                        if op in self.CoreIRNodes.peak_nodes:
-                            print(op)
-                            ir_fc = self.CoreIRNodes.peak_nodes[op]
-                            new_rewrite_rule = read_serialized_bindings(rr, ir_fc, arch_fc)
-                            counter_example = new_rewrite_rule.verify()
-
-                            if counter_example is not None:
-                                print(counter_example)
-                                #raise ValueError(f"RR for {op} fails with ^ Counter Example")
-                            self.table.add_peak_rule(new_rewrite_rule, op)
         else:
             for ind, peak_rule in enumerate(rrules):
-                self.table.add_peak_rule(peak_rule, str(ind))
+                self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
+            self.table.sort_rules()
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
         #inline inlines them back in
-        #print("premapped")
-        #print_dag(dag)
+        # print("premapped")
+        # print_dag(dag)
 
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")

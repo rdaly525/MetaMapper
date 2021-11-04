@@ -179,7 +179,12 @@ class Nodes:
         assert len(names) <2
         if len(names) == 1:
             return names[0]
+        if  f"{cmod.name}" == "mul":
+            return f"{cmod.namespace.name}.{cmod.name}32"
+        elif f"{cmod.namespace.name}.{cmod.name}" in self.coreir_modules:
+            return f"{cmod.namespace.name}.{cmod.name}"
         return None
+
 
     #returns Node name from coreir module name or None if not found
     def name_from_peak(self, peak_fc) -> str:

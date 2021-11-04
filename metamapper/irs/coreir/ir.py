@@ -14,11 +14,66 @@ def gen_peak_CoreIR(width):
         class mult_middle(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0: Data, in1: Data) -> Data:
-                res = Data32(in0) * Data32(in1) >> 8
-                return Data(res[8:24])
+                mul = Data32(in0) * Data32(in1)
+                res = mul >> 8
+                return Data(res[0:16])
         return mult_middle
 
     CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
+
+
+    @family_closure
+    def sext_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.BitVector[32]
+        class sext(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data) -> Data32:
+                res = Data32(in0)
+                return res
+        return sext
+
+    CoreIR.add_instruction("coreir.sext", sext_fc)
+
+    @family_closure
+    def slice_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.BitVector[32]
+        class slice(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data32) -> Data:
+                res = Data(in0[8:24])
+                return res
+        return slice
+
+    CoreIR.add_instruction("coreir.slice", slice_fc)
+
+    @family_closure
+    def mul32_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.BitVector[32]
+        class mul32(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data32, in1: Data32) -> Data32:
+                res = Data32(in0) * Data32(in1)
+                return Data32(res)
+        return mul32
+
+    CoreIR.add_instruction("coreir.mul32", mul32_fc)
+
+
+    @family_closure
+    def ashr32_fc(family: AbstractFamily):
+        Data = family.BitVector[16]
+        Data32 = family.Signed[32]
+        class ashr32(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0: Data32, in1: Data32) -> Data32:
+                res = Data32(in0) >> Data32(in1)
+                return Data32(res)
+        return ashr32
+
+    CoreIR.add_instruction("coreir.ashr32", ashr32_fc)
 
     @family_closure
     def rom_fc(family: AbstractFamily):
@@ -265,6 +320,7 @@ def gen_peak_CoreIR(width):
 
     CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
     CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
+
 
     return CoreIR
 

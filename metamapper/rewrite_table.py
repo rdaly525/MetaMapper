@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from hwtypes.modifiers import strip_modifiers
-from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img, Constant2CoreIRConstant
+from .common_passes import CheckIfTree, VerifyNodes, print_dag, BindsToCombines, SimplifyCombines, RemoveSelects, gen_dag_img, Constant2CoreIRConstant, DagNumNodes
 import typing as tp
 from .node import Nodes, DagNode, Dag, Constant, Input, Output, Bind
 from .peak_util import peak_to_dag
@@ -39,6 +39,7 @@ class RewriteRule:
             name = "Unnamed"
         self.name = name
 
+
 #This will verify that each ir and arch are only of the apporpriate type
 class RewriteTable:
     def __init__(self, from_: Nodes, to: Nodes):
@@ -54,15 +55,15 @@ class RewriteTable:
         Constant2CoreIRConstant(self.from_).run(rr.tile)
         self.rules.append(rr)
 
-    def add_peak_rule(self, rule: PeakRule, name=None):
+    def add_peak_rule(self, CoreIRNodes: Nodes, rule: PeakRule, name=None):
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
-        from_dag = peak_to_dag(self.from_, rule.ir_fc)
-        # if name == "7": gen_dag_img(from_dag, name)
+
+        from_dag = peak_to_dag(self.from_, rule.ir_fc, name=name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-        #print("from_dag")
-        #print_dag(from_dag)
+        # print("from_dag", name)
+        # print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -124,8 +125,8 @@ class RewriteTable:
         to_dag = Dag([to_input], [to_output])
 
 
-        #print("Before combine")
-        #print_dag(to_dag)
+        # print("Before combine")
+        # print_dag(to_dag)
         BindsToCombines().run(to_dag)
         #print("After combine")
         #print_dag(to_dag)
@@ -171,3 +172,13 @@ class RewriteTable:
         rr = self.add_peak_rule(peak_rr, name=rr_name)
         return rr
 
+
+    def sort_rules(self):
+        rule_nodes = []
+        for rule in self.rules:
+            dag = rule.tile
+            num_nodes = DagNumNodes().doit(dag)
+            rule_nodes.append(num_nodes)
+
+        keydict = dict(zip(self.rules, rule_nodes))
+        self.rules.sort(key=keydict.get, reverse=True)

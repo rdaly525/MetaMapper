@@ -189,6 +189,19 @@ class ExtractNames(Visitor):
             self.ops.setdefault(node.node_name, 0)
             self.ops[node.node_name] +=1
 
+class DagNumNodes(Visitor):
+    def __init__(self):
+        self.num_nodes = 0
+
+    def doit(self, dag: Dag):
+        self.run(dag)
+        return self.num_nodes
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        self.num_nodes += 1
+
+
 class VerifyNodes(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
