@@ -3,6 +3,8 @@ from DagVisitor import Visitor, Transformer
 from collections import OrderedDict
 from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant, Select, RegisterSource, RegisterSink
 from . import CoreIRContext
+from .irs.coreir.ir import gen_peak_CoreIR
+from .irs.coreir.ir import gen_rom
 import typing as tp
 from .family import fam
 from peak.mapper import Unbound
@@ -184,7 +186,6 @@ class Loader:
 
             if not self.nodes.is_stateful(node_name):
                 continue
-
             #Absolutely stateful
             source_node_t, _ = self.nodes.dag_nodes[node_name]
             inputs, outputs = parse_rtype(inst.module.type)
@@ -405,7 +406,7 @@ class Loader:
 #Takes in a coreir module and translates it into a dag
 # inline=True means to find instances of modules not defined in 'nodes' and inline them
 # If they are not inlineable then raise an error
-def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
+def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None) -> Dag:
 
     c = cmod.context
     assert cmod.definition
@@ -413,14 +414,26 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
         for _ in range(3):
             to_inline = []
             for inst in cmod.definition.instances:
-                if is_const(inst.module) or is_reg(inst.module) or inst.module.name == "rom2":
+                if inst.module.name == "rom2":
+                    if 'memory.rom2' not in nodes.coreir_modules:
+                        CoreIRNodes = nodes
+                        depth = inst.module.generator_args['depth'].value
+                        width = inst.module.generator_args['width'].value
+                        peak_ir = gen_peak_CoreIR(width)
+                        rom2 = c.get_namespace("memory").generators["rom2"](depth=depth, width=width)
+                        Rom = gen_rom(CoreIRNodes)
+                        CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
+                        mr = "memory.rom2"
+                        archnodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
+                    continue
+                if is_const(inst.module) or is_reg(inst.module):
                     continue
                 node_name = nodes.name_from_coreir(inst.module)
                 
                 if node_name is None:
                     to_inline.append(inst)
             for inst in to_inline:
-                # print("inlining", inst.name, inst.module.name)
+                #print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 

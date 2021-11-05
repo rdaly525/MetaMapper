@@ -43,31 +43,12 @@ def gen_CoreIRNodes(width):
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
     
-    class Rom(DagNode):
-        def __init__(self, raddr, ren, *, init, iname):
-            super().__init__(raddr, ren, init=init, iname=iname)
-            self.modparams=()
+   
+    #rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=1024, width=width)
 
-        @property
-        def attributes(self):
-            return ("init", "iname")
-
-        #Hack to get correct port name
-        def select(self, field, original=None):
-            self._selects.add("rdata")
-            return Select(self, field="rdata",type=BitVector[16])
-
-        nodes = CoreIRNodes
-        static_attributes = {}
-        node_name = "memory.rom2"
-        num_children = 2
-        type = Product.from_fields("Output",{"rdata":BitVector[16]})
-
-    rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=1024, width=width)
-
-    CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
-    assert "memory.rom2" in CoreIRNodes.dag_nodes
-    assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
+    #CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
+    #assert "memory.rom2" in CoreIRNodes.dag_nodes
+    #assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
     
     # name = f"coreir.ashr32"
     # peak_fc = peak_ir.instructions[name]
@@ -100,4 +81,5 @@ def gen_CoreIRNodes(width):
 
 
     return CoreIRNodes
+
 
