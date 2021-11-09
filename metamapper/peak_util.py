@@ -97,7 +97,7 @@ def peak_to_dag(nodes: Nodes, peak_fc, name=None):
     node_name = nodes.name_from_peak(peak_fc)
     #case 2
     if node_name is None:
-        if "mult_middle" in name:
+        if name != None and "mult_middle" in name:
             cmod = middle_mult_cmod(nodes, name)
         else:
             cmod = peak_to_coreir(peak_fc)
