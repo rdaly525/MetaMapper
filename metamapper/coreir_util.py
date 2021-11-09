@@ -3,8 +3,6 @@ from DagVisitor import Visitor, Transformer
 from collections import OrderedDict
 from .node import DagNode, Dag, Nodes, Source, Sink, Input, InstanceInput, Combine, Constant, Select, RegisterSource, RegisterSink
 from . import CoreIRContext
-from .irs.coreir.ir import gen_peak_CoreIR
-from .irs.coreir.ir import gen_rom
 import typing as tp
 from .family import fam
 from peak.mapper import Unbound
@@ -15,8 +13,11 @@ import os
 import keyword
 from hwtypes.adt import Product
 import hwtypes as ht
+from hwtypes import BitVector, Bit
 from hwtypes.modifiers import strip_modifiers, is_modified
 import random
+from peak import Peak, name_outputs, family_closure, Const
+from peak.family import AbstractFamily
 
 def create_bv_const(width, value):
     bv = ht.BitVector[width]
@@ -402,6 +403,38 @@ class Loader:
         return drivers
 
 
+@family_closure
+def rom_fc(family: AbstractFamily):
+    Data = family.BitVector[16]
+    Bit = family.Bit
+    class rom(Peak):
+        @name_outputs(rdata=Data)
+        def __call__(self, raddr: Data, ren: Bit) -> Data:
+            return Data(0)
+    return rom
+
+def gen_rom(CoreIRNodes):
+    class Rom(DagNode):
+        def __init__(self, raddr, ren, *, init, iname):
+            super().__init__(raddr, ren, init=init, iname=iname)
+            self.modparams=()
+
+        @property
+        def attributes(self):
+            return ("init", "iname")
+
+        #Hack to get correct port name
+        def select(self, field, original=None):
+            self._selects.add("rdata")
+            return Select(self, field="rdata",type=BitVector[16])
+
+        nodes = CoreIRNodes
+        static_attributes = {}
+        node_name = "memory.rom2"
+        num_children = 2
+        type = Product.from_fields("Output",{"rdata":BitVector[16]})
+    return Rom
+
 
 #Takes in a coreir module and translates it into a dag
 # inline=True means to find instances of modules not defined in 'nodes' and inline them
@@ -411,7 +444,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
     c = cmod.context
     assert cmod.definition
     if inline:
-        for _ in range(3):
+        for _ in range(5):
             to_inline = []
             for inst in cmod.definition.instances:
                 if inst.module.name == "rom2":
@@ -419,10 +452,9 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
                         CoreIRNodes = nodes
                         depth = inst.module.generator_args['depth'].value
                         width = inst.module.generator_args['width'].value
-                        peak_ir = gen_peak_CoreIR(width)
                         rom2 = c.get_namespace("memory").generators["rom2"](depth=depth, width=width)
                         Rom = gen_rom(CoreIRNodes)
-                        CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
+                        CoreIRNodes.add("memory.rom2", rom_fc, rom2, Rom)
                         mr = "memory.rom2"
                         archnodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
                     continue

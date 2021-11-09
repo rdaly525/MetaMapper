@@ -324,27 +324,5 @@ def gen_peak_CoreIR(width):
 
 
     return CoreIR
-
-def gen_rom(CoreIRNodes):
-    class Rom(DagNode):
-        def __init__(self, raddr, ren, *, init, iname):
-            super().__init__(raddr, ren, init=init, iname=iname)
-            self.modparams=()
-
-        @property
-        def attributes(self):
-            return ("init", "iname")
-
-        #Hack to get correct port name
-        def select(self, field, original=None):
-            self._selects.add("rdata")
-            return Select(self, field="rdata",type=BitVector[16])
-
-        nodes = CoreIRNodes
-        static_attributes = {}
-        node_name = "memory.rom2"
-        num_children = 2
-        type = Product.from_fields("Output",{"rdata":BitVector[16]})
-    return Rom
 #TODO missing:
 # slice, concat, sext, zext
