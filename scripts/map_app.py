@@ -27,8 +27,8 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-lassen_location = "/nobackup/melchert/lassen"
-lassen_header = "./libs/lassen_header.json"
+lassen_location = "/aha/lassen"
+lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
@@ -49,7 +49,7 @@ def gen_rrules(pipelined=False):
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
         ops.append(rule_name)
-        print(rule_name)
+        # print(rule_name)
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)
@@ -105,8 +105,8 @@ for kname, kmod in kernels.items():
     print(f"Mapping kernel {kname}")
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-    print_dag(dag)
-    gen_dag_img(dag, f"img/{kname}")
+    # print_dag(dag)
+    # gen_dag_img(dag, f"img/{kname}")
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
     # print(STA(pe_cycles).doit(mapped_dag))
