@@ -62,11 +62,7 @@ class RewriteTable:
         from_dag = peak_to_dag(self.from_, rule.ir_fc, name=name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-        if name == "abs":
-            print("from_dag", name)
-            print_dag(from_dag)
-            # breakpoint()
-            gen_dag_img(from_dag, "./img/abs")
+       
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
@@ -185,6 +181,3 @@ class RewriteTable:
 
         keydict = dict(zip(self.rules, rule_nodes))
         self.rules.sort(key=keydict.get, reverse=True)
-
-        for rule in self.rules:
-            print(rule.name)
