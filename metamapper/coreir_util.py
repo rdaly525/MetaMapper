@@ -410,7 +410,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True) -> Dag:
     c = cmod.context
     assert cmod.definition
     if inline:
-        for _ in range(3):
+        for _ in range(4):
             to_inline = []
             for inst in cmod.definition.instances:
                 if is_const(inst.module) or is_reg(inst.module) or inst.module.name == "rom2":

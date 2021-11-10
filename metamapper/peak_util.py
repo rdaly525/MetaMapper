@@ -38,6 +38,18 @@ class FixConsts(Transformer):
             const = const_node(node)
             return const.select("out")
 
+    # def visit_Constant(self, node):
+    #     Transformer.generic_visit(self, node)
+    #     T = node.type
+    #     if T is fam().PyFamily().Bit:
+    #         const_node = self.nodes.dag_nodes["corebit.const"]
+    #     elif T is fam().PyFamily().BitVector[16]:
+    #         const_node = self.nodes.dag_nodes["coreir.const"]
+    #     else:
+    #         raise ValueError(T)
+    #     const = const_node(node)
+    #     return const.select("out")
+
 def flatten(cmod: coreir.Module):
     CoreIRContext().run_passes(["rungenerators"]) 
     d = cmod.definition

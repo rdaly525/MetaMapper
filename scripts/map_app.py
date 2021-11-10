@@ -14,7 +14,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, gen_dag_img_simp, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, gen_dag_img_simp, gen_dag_img, Constant2CoreIRConstant
 from metamapper.delay_matching import STA
 from peak.mapper import read_serialized_bindings
 
@@ -27,10 +27,10 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-lassen_location = "/aha/lassen"
-lassen_header = "./aha/MetaMapper/libs/lassen_header.json"
+lassen_location = "/nobackup/melchert/lassen"
+lassen_header = "./libs/lassen_header.json"
 
-def gen_rrules():
+def gen_rrules(pipelined=False):
 
     c = CoreIRContext()
     cmod = putil.peak_to_coreir(lassen_fc)
@@ -40,11 +40,16 @@ def gen_rrules():
     rrules = []
     ops = []
 
-    rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+    if pipelined:
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
+    else:
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
         ops.append(rule_name)
+        print(rule_name)
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)
@@ -53,13 +58,12 @@ def gen_rrules():
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        counter_example = rewrite_rule.verify()
-        assert counter_example == None, f"{rule_name} failed"
+        # counter_example = rewrite_rule.verify()
+        # assert counter_example == None, f"{rule_name} failed"
         rrules.append(rewrite_rule)
 
     return rrules, ops
 
-rrules, ops = gen_rrules()
 
 file_name = str(sys.argv[1])
 if len(sys.argv) > 2:
@@ -67,6 +71,7 @@ if len(sys.argv) > 2:
 else:
     pe_cycles = 0
 
+rrules, ops = gen_rrules(pipelined = pe_cycles != 0)
 verilog = False
 app = os.path.basename(file_name).split(".json")[0]
 output_dir = os.path.dirname(file_name)
@@ -100,9 +105,10 @@ for kname, kmod in kernels.items():
     print(f"Mapping kernel {kname}")
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
+    print_dag(dag)
+    gen_dag_img(dag, f"img/{kname}")
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    # gen_dag_img_simp(mapped_dag, f"img/{kname}")
     # print(STA(pe_cycles).doit(mapped_dag))
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
