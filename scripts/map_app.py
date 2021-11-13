@@ -49,6 +49,7 @@ def gen_rrules(pipelined=False):
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
         ops.append(rule_name)
+        print(rule_name)
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)

@@ -444,7 +444,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
     c = cmod.context
     assert cmod.definition
     if inline:
-        for _ in range(5):
+        for _ in range(10):
             to_inline = []
             for inst in cmod.definition.instances:
                 if inst.module.name == "rom2":

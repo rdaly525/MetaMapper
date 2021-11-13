@@ -51,10 +51,7 @@ class Mapper:
                         print(f"  Found!")
         else:
             for ind, peak_rule in enumerate(rrules):
-                if ind in ops:
-                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
-                else:
-                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
+                self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
             self.table.sort_rules()
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
