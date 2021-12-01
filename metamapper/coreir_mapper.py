@@ -21,7 +21,8 @@ class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
     # rule_file #pointer to serialized rule file
-    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=[], rule_file=None, rrules=None):
+    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rule_file=None, rrules=None):
+    
 
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
@@ -51,7 +52,10 @@ class Mapper:
                         print(f"  Found!")
         else:
             for ind, peak_rule in enumerate(rrules):
-                self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
+                if ops != None:
+                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
+                else:
+                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
             self.table.sort_rules()
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
