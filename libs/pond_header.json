@@ -1,15 +1,11 @@
 {"namespaces":{
   "global":{
     "modules":{
-      "PE":{
+      "Pond":{
         "type":["Record",[
-          ["inst",["Array",31,"BitIn"]],
-          ["inputs0",["Array",16,"BitIn"]],
-          ["inputs1",["Array",16,"BitIn"]],
-          ["inputs2",["Array",16,"BitIn"]],
-          ["inputs3",["Array",16,"BitIn"]],
-          ["inputs4",["Array",16,"BitIn"]],
+          ["flush","BitIn"],
           ["clk_en","BitIn"],
+          ["data_in_pond_0",["Array",16,"BitIn"]],
           ["O0",["Array",16,"Bit"]],
           ["O1","Bit"],
           ["CLK",["Named","coreir.clkIn"]],
