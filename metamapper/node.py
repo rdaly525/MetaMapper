@@ -176,7 +176,7 @@ class Nodes:
     #returns Node name from coreir module name
     def name_from_coreir(self, cmod) -> str:
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
-        assert len(names) <2
+        assert len(names) <2, names
         if len(names) == 1:
             return names[0]
         if  f"{cmod.name}" == "mul":

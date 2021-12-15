@@ -9,4 +9,3 @@ cmod = putil.magma_to_coreir(Pond)
 c = CoreIRContext()
 c.serialize_header("libs/pond_header.json", [cmod])
 
-

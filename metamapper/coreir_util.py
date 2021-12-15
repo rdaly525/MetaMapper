@@ -703,7 +703,8 @@ class FixSelects(Transformer):
                 dag_node = dag_node[0] #Use the source
             assert issubclass(dag_node, DagNode), f"{dag_node}"
             peak_outputs = list(peak_fc(fam().PyFamily()).output_t.field_dict.keys())
-            assert len(peak_outputs) == len(c_output_keys)
+            #if len(peak_outputs) != len(c_output_keys):i
+            #assert len(peak_outputs) == len(c_output_keys)
             self.field_map[dag_node] = {name: c_output_keys[i] for i, name in enumerate(peak_outputs)}
             #if len(peak_outputs) == 1:
             #    self.field_map[dag_node] = {peak_outputs[0]: }
@@ -736,8 +737,8 @@ def dag_to_coreir_def(nodes: Nodes, dag: Dag, mod: coreir.Module, convert_unboun
 def dag_to_coreir(nodes: Nodes, dag: Dag, name: str, convert_unbounds=True) -> coreir.ModuleDef:
     dag = Clone().clone(dag)
     VerifyUniqueIname().run(dag)
-    #print_dag(dag)
     FixSelects(nodes).run(dag)
+    print_dag(dag)
     c = CoreIRContext()
     #construct coreir type
     inputs = {fix_keyword_to_coreir(field):c.Flip(adt_to_ctype(T)) for field, T in dag.input.type.field_dict.items() if field != "__fake__"}
