@@ -207,6 +207,7 @@ class Loader:
             sink_nodes.append(sink_node)
 
         self.dag = Dag(source_nodes, sink_nodes)
+        print_dag(self.dag)
 
     def add_const(self, inst: coreir.Instance):
         if inst in self.const_cache:
@@ -462,10 +463,11 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
                     continue
                 node_name = nodes.name_from_coreir(inst.module)
                 
+                # print(inst.module.name, node_name)
                 if node_name is None:
                     to_inline.append(inst)
             for inst in to_inline:
-                #print("inlining", inst.name, inst.module.name)
+                # print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 

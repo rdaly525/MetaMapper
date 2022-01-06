@@ -53,6 +53,7 @@ class Mapper:
         else:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
+                    # print(ops[ind])
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
                 else:
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)

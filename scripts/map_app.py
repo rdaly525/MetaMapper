@@ -27,8 +27,8 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-lassen_location = "/aha/lassen"
-lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
+lassen_location = "/nobackup/melchert/lassen"
+lassen_header = "/nobackup/melchert/MetaMapper/libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
@@ -43,7 +43,7 @@ def gen_rrules(pipelined=False):
     if pipelined:
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
     else:
-        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/fp_*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
 
     for idx, rrule in enumerate(rrule_files):
@@ -78,7 +78,7 @@ app = os.path.basename(file_name).split(".json")[0]
 output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
-cutil.load_libs(["commonlib"])
+cutil.load_libs(["commonlib", "float"])
 CoreIRNodes = gen_CoreIRNodes(16)
 
 cutil.load_from_json(file_name) #libraries=["lakelib"])

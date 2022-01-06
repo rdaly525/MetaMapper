@@ -77,6 +77,9 @@ class DagNode(Visited):
 
     @lru_cache(None)
     def select(self, field, original=None):
+        # This is a hack for selecting one bit
+        if isinstance(field, int):
+            return Select(self, field=field, type=ht.Bit)
         key_list = {f"O{i}": k for i, k in enumerate(self.type.field_dict.keys())}
         new_field = key_list.get(field)
         if original is None and new_field is not None:
@@ -165,6 +168,8 @@ class Nodes:
         #if node is stateful, it points to a tuple(Source, Sink)
         self.dag_nodes = {}
         self.peak_nodes = {}
+        self.custom_nodes = []
+        self.custom_inline = {}
         self.coreir_modules: tp.Mapping[str, coreir.Module] = {}
 
     def __str__(self):
@@ -175,23 +180,29 @@ class Nodes:
 
     #returns Node name from coreir module name
     def name_from_coreir(self, cmod) -> str:
+        if cmod.name in self.custom_nodes and cmod.name in self.dag_nodes:
+            return cmod.name
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
-        assert len(names) <2
+        assert len(names) <2, names
         if len(names) == 1:
             return names[0]
-        if  f"{cmod.name}" == "mul":
-            return f"{cmod.namespace.name}.{cmod.name}32"
-        elif f"{cmod.namespace.name}.{cmod.name}" in self.coreir_modules:
+        # if  f"{cmod.name}" == "mul":
+        #     return f"{cmod.namespace.name}.{cmod.name}32"
+        if f"{cmod.namespace.name}.{cmod.name}" in self.coreir_modules:
             return f"{cmod.namespace.name}.{cmod.name}"
         return None
 
 
     #returns Node name from coreir module name or None if not found
-    def name_from_peak(self, peak_fc) -> str:
+    def name_from_peak(self, peak_fc, name = None) -> str:
+        if name in self.custom_nodes and name in self.dag_nodes:
+            return name
+
         names = [k for k,v in self.peak_nodes.items() if v is peak_fc]
-        assert len(names) <2
+        assert len(names) <2, names
         if len(names) == 1:
             return names[0]
+
         return None
 
     #Adds all 3 kinds of nodes under one name

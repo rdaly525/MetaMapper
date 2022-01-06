@@ -59,6 +59,7 @@ class RewriteTable:
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
 
+        
         from_dag = peak_to_dag(self.from_, rule.ir_fc, name=name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)

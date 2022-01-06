@@ -94,15 +94,15 @@ def peak_to_dag(nodes: Nodes, peak_fc, name=None):
     # Two cases:
     # 1) Either peak_fc will already be a single node in nodes, so just need to simply wrap it
     # 2) peak_fc needs to be compiled into a coreir module where each instance within the module should correspond to a node in Nodes
-    node_name = nodes.name_from_peak(peak_fc)
+    node_name = nodes.name_from_peak(peak_fc, name)
     #case 2
+    print("peak to dag", name, node_name)
     if node_name is None:
-        if name != None and "mult_middle" in name:
-            cmod = middle_mult_cmod(nodes, name)
-        else:
-            cmod = peak_to_coreir(peak_fc)
-            flatten(cmod)
-        # cmod.print_()
+        # if name != None and "mult_middle" in name:
+        #     cmod = middle_mult_cmod(nodes, name)
+        # else:
+        cmod = peak_to_coreir(peak_fc)
+        flatten(cmod)
         dag = coreir_to_dag(nodes, cmod)
         #print("pre-fix")
         #print_dag(dag)
@@ -130,14 +130,17 @@ def peak_to_dag(nodes: Nodes, peak_fc, name=None):
 
 import tempfile
 def magma_to_coreir(mod):
+    cname = mod.coreir_name
+
     f = tempfile.NamedTemporaryFile(delete=False)
     magma.compile(f.name, mod, output="coreir")
-    cname = mod.coreir_name
     crt = magma.backend.coreir.coreir_runtime 
+
     return crt.module_map()[crt.coreir_context()]['global'][cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
     peak_m = peak_fc(fam().MagmaFamily())
+
     if wrap:
         class HashableDict(dict):
             def __hash__(self):
@@ -196,8 +199,8 @@ def check_ports(node: DagNode, cmod: coreir.Module):
     return True
 
 def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, modparams=()) -> str:
-    if cmod is None:
-        cmod = peak_to_coreir(peak_fc, wrap=True)
+    # if cmod is None:
+    #     cmod = peak_to_coreir(peak_fc, wrap=True)
     dag_node, node_name = peak_to_node(nodes, peak_fc, stateful=stateful, name=name, modparams=modparams)
     check_ports(dag_node, cmod)
     nodes.add(node_name, peak_fc, cmod, dag_node)
