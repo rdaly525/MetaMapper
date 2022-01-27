@@ -14,7 +14,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, gen_dag_img_simp, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant
 from metamapper.delay_matching import STA
 from peak.mapper import read_serialized_bindings
 
@@ -27,8 +27,8 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-lassen_location = "/nobackup/melchert/lassen"
-lassen_header = "/nobackup/melchert/MetaMapper/libs/lassen_header.json"
+lassen_location = "/aha/lassen"
+lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
@@ -43,12 +43,19 @@ def gen_rrules(pipelined=False):
     if pipelined:
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
     else:
-        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/fp_*.json')
-        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file and "const" not in rrule_file]
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/const.json')
+        #rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/mux.json')
+
+    custom_rule_names = {"fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        ops.append(rule_name)
+        if rule_name in custom_rule_names:
+            ops.append(custom_rule_names[rule_name])
+        else:
+            ops.append(rule_name)
         print(rule_name)
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
@@ -78,23 +85,25 @@ app = os.path.basename(file_name).split(".json")[0]
 output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
-cutil.load_libs(["commonlib", "float"])
+cutil.load_libs(["commonlib", "float_DW"])
 CoreIRNodes = gen_CoreIRNodes(16)
-
 cutil.load_from_json(file_name) #libraries=["lakelib"])
 kernels = dict(c.global_namespace.modules)
 
-
 arch_fc = lassen_fc
 ArchNodes = Nodes("Arch")
+
+#mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
 putil.load_and_link_peak(
     ArchNodes,
     lassen_header,
     {"global.PE": arch_fc}
 )
-# putil.load_from_peak(ArchNodes, arch_fc)
-#mr = "memory.rom2"
-#ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
+
+#putil.load_from_peak(ArchNodes, arch_fc)
+mr = "memory.rom2"
+ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
+
 
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
@@ -108,7 +117,7 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    # gen_dag_img_simp(mapped_dag, f"img/{kname}")
+    gen_dag_img(mapped_dag, f"img/{kname}")
     # print(STA(pe_cycles).doit(mapped_dag))
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)

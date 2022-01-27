@@ -371,7 +371,7 @@ class Printer(Visitor):
 
     def visit_Input(self, node):
         Visitor.generic_visit(self, node)
-        self.res += f"{node._id_}<Input>\n"
+        self.res += f"{node._id_}<Input>{hex(id(node))}\n"
 
     def visit_InstanceInput(self, node):
         self.res += f"{node._id_}<InstanceInput>\n"
@@ -464,6 +464,95 @@ class SimplifyCombines(Transformer):
         else:
             raise NotImplementedError()
         return Constant(value=val._value_, type=node.type)
+
+class CloneInline(Visitor):
+    def clone(self, dag: Dag, input_nodes, iname_prefix: str = ""):
+        assert dag is not None
+        self.node_map = {node: node.copy() for node in dag.sources}
+        self.iname_prefix = iname_prefix
+        self.run(dag)
+
+        input_nodes_copy = [self.node_map[node] for node in input_nodes]
+
+        dag_copy = Dag(
+            sources=[self.node_map[node] for node in dag.sources],
+            sinks=[self.node_map[node] for node in dag.sinks]
+        )
+        return dag_copy, input_nodes_copy
+
+    def visit_Input(self, node):
+        pass
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        new_node = node.copy()
+        children = (self.node_map[child] for child in node.children())
+        new_node.set_children(*children)
+        new_node.iname = self.iname_prefix + new_node.iname
+        self.node_map[node] = new_node
+
+class CustomInline(Transformer): 
+    def __init__(self, rewrite_rules):
+        self.rrs = rewrite_rules
+
+    def visit_Select(self, node: Select):
+        Transformer.generic_visit(self, node)
+        if node.child.node_name in self.rrs:
+            replace_dag, input_nodes = CloneInline().clone(*self.rrs[node.child.node_name], iname_prefix=node.iname)
+            for in_node in input_nodes:
+                new_children = list(in_node.children())
+                for child_idx, child_node in enumerate(in_node.children()):
+                    if child_node.node_name == "Select" and child_node.field == "in0":
+                        new_children[child_idx] = node.child.children()[0]
+                    elif child_node.node_name == "Select" and child_node.field == "in1":
+                        new_children[child_idx] = node.child.children()[1]
+                in_node.set_children(*new_children)
+            return replace_dag.output.child
+
+        return node 
+
+class CustomInline2(Visitor):
+    def __init__(self, rewrite_rules):
+        self.rrs = rewrite_rules
+
+    def doit(self, dag: Dag):
+        self.node_map = {}
+
+        self.run(dag)
+        real_sources = [self.node_map[s] for s in dag.sources]
+        real_sinks = [self.node_map[s] for s in dag.sinks]
+        return Dag(sources=real_sources, sinks=real_sinks)
+
+    def visit_Select(self, node: Select):
+        Visitor.generic_visit(self, node)
+        if node.child.node_name in self.rrs:
+            replace_dag = self.rrs[node.child.node_name][0]
+            input_nodes = self.rrs[node.child.node_name][1]
+            for in_node in input_nodes:
+                new_children = list(in_node.children())
+                for child_idx, child_node in enumerate(in_node.children()):
+                    if child_node.node_name == "Select" and child_node.field == "in0":
+                        new_children[child_idx] = self.node_map[node.child.children()[0]]
+                    elif child_node.node_name == "Select" and child_node.field == "in1":
+                        new_children[child_idx] = self.node_map[node.child.children()[1]]
+                in_node.set_children(*new_children)
+
+            new_children = [self.node_map[child] for child in replace_dag.output.child.children()]
+            new_node = replace_dag.output.child
+            new_node.set_children(*new_children)
+            self.node_map[node] = new_node            
+        else:
+            new_children = [self.node_map[child] for child in node.children()]
+            new_node = node.copy()
+            new_node.set_children(*new_children)
+            self.node_map[node] = new_node
+
+    def generic_visit(self, node: DagNode):
+        Visitor.generic_visit(self, node)
+        new_children = [self.node_map[child] for child in node.children()]
+        new_node = node.copy()
+        new_node.set_children(*new_children)
+        self.node_map[node] = new_node
 
 
 #Finds Opportunities to skip selecting from a Combine node

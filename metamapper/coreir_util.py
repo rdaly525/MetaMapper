@@ -207,7 +207,7 @@ class Loader:
             sink_nodes.append(sink_node)
 
         self.dag = Dag(source_nodes, sink_nodes)
-        print_dag(self.dag)
+        #print_dag(self.dag)
 
     def add_const(self, inst: coreir.Instance):
         if inst in self.const_cache:
@@ -265,6 +265,7 @@ class Loader:
                     #   c) at leaf type with normal connection (other_inst, ports)
                     if (child_inst, sel_path) == (None, None):
                         children.append(Constant(value=Unbound, type=ht.Bit))
+                        #pass
                     else:
                         child_node = self.add_node(child_inst)
                         if isinstance(child_node, Constant):
@@ -275,6 +276,8 @@ class Loader:
                             ##sel_path = child_node._nodes_.csp_to_asp(sel_path)
                             for sel in sel_path:
                                 sel = fix_keyword_from_coreir(sel)
+                                if sel == "z":
+                                    sel = "out"
                                 child = child.select(sel)
                             children.append(child)
                 else:
@@ -382,8 +385,9 @@ class Loader:
                     return False
             else:
                 raise NotImplementedError(t.kind)
-
         for port_name, t in inputs.items():
+            if port_name == "rnd":
+                continue
             bv = is_bv(t)
             port = select(w, port_name)
             if bv: #Leaf
@@ -467,7 +471,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
                 if node_name is None:
                     to_inline.append(inst)
             for inst in to_inline:
-                # print("inlining", inst.name, inst.module.name)
+                print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 

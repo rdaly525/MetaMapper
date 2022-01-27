@@ -69,7 +69,7 @@ class RewriteTable:
         # Get input/output names from peak_cls
 
         to_fc = rule.arch_fc
-        to_node_name = self.to.name_from_peak(to_fc)
+        to_node_name = self.to.name_from_peak(to_fc, name)
         to_node_t = self.to.dag_nodes[to_node_name]
         assert issubclass(to_node_t, DagNode)
         to_bv = to_fc(fam().PyFamily())

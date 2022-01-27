@@ -180,8 +180,8 @@ class Nodes:
 
     #returns Node name from coreir module name
     def name_from_coreir(self, cmod) -> str:
-        if cmod.name in self.custom_nodes and cmod.name in self.dag_nodes:
-            return cmod.name
+        if f"{cmod.namespace.name}.{cmod.name}" in self.custom_nodes and f"{cmod.namespace.name}.{cmod.name}" in self.dag_nodes:
+            return f"{cmod.namespace.name}.{cmod.name}"
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
         assert len(names) <2, names
         if len(names) == 1:

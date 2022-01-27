@@ -1,4 +1,4 @@
-from metamapper.common_passes import VerifyNodes, print_dag, count_pes, SimplifyCombines, RemoveSelects, prove_equal, \
+from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
     Clone, ExtractNames, Unbound2Const, gen_dag_img
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
@@ -53,11 +53,11 @@ class Mapper:
         else:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
-                    # print(ops[ind])
+                    print(ops[ind])
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
                 else:
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
-            self.table.sort_rules()
+            #self.table.sort_rules()
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
@@ -67,10 +67,21 @@ class Mapper:
 
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
+        
+        print("original dag")
+        print_dag(dag)
+
+        CustomInline(self.CoreIRNodes.custom_inline).run(dag)
+        #dag = UpdateSources().update_sources(dag)
+        
+        print("inlined dag")
+        print_dag(dag)
 
         mapped_dag = self.inst_sel(dag)
+
         #print("postmapped")
         #print_dag(mapped_dag)
+        
         SimplifyCombines().run(mapped_dag)
         #print("simplifyCombines")
         #print_dag(mapped_dag)
