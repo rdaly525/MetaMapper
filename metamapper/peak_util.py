@@ -130,7 +130,7 @@ def peak_to_dag(nodes: Nodes, peak_fc, name=None):
 
 import tempfile
 def magma_to_coreir(mod):
-    f = tempfile.NamedTemporaryFile(delete=False)
+    f = tempfile.NamedTemporaryFile()
     magma.compile(f.name, mod, output="coreir")
     cname = mod.coreir_name
     crt = magma.backend.coreir.coreir_runtime 

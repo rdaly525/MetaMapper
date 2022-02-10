@@ -48,7 +48,6 @@ def gen_rrules(pipelined=False):
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
         ops.append(rule_name)
-        print(rule_name)
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)
@@ -57,9 +56,6 @@ def gen_rrules(pipelined=False):
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        if False:
-            counter_example = rewrite_rule.verify()
-            assert counter_example == None, f"{rule_name} failed"
         rrules.append(rewrite_rule)
 
     return rrules, ops
