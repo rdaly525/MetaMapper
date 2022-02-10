@@ -44,16 +44,6 @@ def gen_CoreIRNodes(width):
             assert CoreIRNodes.name_from_coreir(cmod) == name
     
    
-    #rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=1024, width=width)
-
-    #CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, Rom)
-    #assert "memory.rom2" in CoreIRNodes.dag_nodes
-    #assert CoreIRNodes.dag_nodes["memory.rom2"] is not None
-    
-    # name = f"coreir.ashr32"
-    # peak_fc = peak_ir.instructions[name]
-    # cmod = c.get_namespace("coreir").generators["ashr"](width=32)
-    # name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.ashr32", modparams=())
 
     name = f"coreir.mul32"
     peak_fc = peak_ir.instructions[name]
@@ -69,15 +59,6 @@ def gen_CoreIRNodes(width):
     peak_fc = peak_ir.instructions[name]
     cmod = c.get_namespace("coreir").generators["slice"](width=32, hi=24, lo=8)
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="coreir.slice", modparams=())
-
-    # peak_fc = peak_ir.instructions["commonlib.mult_middle"]
-    # MultMiddle = CoreIRNodes.create_dag_node("commonlib.mult_middle", 2, stateful=False, static_attrs=dict(type=strip_modifiers(peak_fc(family.PyFamily()).output_t)), modparams=())
-
-    # mult_middle = CoreIRContext().get_namespace("commonlib").generators["mult_middle"](width=width)
-
-    # CoreIRNodes.add("commonlib.mult_middle", peak_ir.instructions["commonlib.mult_middle"], mult_middle, MultMiddle)
-    # assert "commonlib.mult_middle" in CoreIRNodes.dag_nodes
-    # assert CoreIRNodes.dag_nodes["commonlib.mult_middle"] is not None
 
 
     return CoreIRNodes

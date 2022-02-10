@@ -35,7 +35,6 @@ def gen_rrules(pipelined=False):
     c = CoreIRContext()
     cmod = putil.peak_to_coreir(lassen_fc)
     c.serialize_header(lassen_header, [cmod])
-    # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
     ops = []
@@ -81,7 +80,7 @@ c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
 CoreIRNodes = gen_CoreIRNodes(16)
 
-cutil.load_from_json(file_name) #libraries=["lakelib"])
+cutil.load_from_json(file_name) 
 kernels = dict(c.global_namespace.modules)
 
 
@@ -92,10 +91,6 @@ putil.load_and_link_peak(
     lassen_header,
     {"global.PE": arch_fc}
 )
-# putil.load_from_peak(ArchNodes, arch_fc)
-#mr = "memory.rom2"
-#ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
-
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
 
@@ -106,10 +101,7 @@ for kname, kmod in kernels.items():
     print(f"Mapping kernel {kname}")
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod, archnodes=ArchNodes)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    # gen_dag_img_simp(mapped_dag, f"img/{kname}")
-    # print(STA(pe_cycles).doit(mapped_dag))
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
@@ -120,5 +112,4 @@ c.serialize_definitions(output_file, mods)
 
 with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
     json.dump(mapper.kernel_cycles, outfile)
-
 
