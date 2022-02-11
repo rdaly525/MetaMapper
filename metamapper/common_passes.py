@@ -511,48 +511,6 @@ class CustomInline(Transformer):
 
         return node 
 
-class CustomInline2(Visitor):
-    def __init__(self, rewrite_rules):
-        self.rrs = rewrite_rules
-
-    def doit(self, dag: Dag):
-        self.node_map = {}
-
-        self.run(dag)
-        real_sources = [self.node_map[s] for s in dag.sources]
-        real_sinks = [self.node_map[s] for s in dag.sinks]
-        return Dag(sources=real_sources, sinks=real_sinks)
-
-    def visit_Select(self, node: Select):
-        Visitor.generic_visit(self, node)
-        if node.child.node_name in self.rrs:
-            replace_dag = self.rrs[node.child.node_name][0]
-            input_nodes = self.rrs[node.child.node_name][1]
-            for in_node in input_nodes:
-                new_children = list(in_node.children())
-                for child_idx, child_node in enumerate(in_node.children()):
-                    if child_node.node_name == "Select" and child_node.field == "in0":
-                        new_children[child_idx] = self.node_map[node.child.children()[0]]
-                    elif child_node.node_name == "Select" and child_node.field == "in1":
-                        new_children[child_idx] = self.node_map[node.child.children()[1]]
-                in_node.set_children(*new_children)
-
-            new_children = [self.node_map[child] for child in replace_dag.output.child.children()]
-            new_node = replace_dag.output.child
-            new_node.set_children(*new_children)
-            self.node_map[node] = new_node            
-        else:
-            new_children = [self.node_map[child] for child in node.children()]
-            new_node = node.copy()
-            new_node.set_children(*new_children)
-            self.node_map[node] = new_node
-
-    def generic_visit(self, node: DagNode):
-        Visitor.generic_visit(self, node)
-        new_children = [self.node_map[child] for child in node.children()]
-        new_node = node.copy()
-        new_node.set_children(*new_children)
-        self.node_map[node] = new_node
 
 
 #Finds Opportunities to skip selecting from a Combine node

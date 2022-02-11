@@ -703,6 +703,8 @@ class FixSelects(Transformer):
             peak_fc = nodes.peak_nodes[node_name]
             dag_node = nodes.dag_nodes[node_name]
             cmod = nodes.coreir_modules[node_name]
+            if cmod == None:
+                continue
             _, c_outputs = parse_rtype(cmod.type)
             c_output_keys = list(c_outputs.keys())
             if nodes.is_stateful(node_name):

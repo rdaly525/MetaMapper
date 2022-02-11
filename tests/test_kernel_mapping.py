@@ -1,3 +1,4 @@
+import pytest
 import glob
 import jsonpickle
 import sys
@@ -26,6 +27,15 @@ class _ArchCycles:
         elif kind == "global.PE":
             return pe_cycles
         return 0
+
+class _ArchCyclesPipelined:
+    def get(self, node):
+        kind = node.kind()[0]
+        if kind == "Rom":
+            return 1
+        elif kind == "global.PE":
+            return pe_cycles
+        return 1
 
 lassen_location = "/aha/lassen"
 lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
@@ -78,8 +88,6 @@ def gen_rrules(pipelined=False):
     "gaussian",
     "harris",
     "camera_pipeline",
-    "laplacian_pyramid",
-    "cascade",
 ])
 def test_kernel_mapping(pipelined, app):
 
@@ -88,13 +96,12 @@ def test_kernel_mapping(pipelined, app):
     app_file = f"{base}/{app}_compute.json"
     if pipelined:
         mapped_file = f"tests/build/{app}_mapped.json"
-        pe_cycles = 1
+        archcycles = _ArchCycles()
     else:
         mapped_file = f"tests/build/{app}_delay_mapped.json"
-        pe_cycles = 0
+        archcycles = _ArchCyclesPipelined()
 
-
-    rrules, ops = gen_rrules(pipelined = pe_cycles != 0)
+    rrules, ops = gen_rrules(pipelined = pipelined)
 
     c = CoreIRContext(reset=True)
     cutil.load_libs(["commonlib", "float_DW"])
@@ -125,7 +132,7 @@ def test_kernel_mapping(pipelined, app):
         dag = cutil.coreir_to_dag(CoreIRNodes, kmod, archnodes=ArchNodes)
         Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
-        mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
+        mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=archcycles, convert_unbound=False, prove_mapping=False)
 
         mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
         mods.append(mod)

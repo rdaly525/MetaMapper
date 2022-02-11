@@ -54,6 +54,7 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
                     op = ops[ind]
+                    print(op)
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
                     
