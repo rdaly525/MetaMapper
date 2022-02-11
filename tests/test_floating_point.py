@@ -6,7 +6,7 @@ import os
 import json
 from pathlib import Path
 import delegator
-import pytest
+
 from lassen import PE_fc as lassen_fc
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
@@ -14,7 +14,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, gen_dag_img_simp, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant
 from metamapper.delay_matching import STA
 from peak.mapper import read_serialized_bindings
 
@@ -24,12 +24,13 @@ class _ArchCycles:
         if kind == "Rom":
             return 1
         elif kind == "global.PE":
-            return 0
+            return pe_cycles
         return 0
 
-lassen_header = "./libs/lassen_header.json"
+lassen_location = "/aha/lassen"
+lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
 
-def gen_rrules():
+def gen_rrules(pipelined=False):
 
     c = CoreIRContext()
     cmod = putil.peak_to_coreir(lassen_fc)
@@ -39,15 +40,23 @@ def gen_rrules():
     rrules = []
     ops = []
 
-    rrule_files = glob.glob(f'examples/lassen/rewrite_rules/*.json')
+    if pipelined:
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
+    else:
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
+
+    custom_rule_names = {"fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        print(idx, rule_name)
-        ops.append(rule_name)
-
-        peak_eq = importlib.import_module(f"examples.lassen.rewrite_rules.{rule_name}")
-
+        if "fp" in rule_name and "pipelined" in rule_name:
+            rule_name = rule_name.split("_pipelined")[0]
+        if rule_name in custom_rule_names:
+            ops.append(custom_rule_names[rule_name])
+        else:
+            ops.append(rule_name)
+        peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)
 
@@ -55,33 +64,41 @@ def gen_rrules():
             rewrite_rule_in = jsonpickle.decode(json_file.read())
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        counter_example = rewrite_rule.verify()
-        assert counter_example == None, f"{rule_name} failed"
-        print(rule_name, "passed")
+
         rrules.append(rewrite_rule)
 
     return rrules, ops
 
-@pytest.mark.parametrize("lat", [
-    None,
-    #_ArchLatency
+
+@pytest.mark.parametrize("pipelined", [
+    True,
+    False
 ])
 @pytest.mark.parametrize("app", [
-    "pointwise",
-    "camera_pipeline"
+    "fp_arith",
+    "nlmeans"
 ])
-def test_kernel_mapping(lat, app):
+def test_kernel_mapping(pipelined, app):
 
-    base = "examples/clockwork"
-    file_name = f"{base}/{app}_compute.json"
+    verilog = False
+    base = "examples/floatingpoint"
+    app_file = f"{base}/{app}_compute.json"
+    if pipelined:
+        mapped_file = f"tests/build/{app}_mapped.json"
+        pe_cycles = 1
+    else:
+        mapped_file = f"tests/build/{app}_delay_mapped.json"
+        pe_cycles = 0
 
-    rrules, ops = gen_rrules()
+
+    rrules, ops = gen_rrules(pipelined = pe_cycles != 0)
 
     c = CoreIRContext(reset=True)
-    cutil.load_libs(["commonlib"])
+    cutil.load_libs(["commonlib", "float_DW"])
     CoreIRNodes = gen_CoreIRNodes(16)
 
-    cutil.load_from_json(file_name)
+    cutil.load_from_json(app_file)
+    c.run_passes(["rungenerators", "deletedeadinstances"])
     kernels = dict(c.global_namespace.modules)
 
     arch_fc = lassen_fc
@@ -91,6 +108,7 @@ def test_kernel_mapping(lat, app):
         lassen_header,
         {"global.PE": arch_fc}
     )
+
     mr = "memory.rom2"
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
@@ -101,9 +119,12 @@ def test_kernel_mapping(lat, app):
 
     for kname, kmod in kernels.items():
         print(f"Mapping kernel {kname}")
-        dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
+        dag = cutil.coreir_to_dag(CoreIRNodes, kmod, archnodes=ArchNodes)
         Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
         mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=False)
+
+        mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
         mods.append(mod)
+    print(f"saving to {mapped_file}")
+    c.serialize_definitions(mapped_file, mods)
