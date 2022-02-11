@@ -56,7 +56,6 @@ class Mapper:
                     op = ops[ind]
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
-                    print(op)
                     
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, op)
                 else:
@@ -78,8 +77,8 @@ class Mapper:
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
         #dag = UpdateSources().update_sources(dag)
         
-        print("inlined dag")
-        print_dag(dag)
+        #print("inlined dag")
+        #print_dag(dag)
 
         mapped_dag = self.inst_sel(dag)
 

@@ -40,21 +40,11 @@ def gen_rrules(pipelined=False):
     rrules = []
     ops = []
 
-    if True:
-        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/fp_*.json')
-        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" in rrule_file]
-        rrule_files = [rrule_file for rrule_file in rrule_files if "const" not in rrule_file]
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/const.json')
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/bit_const.json')
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/mux_pipelined.json')
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/and__pipelined.json')
+    if pipelined:
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
     else:
-        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/fp_*.json')
-        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file and "const" not in rrule_file]
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/const.json')
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/bit_const.json')
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/mux.json')
-        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/and_.json')
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
 
     custom_rule_names = {"fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
@@ -66,7 +56,6 @@ def gen_rrules(pipelined=False):
             ops.append(custom_rule_names[rule_name])
         else:
             ops.append(rule_name)
-        print(rule_name)
         peak_eq = importlib.import_module(f"lassen.rewrite_rules.{rule_name}")
         ir_fc = getattr(peak_eq, rule_name + "_fc")
         mapping_funcs.append(ir_fc)
@@ -129,7 +118,7 @@ for kname, kmod in kernels.items():
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
     #gen_dag_img(mapped_dag, f"img/{kname}")
     # print(STA(pe_cycles).doit(mapped_dag))
-    print_dag(mapped_dag)
+    #print_dag(mapped_dag)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 

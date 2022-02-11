@@ -20,7 +20,7 @@ def gen_CoreIRNodes(width):
     c = CoreIRContext()
 
     basic = ("mul", "add", "const", "and_", "or_", "neg")
-    other = ("ashr", "eq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
+    other = ("ashr", "eq", "neq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
     bit_ops = ("const", "or_", "and_", "xor", "not_", "mux")
     commonlib_ops = ("abs", "smax", "smin", "umin", "umax")
     for namespace, ops, is_module in (
@@ -48,25 +48,21 @@ def gen_CoreIRNodes(width):
     
     name = f"float_DW.fp_add"
     peak_fc = peak_ir.instructions[name]
-    #cmod = c.get_namespace("float_DW").generators["fp_add"](exp_width=8, ieee_compliance=False, sig_width=7)
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float_DW.fp_add", modparams=())
 
     name = f"float.sub"
     peak_fc = peak_ir.instructions[name]
-    #cmod = c.get_namespace("float_DW").generators["fp_sub"](exp_bits=8, frac_bits=7)
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.sub", modparams=())
 
     name = f"float.exp"
     peak_fc = peak_ir.instructions[name]
-    #cmod = c.get_namespace("float_DW").generators["fp_sub"](exp_bits=8, frac_bits=7)
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.exp", modparams=())
 
     name = f"float_DW.fp_mul"
     peak_fc = peak_ir.instructions[name]
-    #cmod = c.get_namespace("float_DW").generators["fp_mul"](exp_width=8, ieee_compliance=False, sig_width=7)
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float_DW.fp_mul", modparams=())
 
@@ -102,9 +98,6 @@ def gen_CoreIRNodes(width):
     peak_fc = peak_ir.instructions[name]
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_lt", modparams=())
-
-
-
 
     name = f"fp_getmant"
     peak_fc = peak_ir.instructions[name]
@@ -146,7 +139,7 @@ def gen_CoreIRNodes(width):
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="mult_middle", modparams=())
 
-    CoreIRNodes.custom_nodes = ["mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
+    CoreIRNodes.custom_nodes = ["coreir.neq", "mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
 
     class FPRom(DagNode):
@@ -302,7 +295,25 @@ def gen_CoreIRNodes(width):
     sink_node = Output(min_.select("out"), type=output_t)
 
     CoreIRNodes.custom_inline["float.min"] = (Dag(sources=[source_node3], sinks=[sink_node]), [lt, min_])
-  
+ 
+
+
+    input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
+    output_t = Product.from_fields("Output", {"out": Bit})
+
+    source_node4 = Input(iname="self", type=input_t)
+    in0 = source_node4.select("in0")
+    in1 = source_node4.select("in1")
+
+    eq = CoreIRNodes.dag_nodes["coreir.eq"](in0, in1)
+
+    not_ = CoreIRNodes.dag_nodes["corebit.not_"](eq.select("out"))
+
+    sink_node = Output(not_.select("out"), type=output_t)
+
+    CoreIRNodes.custom_inline["coreir.neq"] = (Dag(sources=[source_node4], sinks=[sink_node]), [eq])
+ 
+
 
     return CoreIRNodes
 
