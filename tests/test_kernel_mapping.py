@@ -11,7 +11,7 @@ import pytest
 import delegator
 from lassen.sim import PE_fc as lassen_fc
 
-lassen_rules = "src/lassen/scripts/rewrite_rules/lassen_rewrite_rules.json"
+lassen_rules = "src/lassen/scripts/rewrite_rules"
 lassen_header = "libs/lassen_header.json"
 lassen_def = "libs/lassen_def.json"
 
