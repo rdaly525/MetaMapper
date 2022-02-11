@@ -217,7 +217,11 @@ def gen_CoreIRNodes(width):
     in0 = source_node.select("in0")
     in1 = source_node.select("in1")
     get_mant = CoreIRNodes.dag_nodes["fp_getmant"](in1,Constant(value=BitVector[16](0), type=BitVector[16]))
-    rom = FPRom(get_mant.select("out"), Constant(value=Bit(1), type=Bit), init=div_rom_init, iname="fpdivrom")
+
+    en_const = Constant(value=Bit(1), type=Bit)
+    en_const_dag = CoreIRNodes.dag_nodes["corebit.const"](en_const)
+
+    rom = FPRom(get_mant.select("out"), en_const_dag.select("out"), init=div_rom_init, iname="fpdivrom")
     sub_exp = CoreIRNodes.dag_nodes["fp_subexp"](rom.select("rdata"), in1)
     mult = CoreIRNodes.dag_nodes["float_DW.fp_mul"](sub_exp.select("out"), in0)
     sink_node = Output(mult.select("out"), type=output_t)
@@ -241,14 +245,24 @@ def gen_CoreIRNodes(width):
     ln2_inv = 1.0/math.log(2)
     ln2_inv_bf = int(float2bfbin(ln2_inv), 2)
     const_ln2_inv = Constant(value=BitVector[16](ln2_inv_bf), type=BitVector[16])
-    ln2_mult = CoreIRNodes.dag_nodes["float_DW.fp_mul"](const_ln2_inv, in0)
+    const_ln2_inv_dag = CoreIRNodes.dag_nodes["coreir.const"](const_ln2_inv)
+    ln2_mult = CoreIRNodes.dag_nodes["float_DW.fp_mul"](const_ln2_inv_dag.select("out"), in0)
 
     get_int = CoreIRNodes.dag_nodes["fp_getfint"](ln2_mult.select("out"), Constant(value=BitVector[16](0), type=BitVector[16]))
     get_frac = CoreIRNodes.dag_nodes["fp_getffrac"](ln2_mult.select("out"), Constant(value=BitVector[16](0), type=BitVector[16]))
 
-    rom_idx = CoreIRNodes.dag_nodes["coreir.and_"](get_frac.select("out"), Constant(value=BitVector[16](255), type=BitVector[16]))
 
-    rom = FPRom(rom_idx.select("out"), Constant(value=Bit(1), type=Bit), init=exp_rom_init, iname="fpexprom")
+    and_const = Constant(value=BitVector[16](255), type=BitVector[16])
+    and_const_dag = CoreIRNodes.dag_nodes["coreir.const"](and_const)
+
+
+    rom_idx = CoreIRNodes.dag_nodes["coreir.and_"](get_frac.select("out"), and_const_dag.select("out"))
+
+    en_const = Constant(value=Bit(1), type=Bit)
+    en_const_dag = CoreIRNodes.dag_nodes["corebit.const"](en_const)
+
+
+    rom = FPRom(rom_idx.select("out"), en_const_dag.select("out"), init=exp_rom_init, iname="fpexprom")
     add_exp = CoreIRNodes.dag_nodes["fp_addiexp"](rom.select("rdata"), get_int.select("out"))
 
     sink_node = Output(add_exp.select("out"), type=output_t)
@@ -288,7 +302,8 @@ def gen_CoreIRNodes(width):
     sink_node = Output(min_.select("out"), type=output_t)
 
     CoreIRNodes.custom_inline["float.min"] = (Dag(sources=[source_node3], sinks=[sink_node]), [lt, min_])
-    
+  
+
     return CoreIRNodes
 
 

@@ -40,18 +40,28 @@ def gen_rrules(pipelined=False):
     rrules = []
     ops = []
 
-    if pipelined:
-        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
+    if True:
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/fp_*.json')
+        rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" in rrule_file]
+        rrule_files = [rrule_file for rrule_file in rrule_files if "const" not in rrule_file]
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/const.json')
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/bit_const.json')
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/mux_pipelined.json')
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/and__pipelined.json')
     else:
-        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
+        rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/fp_*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file and "const" not in rrule_file]
         rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/const.json')
-        #rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/mux.json')
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/bit_const.json')
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/mux.json')
+        rrule_files.append(f'{lassen_location}/lassen/rewrite_rules/and_.json')
 
-    custom_rule_names = {"fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
+    custom_rule_names = {"fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
+        if "fp" in rule_name and "pipelined" in rule_name:
+            rule_name = rule_name.split("_pipelined")[0]
         if rule_name in custom_rule_names:
             ops.append(custom_rule_names[rule_name])
         else:
@@ -117,8 +127,9 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    gen_dag_img(mapped_dag, f"img/{kname}")
+    #gen_dag_img(mapped_dag, f"img/{kname}")
     # print(STA(pe_cycles).doit(mapped_dag))
+    print_dag(mapped_dag)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 

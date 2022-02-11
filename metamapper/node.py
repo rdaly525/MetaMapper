@@ -79,6 +79,8 @@ class DagNode(Visited):
     def select(self, field, original=None):
         # This is a hack for selecting one bit
         if isinstance(field, int):
+            if self.type[field] == ht.BitVector[16]:
+                return Select(self, field=field, type=self.type[field])
             return Select(self, field=field, type=ht.Bit)
         key_list = {f"O{i}": k for i, k in enumerate(self.type.field_dict.keys())}
         new_field = key_list.get(field)

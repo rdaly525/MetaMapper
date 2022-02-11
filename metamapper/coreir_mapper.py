@@ -53,8 +53,12 @@ class Mapper:
         else:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
-                    print(ops[ind])
-                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, ops[ind])
+                    op = ops[ind]
+                    if "fp" in op and "pipelined" in op:
+                        op = op.split("_pipelined")[0]
+                    print(op)
+                    
+                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, op)
                 else:
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
             #self.table.sort_rules()
@@ -68,8 +72,8 @@ class Mapper:
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         
-        print("original dag")
-        print_dag(dag)
+        #print("original dag")
+        #print_dag(dag)
 
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
         #dag = UpdateSources().update_sources(dag)
