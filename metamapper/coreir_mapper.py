@@ -61,7 +61,7 @@ class Mapper:
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, op)
                 else:
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
-            #self.table.sort_rules()
+            self.table.sort_rules()
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
         #Preprocess isolates coreir primitive modules
