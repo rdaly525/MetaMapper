@@ -38,11 +38,13 @@ class _ArchCyclesPipelined:
         return 1
 
 lassen_location = "src/lassen"
+lassen_header = "libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
     c = CoreIRContext(reset=True)
     cmod = putil.peak_to_coreir(lassen_fc)
+    c.serialize_header(lassen_header, [cmod])
     mapping_funcs = []
     rrules = []
     ops = []
