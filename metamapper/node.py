@@ -185,11 +185,8 @@ class Nodes:
         if f"{cmod.namespace.name}.{cmod.name}" in self.custom_nodes and f"{cmod.namespace.name}.{cmod.name}" in self.dag_nodes:
             return f"{cmod.namespace.name}.{cmod.name}"
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
-        assert len(names) <2, names
-        if len(names) == 1:
+        if len(names) > 0:
             return names[0]
-        # if  f"{cmod.name}" == "mul":
-        #     return f"{cmod.namespace.name}.{cmod.name}32"
         if f"{cmod.namespace.name}.{cmod.name}" in self.coreir_modules:
             return f"{cmod.namespace.name}.{cmod.name}"
         return None
