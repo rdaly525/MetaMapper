@@ -38,15 +38,12 @@ class _ArchCyclesPipelined:
         return 1
 
 
-lassen_location = "/aha/lassen"
-lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
+lassen_location = "src/lassen"
 
 def gen_rrules(pipelined=False):
 
     c = CoreIRContext(reset=True)
     cmod = putil.peak_to_coreir(lassen_fc)
-    c.serialize_header(lassen_header, [cmod])
-    # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
     ops = []
