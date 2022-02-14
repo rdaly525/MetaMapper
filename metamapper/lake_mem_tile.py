@@ -4,10 +4,11 @@ from lake.utils.sram_macro import SRAMMacroInfo
 from lake.passes.passes import change_sram_port_names
 from hwtypes.adt import Tuple, Product
 from peak import family, family_closure, Peak, name_outputs, Const
-
+from ast_tools.passes import apply_passes, if_inline, loop_unroll
+from ast_tools.macros import inline, unroll
 import kratos as kts
 
-def gen_mem_tile(data_width=16,  # CGRA Params
+def gen_MEM_fc(data_width=16,  # CGRA Params
                 mem_width=64,
                 mem_depth=512,
                 banks=1,
@@ -79,7 +80,10 @@ def gen_mem_tile(data_width=16,  # CGRA Params
             return family.MagmaFamily().BitVector[width]
 
     def BV_out(width):
-        return family.MagmaFamily().BitVector[width]
+        if width == 1:
+            return family.MagmaFamily().Bit
+        else:
+            return family.MagmaFamily().BitVector[width]
 
     peak_inputs = {}
     peak_outputs = {}
@@ -120,7 +124,7 @@ def gen_mem_tile(data_width=16,  # CGRA Params
         else:
             peak_configs[io_info.port_name] = BV(io_info.port_width)
            
-
+    breakpoint() 
     inputs_adt = Product.from_fields('inputs', peak_inputs)
     outputs_adt = Product.from_fields('outputs', peak_outputs)
     configs_adt = Product.from_fields('configs', peak_configs)
@@ -133,22 +137,25 @@ def gen_mem_tile(data_width=16,  # CGRA Params
             def __init__(self):
                 self.circ = circ
 
+            @apply_passes([loop_unroll()])
             @name_outputs(outputs=outputs_adt)
             def __call__(self, configs: Const(configs_adt), inputs: inputs_adt) -> (outputs_adt):
-                for peak_input in peak_inputs:
+                for peak_input_idx in unroll(range(len(peak_inputs))):
+                    peak_input = list(peak_inputs)[peak_input_idx]
                     setattr(self.circ, peak_input, getattr(inputs, peak_input))
-                for peak_config in peak_configs:
+                for peak_config_idx in unroll(range(len(peak_configs))):
+                    peak_config = list(peak_configs)[peak_config_idx]
                     setattr(self.circ, peak_config, getattr(configs, peak_config))
 
                 outputs = {}
 
-                for peak_output in peak_outputs:
+                for peak_output_idx in unroll(range(len(peak_outputs))):
+                    peak_output = list(peak_outputs)[peak_output_idx]
                     outputs[peak_output] = getattr(self.circ, peak_output)
 
                 return outputs_c(**outputs)
 
         return MEM
 
-    MEM = MEM_fc(family.MagmaFamily())
 
-gen_mem_tile()
+    return MEM_fc

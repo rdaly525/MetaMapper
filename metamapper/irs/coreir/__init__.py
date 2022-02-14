@@ -157,7 +157,7 @@ def gen_CoreIRNodes(width):
 
         nodes = CoreIRNodes
         static_attributes = {}
-        node_name = "memory.rom2"
+        node_name = "memory.fprom2"
         num_children = 2
         type = Product.from_fields("Output",{"rdata":BitVector[16]})
   
@@ -201,7 +201,7 @@ def gen_CoreIRNodes(width):
     div_rom_init = [div_lut(i) for i in range(0, 128)]+[0x0000]*(depth - 128)
 
     rom2 = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
-    CoreIRNodes.add("memory.rom2", peak_ir.instructions["memory.rom2"], rom2, FPRom)
+    CoreIRNodes.add("memory.fprom2", peak_ir.instructions["memory.rom2"], rom2, FPRom)
 
     input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
     output_t = Product.from_fields("Output", {"out": BitVector[16]})

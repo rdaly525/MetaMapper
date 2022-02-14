@@ -1,4 +1,4 @@
-from metamapper.lake_mem import gen_MEM_fc
+from metamapper.lake_mem_tile import gen_MEM_fc
 from peak import family
 from metamapper import peak_util as putil
 from metamapper import CoreIRContext

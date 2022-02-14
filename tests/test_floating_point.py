@@ -43,7 +43,7 @@ lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
-    c = CoreIRContext()
+    c = CoreIRContext(reset=True)
     cmod = putil.peak_to_coreir(lassen_fc)
     c.serialize_header(lassen_header, [cmod])
     # c.serialize_definitions(pe_def, [cmod])

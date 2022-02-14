@@ -21,6 +21,7 @@ from peak.mapper import read_serialized_bindings
 class _ArchCycles:
     def get(self, node):
         kind = node.kind()[0]
+        print(kind)
         if kind == "Rom":
             return 1
         elif kind == "global.PE":
@@ -50,7 +51,7 @@ def gen_rrules(pipelined=False):
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        if "fp" in rule_name and "pipelined" in rule_name:
+        if ("fp" in rule_name and "pipelined" in rule_name) or rule_name.split("_pipelined")[0] in custom_rule_names:
             rule_name = rule_name.split("_pipelined")[0]
         if rule_name in custom_rule_names:
             ops.append(custom_rule_names[rule_name])
@@ -100,7 +101,7 @@ putil.load_and_link_peak(
 )
 
 #putil.load_from_peak(ArchNodes, arch_fc)
-mr = "memory.rom2"
+mr = "memory.fprom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 

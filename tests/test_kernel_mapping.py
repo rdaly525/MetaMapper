@@ -25,7 +25,7 @@ class _ArchCycles:
         if kind == "Rom":
             return 1
         elif kind == "global.PE":
-            return pe_cycles
+            return 0
         return 0
 
 class _ArchCyclesPipelined:
@@ -34,7 +34,7 @@ class _ArchCyclesPipelined:
         if kind == "Rom":
             return 1
         elif kind == "global.PE":
-            return pe_cycles
+            return 1
         return 1
 
 lassen_location = "/aha/lassen"
@@ -42,7 +42,7 @@ lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
-    c = CoreIRContext()
+    c = CoreIRContext(reset=True)
     cmod = putil.peak_to_coreir(lassen_fc)
     c.serialize_header(lassen_header, [cmod])
     # c.serialize_definitions(pe_def, [cmod])
@@ -56,11 +56,11 @@ def gen_rrules(pipelined=False):
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
 
-    custom_rule_names = {"fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
+    custom_rule_names = {"mult_middle":"commonlib.mult_middle","fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        if "fp" in rule_name and "pipelined" in rule_name:
+        if ("fp" in rule_name and "pipelined" in rule_name) or rule_name.split("_pipelined")[0] in custom_rule_names:
             rule_name = rule_name.split("_pipelined")[0]
         if rule_name in custom_rule_names:
             ops.append(custom_rule_names[rule_name])
@@ -85,9 +85,9 @@ def gen_rrules(pipelined=False):
     False
 ])
 @pytest.mark.parametrize("app", [
+    "camera_pipeline",
     "gaussian",
     "harris",
-    "camera_pipeline",
 ])
 def test_kernel_mapping(pipelined, app):
 
