@@ -134,12 +134,12 @@ def gen_CoreIRNodes(width):
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_cnvint2f", modparams=())
 
-    name = f"mult_middle"
+    name = f"commonlib.mult_middle"
     peak_fc = peak_ir.instructions[name]
     cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="mult_middle", modparams=())
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.mult_middle", modparams=())
 
-    CoreIRNodes.custom_nodes = ["coreir.neq", "mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
+    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
 
     class FPRom(DagNode):

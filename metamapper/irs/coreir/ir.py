@@ -972,7 +972,7 @@ def gen_peak_CoreIR(width):
                 return Data(res[0:16])
         return mult_middle
 
-    CoreIR.add_instruction("mult_middle", mult_middle_fc)
+    CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
 
 
     @family_closure

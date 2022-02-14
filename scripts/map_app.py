@@ -46,7 +46,7 @@ def gen_rrules(pipelined=False):
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
 
-    custom_rule_names = {"fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
+    custom_rule_names = {"mult_middle": "commonlib.mult_middle", "fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
