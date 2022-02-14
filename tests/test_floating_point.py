@@ -121,7 +121,7 @@ def test_kernel_mapping(pipelined, app):
         {"global.PE": arch_fc}
     )
 
-    mr = "memory.rom2"
+    mr = "memory.fprom2"
     ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
     mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)

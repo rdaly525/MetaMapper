@@ -215,7 +215,7 @@ class VerifyNodes(Visitor):
 
     def generic_visit(self, node):
         if hasattr(node, "node_name"):
-            if node.node_name != "coreir.reg" and node.node_name != "memory.rom2":
+            if node.node_name != "coreir.reg" and node.node_name != "memory.rom2" and node.node_name != "memory.fprom2":
                 nodes = type(node).nodes
                 if nodes != self.nodes and nodes != Common:
                     self.wrong_nodes.add(node)

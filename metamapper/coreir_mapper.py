@@ -58,7 +58,7 @@ class Mapper:
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
                     
-                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, op)
+                    self.table.add_peak_rule(peak_rule, op)
                 else:
                     self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
             self.table.sort_rules()
@@ -68,7 +68,6 @@ class Mapper:
         #inline inlines them back in
         # print("premapped")
         # print_dag(dag)
-
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         

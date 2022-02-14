@@ -80,10 +80,10 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
             return family.MagmaFamily().BitVector[width]
 
     def BV_out(width):
-        if width == 1:
-            return family.MagmaFamily().Bit
-        else:
-            return family.MagmaFamily().BitVector[width]
+        #if width == 1:
+        #    return family.MagmaFamily().Bit
+        #else:
+        return family.MagmaFamily().BitVector[width]
 
     peak_inputs = {}
     peak_outputs = {}

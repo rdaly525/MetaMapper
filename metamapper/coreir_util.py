@@ -634,6 +634,11 @@ class ToCoreir(Visitor):
             rom_mod = self.nodes.coreir_modules["memory.rom2"]
             config = CoreIRContext().new_values(dict(init=node.init))
             inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
+        elif type(node).node_name == "memory.fprom2":
+            rom_mod = self.nodes.coreir_modules["memory.fprom2"]
+            config = CoreIRContext().new_values(dict(init=node.init))
+            inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
+
 
         else:
             inst = self.create_instance(node)

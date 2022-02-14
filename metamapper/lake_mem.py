@@ -4,7 +4,8 @@ from lake.utils.sram_macro import SRAMMacroInfo
 from lake.passes.passes import change_sram_port_names
 from hwtypes.adt import Tuple, Product
 from peak import family, family_closure, Peak, name_outputs, Const
-
+from ast_tools.passes import apply_passes, if_inline, loop_unroll
+from ast_tools.macros import inline, unroll
 import kratos as kts
 
 
@@ -122,7 +123,7 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
     for k in circ.interface.ports:
         if k in peak_outputs:
             output_attrs.append(k)
-
+    
     @family_closure
     def MEM_fc(family):
 
@@ -135,6 +136,7 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
             def __init__(self):
                 self.circ = circ()
 
+            @apply_passes([loop_unroll()])
             @name_outputs(
                 data_out_1=BV[16],
                 empty=Bit,
@@ -168,7 +170,8 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
             ) -> (BV[16], Bit, Bit, Bit, BV[16], Bit, Bit, Bit, BV[32]):
 
                 circ_inputs = {}
-                for port in peak_configs:
+                for port_idx in unroll(range(len(peak_configs))):
+                    port = list(peak_configs)[port_idx]
                     circ_inputs[port] = getattr(configs, port)
 
                 circ_inputs["addr_in_0"] = addr_in_0
@@ -193,8 +196,9 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                 circ_outputs = self.circ(**circ_inputs)
 
                 outputs = {}
-                for port, circ_output in zip(output_attrs, circ_outputs):
-                    print("test", port, type(circ_output))
+                for output_idx in unroll(range(len(output_attrs))):
+                    port = output_attrs[output_idx]
+                    circ_output = circ_outputs[output_idx]
                     outputs[port] = circ_output
 
                 empty = outputs["empty"] == BV[1](1)

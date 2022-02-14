@@ -55,7 +55,7 @@ class RewriteTable:
         Constant2CoreIRConstant(self.from_).run(rr.tile)
         self.rules.append(rr)
 
-    def add_peak_rule(self, CoreIRNodes: Nodes, rule: PeakRule, name=None):
+    def add_peak_rule(self, rule: PeakRule, name=None):
         if not isinstance(rule, PeakRule):
             raise ValueError("rule is not a Peak Rule")
 
