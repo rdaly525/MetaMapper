@@ -22,7 +22,7 @@ class _ArchCycles:
     def get(self, node):
         kind = node.kind()[0]
         print(kind)
-        if kind == "Rom":
+        if kind == "Rom" or kind == "FPRom":
             return 1
         elif kind == "global.PE":
             return pe_cycles
