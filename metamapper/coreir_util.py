@@ -310,15 +310,6 @@ class Loader:
                 else:
                     raise NotImplementedError()
 
-
-
-            #elif inst.module.name != "rom2" and inst.module.name != "Mem":
-            #    try:
-            #        modargs = [Constant(value=v.value, type=get_adt(inst, k)) for k, v in inst.config.items()]
-            #    except:
-            #        print(inst.module.name)
-            #    #TODO unsafe. Assumes that modargs are specified at the end.
-            #    children += modargs
             if is_reg(inst.module):
                 init = inst.config["init"]
                 assert node_t is RegisterSink
@@ -330,8 +321,6 @@ class Loader:
             elif sink_t is None: #Normal instance
                 node = node_t(*children, iname=iname)
                 self.node_map[inst] = node
-            #elif sink_adt is None:
-            #    node = node_t(*children, iname=iname)
             else: #stateful instance
                 node = node_t(*children, iname=iname, type=sink_adt)
             return node
@@ -491,27 +480,6 @@ def load_from_json(file, libraries=[]):
     cmod = c.load_from_file(file)
     return cmod
 
-#def preprocess(CoreIRNodes: Nodes, cmod: coreir.Module) -> Dag:
-#
-#    c = cmod.context
-#    assert cmod.definition
-#
-#    #Simple optimizations
-#    # c.run_passes(["rungenerators", "deletedeadinstances"])
-#    # c.run_passes(["flatten", "removebulkconnections"])
-#
-#    #First inline all non-findable instances
-#    #TODO better mechanism for this
-#    to_inline = []
-#    for inst in cmod.definition.instances:
-#        mod_name = inst.module.name
-#        if mod_name in ("absd", "umax", "umin", "smax", "smin", "abs", "sle"):
-#            to_inline.append(inst)
-#    for inst in to_inline:
-#        print("inlining", inst.name, inst.module.name)
-#        coreir.inline_instance(inst)
-#
-#    return coreir_to_dag(CoreIRNodes, cmod)
 
 class ToCoreir(Visitor):
     def __init__(self, nodes: Nodes, def_: coreir.ModuleDef, convert_unbounds=True):
@@ -610,24 +578,6 @@ class ToCoreir(Visitor):
             inst = self.def_.add_module_instance(node.iname, cmod_t)
         return inst
 
-        # create new instance
-        #create modparams
-        #children = list(node.children())
-        #config_fields = {}
-        #for param in reversed(type(node).modparams):
-        #    child = children.pop(-1)
-        #    assert isinstance(child, Constant)
-        #    bv_val = child.value
-        #    if bv_val is Unbound:
-        #        continue
-        #    config_fields[param] = bv_val
-        #if len(config_fields) > 0:
-        #    config = CoreIRContext().new_values(fields=config_fields)
-        #    inst = self.def_.add_module_instance(node.iname, cmod_t, config=config)
-        #else:
-        #inst = self.def_.add_module_instance(node.iname, cmod_t)
-        #return inst
-
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
         if type(node).node_name == "memory.rom2":
@@ -638,8 +588,6 @@ class ToCoreir(Visitor):
             rom_mod = self.nodes.coreir_modules["memory.fprom2"]
             config = CoreIRContext().new_values(dict(init=node.init))
             inst = self.def_.add_module_instance(node.iname, rom_mod, config=config)
-
-
         else:
             inst = self.create_instance(node)
         inst_inputs = list(self.nodes.peak_nodes[node.node_name].Py.input_t.field_dict.keys())

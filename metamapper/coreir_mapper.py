@@ -54,7 +54,6 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
                     op = ops[ind]
-                    print(op)
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
                     
@@ -64,33 +63,13 @@ class Mapper:
             self.table.sort_rules()
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
-        #Preprocess isolates coreir primitive modules
-        #inline inlines them back in
-        # print("premapped")
-        # print_dag(dag)
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
-        
-        #print("original dag")
-        #print_dag(dag)
-
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
-        #dag = UpdateSources().update_sources(dag)
-        
-        #print("inlined dag")
-        #print_dag(dag)
-
         mapped_dag = self.inst_sel(dag)
-
-        #print("postmapped")
-        #print_dag(mapped_dag)
-        
         SimplifyCombines().run(mapped_dag)
-        #print("simplifyCombines")
-        #print_dag(mapped_dag)
         RemoveSelects().run(mapped_dag)
-        #print("RemovedSelects")
-        #print_dag(mapped_dag)
+
         self.num_pes += count_pes(mapped_dag)
         print(count_pes(mapped_dag))
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)

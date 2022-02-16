@@ -16,7 +16,6 @@ from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
 from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant
-from metamapper.delay_matching import STA
 from peak.mapper import read_serialized_bindings
 
 class _ArchCycles:

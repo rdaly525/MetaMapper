@@ -15,7 +15,6 @@ from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
 from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant
-from metamapper.delay_matching import STA
 from peak.mapper import read_serialized_bindings
 
 class _ArchCycles:
@@ -93,18 +92,14 @@ kernels = dict(c.global_namespace.modules)
 arch_fc = lassen_fc
 ArchNodes = Nodes("Arch")
 
-#mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
 putil.load_and_link_peak(
     ArchNodes,
     lassen_header,
     {"global.PE": arch_fc}
 )
 
-#putil.load_from_peak(ArchNodes, arch_fc)
 mr = "memory.fprom2"
 ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
-
-
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
 
@@ -117,9 +112,6 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
-    #gen_dag_img(mapped_dag, f"img/{kname}")
-    # print(STA(pe_cycles).doit(mapped_dag))
-    #print_dag(mapped_dag)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
