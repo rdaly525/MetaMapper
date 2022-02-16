@@ -4,7 +4,8 @@ from lake.utils.sram_macro import SRAMMacroInfo
 from lake.passes.passes import change_sram_port_names
 from hwtypes.adt import Tuple, Product
 from peak import family, family_closure, Peak, name_outputs, Const
-
+from ast_tools.passes import apply_passes, if_inline, loop_unroll
+from ast_tools.macros import inline, unroll
 import kratos as kts
 
 
@@ -122,28 +123,55 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
     for k in circ.interface.ports:
         if k in peak_outputs:
             output_attrs.append(k)
-
+    
     @family_closure
     def MEM_fc(family):
 
         BV = family.BitVector
         Bit = family.Bit
 
+
         @family.assemble(locals(), globals())
         class MEM(Peak):
             def __init__(self):
                 self.circ = circ()
 
-            @name_outputs(data_out_1=BV[16], empty=Bit, stencil_valid=Bit, full=Bit, data_out_0=BV[16],
-                          sram_ready_out=Bit, valid_out=BV[2], config_data_out_1=BV[32], config_data_out_0=BV[32])
-            def __call__(self, configs: Const(configs_adt), chain_data_in_0: BV[16], chain_data_in_1: BV[16],
-                         flush: Bit, config_read: Bit, ren_in: BV[2], config_en: BV[2], config_write: Bit,
-                         config_data_in: BV[32], clk_en: Bit, wen_in: BV[2], config_addr_in: BV[8], addr_in_0: BV[16],
-                         addr_in_1: BV[16], data_in_0: BV[16], data_in_1: BV[16]) -> (
-            BV[16], Bit, Bit, Bit, BV[16], Bit, BV[2], BV[32]):
+            @apply_passes([loop_unroll()])
+            @name_outputs(
+                data_out_1=BV[16],
+                empty=Bit,
+                stencil_valid=Bit,
+                full=Bit,
+                data_out_0=BV[16],
+                sram_ready_out=Bit,
+                valid_out_0=Bit,
+                valid_out_1=Bit,
+                config_data_out=BV[32],
+            )
+            def __call__(
+                self,
+                configs: Const(configs_adt),
+                chain_data_in_0: BV[16],
+                chain_data_in_1: BV[16],
+                flush: Bit,
+                config_read: Bit,
+                ren_in_0: Bit,
+                ren_in_1: Bit,
+                config_en: BV[2],
+                config_write: Bit,
+                config_data_in: BV[32],
+                clk_en: Bit,
+                wen_in: BV[2],
+                config_addr_in: BV[8],
+                addr_in_0: BV[16],
+                addr_in_1: BV[16],
+                data_in_0: BV[16],
+                data_in_1: BV[16],
+            ) -> (BV[16], Bit, Bit, Bit, BV[16], Bit, Bit, Bit, BV[32]):
 
                 circ_inputs = {}
-                for port in peak_configs:
+                for port_idx in unroll(range(len(peak_configs))):
+                    port = list(peak_configs)[port_idx]
                     circ_inputs[port] = getattr(configs, port)
 
                 circ_inputs["addr_in_0"] = addr_in_0
@@ -151,6 +179,9 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                 circ_inputs["config_write"] = config_write.ite(BV[1](1), BV[1](0))
                 circ_inputs["config_en"] = config_en
                 circ_inputs["config_data_in"] = config_data_in
+                ren0 = ren_in_0.ite(BV[1](1), BV[1](0))
+                ren1 = ren_in_1.ite(BV[1](1), BV[1](0))
+                ren_in = BV[2].concat(ren0, ren1)
                 circ_inputs["ren_in"] = ren_in
                 circ_inputs["data_in_0"] = data_in_0
                 circ_inputs["data_in_1"] = data_in_1
@@ -165,24 +196,28 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                 circ_outputs = self.circ(**circ_inputs)
 
                 outputs = {}
-
-                for port, circ_output in zip(output_attrs, circ_outputs):
-                    print("test", port, type(circ_output))
+                for output_idx in unroll(range(len(output_attrs))):
+                    port = output_attrs[output_idx]
+                    circ_output = circ_outputs[output_idx]
                     outputs[port] = circ_output
 
                 empty = outputs["empty"] == BV[1](1)
                 stencil_valid = outputs["stencil_valid"] == BV[1](1)
                 full = outputs["full"] == BV[1](1)
                 sram_ready_out = outputs["sram_ready_out"] == BV[1](1)
-
-                return (outputs["data_out_1"],
-                        empty,
-                        stencil_valid,
-                        full,
-                        outputs["data_out_0"],
-                        sram_ready_out,
-                        outputs["valid_out"],
-                        outputs["config_data_out_1"])
+                valid_out_0 = outputs["valid_out"][0]
+                valid_out_1 = outputs["valid_out"][1]
+                return (
+                    outputs["data_out_1"],
+                    empty,
+                    stencil_valid,
+                    full,
+                    outputs["data_out_0"],
+                    sram_ready_out,
+                    valid_out_0,
+                    valid_out_1,
+                    outputs["config_data_out_1"],
+                )
 
         return MEM
 

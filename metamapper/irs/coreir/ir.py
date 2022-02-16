@@ -2,10 +2,15 @@ from peak.ir import IR
 from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
 from peak import Peak, name_outputs, family_closure, Const
-from peak.family import AbstractFamily
+from peak.family import AbstractFamily, MagmaFamily, SMTFamily
+from ...node import Nodes, Constant, DagNode, Select
+from .custom_ops_ir import gen_custom_ops_peak_CoreIR
+from hwtypes import SMTFPVector, FPVector, RoundingMode
+import magma
 
 def gen_peak_CoreIR(width):
-    CoreIR = IR()
+    DATAWIDTH = 16
+    CoreIR = gen_custom_ops_peak_CoreIR(DATAWIDTH)
 
     @family_closure
     def rom_fc(family: AbstractFamily):
@@ -136,6 +141,28 @@ def gen_peak_CoreIR(width):
 
     CoreIR.add_instruction("coreir.reg", reg_fc)
 
+    @family_closure
+    def pipeline_reg_fc(family):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class pipeline_reg(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, value: Data) -> Data:
+                return value
+        return pipeline_reg
+
+    CoreIR.add_instruction("coreir.pipeline_reg", pipeline_reg_fc)
+
+    @family_closure
+    def pipeline_reg_bit_fc(family):
+        Bit = family.Bit
+        class pipeline_reg_1_bit(Peak):
+            @name_outputs(out=Bit)
+            def __call__(self, value: Bit) -> Bit:
+                return value
+        return pipeline_reg_1_bit
+
+    CoreIR.add_instruction("corebit.pipeline_reg", pipeline_reg_bit_fc)
 
 
     class UnaryInput(Product):
@@ -231,7 +258,7 @@ def gen_peak_CoreIR(width):
     CoreIR.add_peak_instruction("coreir.mux", TernaryInput, OutputBV, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
     CoreIR.add_peak_instruction("corebit.mux", TernaryInputBit, OutputBit, lambda f, in0, in1, sel: sel.ite(in1, in0), cls_name="mux")
 
-    return CoreIR
 
+    return CoreIR
 #TODO missing:
 # slice, concat, sext, zext

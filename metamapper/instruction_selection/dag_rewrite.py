@@ -1,8 +1,7 @@
 from DagVisitor import Transformer
 from ..rewrite_table import RewriteTable, RewriteRule
 from ..node import Input, Dag
-from ..common_passes import Clone
-
+from ..common_passes import Clone, print_dag
 
 class ReplaceInputs(Transformer):
     def __init__(self, replacements):
@@ -65,7 +64,8 @@ class GreedyReplace(Transformer):
         #What this is doing is pointing the matched inputs of the dag to the body of the tile.
         #Then replacing the body of the tile to this node
         #TODO verify and call with the matched dag
-        replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{node.iname}_")
+        rr_name = node.children()[0].iname
+        replace_dag_copy = Clone().clone(self.rr.replace(None), iname_prefix=f"{rr_name}_{node.iname}_")
         ReplaceInputs(matched_inputs).run(replace_dag_copy)
         return replace_dag_copy.output.children()[0]
 

@@ -12,7 +12,7 @@ def compile_PE_spec(arch_fc: "peak_fc", header_file: str, def_file: str):
 
     c = CoreIRContext()
     c.serialize_header(header_file, [cmod])
-    c.serialize_definitions(def_file, [cmod])
+    #c.serialize_definitions(def_file, [cmod])
 
 
 lassen_header = "./libs/lassen_header.json"

@@ -1,0 +1,31 @@
+{"top":"global.Add4",
+"namespaces":{
+  "global":{
+    "modules":{
+      "Add4":{
+        "type":["Record",[
+          ["in", ["Array", 2, ["Array",16,"BitIn"]]],
+          ["out",["Array", 1, ["Array",16,"Bit"]]]
+        ]],
+        "instances":{
+          "a0":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          },
+          "a1":{
+            "genref":"coreir.add",
+            "genargs":{"width":["Int",16]}
+          }
+        },
+        "connections":[
+          ["self.in.0","a0.in0"],
+          ["self.in.1","a0.in1"],
+          ["a0.out","a1.in0"],
+          ["self.in.0","a1.in1"],
+          ["self.out.0","a1.out"]
+        ]
+      }
+    }
+  }
+}
+}

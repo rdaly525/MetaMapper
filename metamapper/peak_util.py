@@ -39,7 +39,7 @@ class FixConsts(Transformer):
             return const.select("out")
 
 def flatten(cmod: coreir.Module):
-    CoreIRContext().run_passes(["rungenerators"])
+    CoreIRContext().run_passes(["rungenerators"]) 
     d = cmod.definition
     #TODO change this to stop at a fixed point
     for i in range(4):
@@ -47,12 +47,12 @@ def flatten(cmod: coreir.Module):
             coreir.inline_instance(inst)
 
 
-def peak_to_dag(nodes: Nodes, peak_fc):
+
+def peak_to_dag(nodes: Nodes, peak_fc, name=None):
     # Two cases:
     # 1) Either peak_fc will already be a single node in nodes, so just need to simply wrap it
     # 2) peak_fc needs to be compiled into a coreir module where each instance within the module should correspond to a node in Nodes
-    node_name = nodes.name_from_peak(peak_fc)
-    #print("peak_to_dag node_name : ", node_name)
+    node_name = nodes.name_from_peak(peak_fc, name)
     #case 2
     if node_name is None:
         cmod = peak_to_coreir(peak_fc)
@@ -61,8 +61,8 @@ def peak_to_dag(nodes: Nodes, peak_fc):
         #print("pre-fix")
         #print_dag(dag)
         FixConsts(peak_fc, nodes).run(dag)
-        #print("post-fix")
-        #print_dag(dag)
+        # print("post-fix")
+        # print_dag(dag)
         return dag
 
     #case 1
@@ -83,17 +83,17 @@ def peak_to_dag(nodes: Nodes, peak_fc):
     return dag
 
 import tempfile
-def magma_to_coreir(mod):
-    f = tempfile.NamedTemporaryFile(delete=False)
-    magma.compile(f.name, mod, output="coreir")
+def magma_to_coreir(mod): 
     cname = mod.coreir_name
-    crt = magma.backend.coreir.coreir_runtime
-    return crt.module_map()[crt.coreir_context()]["global"][cname]
-    ##backend.compile(mod)
-    #return backend.modules[cname]
+    f = tempfile.NamedTemporaryFile()
+    magma.compile(f.name, mod, output="coreir")
+    crt = magma.backend.coreir.coreir_runtime 
+
+    return crt.module_map()[crt.coreir_context()]['global'][cname]
 
 def peak_to_coreir(peak_fc, wrap=False) -> coreir.Module:
     peak_m = peak_fc(fam().MagmaFamily())
+
     if wrap:
         class HashableDict(dict):
             def __hash__(self):
@@ -152,8 +152,8 @@ def check_ports(node: DagNode, cmod: coreir.Module):
     return True
 
 def load_from_peak(nodes: Nodes, peak_fc, stateful=False, cmod=None, name=None, modparams=()) -> str:
-    if cmod is None:
-        cmod = peak_to_coreir(peak_fc, wrap=True)
+    # if cmod is None:
+    #     cmod = peak_to_coreir(peak_fc, wrap=True)
     dag_node, node_name = peak_to_node(nodes, peak_fc, stateful=stateful, name=name, modparams=modparams)
     check_ports(dag_node, cmod)
     nodes.add(node_name, peak_fc, cmod, dag_node)
@@ -168,6 +168,9 @@ def load_and_link_peak(nodes: Nodes, header_file: str, peak_dict: dict):
         if cmod.ref_name not in peak_dict:
             raise ValueError(f"{cmod.ref_name} does not have an associated peak_dict")
         peak_fc = peak_dict[cmod.ref_name]
-        node_name = load_from_peak(nodes, peak_fc, stateful=False, cmod=cmod, name=cmod.ref_name)
+        stateful = False
+        if isinstance(peak_fc, tuple):
+            peak_fc, stateful = peak_fc
+        node_name = load_from_peak(nodes, peak_fc, stateful=stateful, cmod=cmod, name=cmod.ref_name)
         assert node_name == cmod.ref_name
 

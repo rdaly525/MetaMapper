@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from graphviz import Digraph
 from DagVisitor import Visitor, Transformer
 from .node import Nodes, Dag, Input, Common, Bind, Combine, Select, Constant, Output
 from .family import fam
@@ -22,7 +23,7 @@ class DagToPdf(Visitor):
 
     def doit(self, dag: Dag):
         AddID().run(dag)
-        self.graph = Digraph(format='png')
+        self.graph = Digraph()
         self.run(dag)
         return self.graph
 
@@ -32,12 +33,46 @@ class DagToPdf(Visitor):
             return f"{str(node)}_{node._id_}"
         if self.no_unbound and not is_unbound_const(node):
             self.graph.node(n2s(node))
-        for child in node.children():
+        for i, child in enumerate(node.children()):
             if self.no_unbound and not is_unbound_const(child):
-                self.graph.edge(n2s(child), n2s(node))
+                self.graph.edge(n2s(child), n2s(node), label=str(i))
 
 def gen_dag_img(dag, file, no_unbound=True):
     DagToPdf(no_unbound).doit(dag).render(filename=file)
+
+class DagToPdfSimp(Visitor):
+    def doit(self, dag: Dag):
+        AddID().run(dag)
+        self.plotted_nodes = {"global.PE", "Input", "Output","PipelineRegister"}
+        self.child_list = []
+        self.graph = Digraph()
+        self.run(dag)
+        return self.graph
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        def n2s(node):
+            op = node.iname.split("_")[0]
+            return f"{str(node)}_{node._id_}\n{op}"
+
+        def find_child(node):
+            if len(node.children()) == 0:
+                return
+            for child in node.children():
+                if str(child) in self.plotted_nodes:      
+                    self.child_list.append(child)
+                else:
+                    child_f = find_child(child)
+
+        if str(node) in self.plotted_nodes:      
+            find_child(node)
+            for child in self.child_list:
+                self.graph.edge(n2s(child), n2s(node))
+            self.child_list = []
+
+
+def gen_dag_img_simp(dag, file):
+    DagToPdfSimp().doit(dag).render(filename=file)
 
 #Translates DagNode
 class Constant2CoreIRConstant(Transformer):
@@ -154,6 +189,19 @@ class ExtractNames(Visitor):
             self.ops.setdefault(node.node_name, 0)
             self.ops[node.node_name] +=1
 
+class DagNumNodes(Visitor):
+    def __init__(self):
+        self.num_nodes = 0
+
+    def doit(self, dag: Dag):
+        self.run(dag)
+        return self.num_nodes
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        self.num_nodes += 1
+
+
 class VerifyNodes(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
@@ -167,7 +215,7 @@ class VerifyNodes(Visitor):
 
     def generic_visit(self, node):
         if hasattr(node, "node_name"):
-            if node.node_name != "coreir.reg" and node.node_name != "memory.rom2":
+            if node.node_name != "coreir.reg" and node.node_name != "memory.rom2" and node.node_name != "memory.fprom2":
                 nodes = type(node).nodes
                 if nodes != self.nodes and nodes != Common:
                     self.wrong_nodes.add(node)
@@ -300,6 +348,18 @@ class Printer(Visitor):
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<{node.kind()[0]}:{node._id_}, {list(T.field_dict.keys())}>({child_ids})\n"
 
+    def visit_PipelineRegister(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<PipelineRegister>({node.child._id_})"
+
+    def visit_RegisterSource(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<Register>"
+
+    def visit_RegisterSink(self, node):
+        Visitor.generic_visit(self, node)
+        self.res += f"{node._id_}<Register>({node.child._id_})"
+
     def visit_Bind(self, node):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
@@ -311,7 +371,7 @@ class Printer(Visitor):
 
     def visit_Input(self, node):
         Visitor.generic_visit(self, node)
-        self.res += f"{node._id_}<Input>\n"
+        self.res += f"{node._id_}<Input>{hex(id(node))}\n"
 
     def visit_InstanceInput(self, node):
         self.res += f"{node._id_}<InstanceInput>\n"
@@ -333,7 +393,6 @@ class Printer(Visitor):
         Visitor.generic_visit(self, node)
         child_ids = ", ".join([str(child._id_) for child in node.children()])
         self.res += f"{node._id_}<Combine:{list(node.type.field_dict.keys())}>({child_ids})\n"
-
 
 class BindsToCombines(Transformer):
     def gen_combine(self, node: Bind):
@@ -406,6 +465,53 @@ class SimplifyCombines(Transformer):
             raise NotImplementedError()
         return Constant(value=val._value_, type=node.type)
 
+class CloneInline(Visitor):
+    def clone(self, dag: Dag, input_nodes, iname_prefix: str = ""):
+        assert dag is not None
+        self.node_map = {node: node.copy() for node in dag.sources}
+        self.iname_prefix = iname_prefix
+        self.run(dag)
+
+        input_nodes_copy = [self.node_map[node] for node in input_nodes]
+
+        dag_copy = Dag(
+            sources=[self.node_map[node] for node in dag.sources],
+            sinks=[self.node_map[node] for node in dag.sinks]
+        )
+        return dag_copy, input_nodes_copy
+
+    def visit_Input(self, node):
+        pass
+
+    def generic_visit(self, node):
+        Visitor.generic_visit(self, node)
+        new_node = node.copy()
+        children = (self.node_map[child] for child in node.children())
+        new_node.set_children(*children)
+        new_node.iname = self.iname_prefix + new_node.iname
+        self.node_map[node] = new_node
+
+class CustomInline(Transformer): 
+    def __init__(self, rewrite_rules):
+        self.rrs = rewrite_rules
+
+    def visit_Select(self, node: Select):
+        Transformer.generic_visit(self, node)
+        if node.child.node_name in self.rrs:
+            replace_dag, input_nodes = CloneInline().clone(*self.rrs[node.child.node_name], iname_prefix=node.iname)
+            for in_node in input_nodes:
+                new_children = list(in_node.children())
+                for child_idx, child_node in enumerate(in_node.children()):
+                    if child_node.node_name == "Select" and child_node.field == "in0":
+                        new_children[child_idx] = node.child.children()[0]
+                    elif child_node.node_name == "Select" and child_node.field == "in1":
+                        new_children[child_idx] = node.child.children()[1]
+                in_node.set_children(*new_children)
+            return replace_dag.output.child
+
+        return node 
+
+
 
 #Finds Opportunities to skip selecting from a Combine node
 class RemoveSelects(Transformer):
@@ -428,6 +534,10 @@ def print_dag(dag: Dag):
 
 def count_pes(dag: Dag):
     return CountPEs().run(dag).res
+
+def dag_to_pdf(dag: Dag, filename):
+    AddID().run(dag)
+    DagToPdf().run(dag).graph.render(filename, view=False)
 
 class CheckIfTree(Visitor):
     def __init__(self):

@@ -13,8 +13,12 @@ from . import CoreIRContext
 #Passes will be run on this
 class DagNode(Visited):
     def __init__(self, *args, **kwargs):
-        if "type" in kwargs and is_modified(kwargs['type']):
-            raise ValueError(f"{self}, {kwargs['type']} cannot be modified")
+        if "type" in kwargs:
+            t = kwargs['type']
+            if t is None:
+                raise ValueError("Need to specify a type")
+            if is_modified(kwargs['type']):
+                raise ValueError(f"{self}, {kwargs['type']} cannot be modified")
         elif "type" in self.static_attributes and is_modified(self.static_attributes["type"]):
             raise ValueError(f"{self} {self.static_attributes['type']}")
         self.set_kwargs(**kwargs)
@@ -56,6 +60,12 @@ class DagNode(Visited):
         return self._children
 
     @property
+    def child(self):
+        if len(self.children()) != 1:
+            raise ValueError("Cannot select singular child")
+        return list(self.children())[0]
+
+    @property
     @abc.abstractmethod
     def attributes(self):
         raise NotImplementedError()
@@ -67,7 +77,11 @@ class DagNode(Visited):
 
     @lru_cache(None)
     def select(self, field, original=None):
-
+        # This is a hack for selecting one bit
+        if isinstance(field, int):
+            if self.type[field] == ht.BitVector[16]:
+                return Select(self, field=field, type=self.type[field])
+            return Select(self, field=field, type=ht.Bit)
         key_list = {f"O{i}": k for i, k in enumerate(self.type.field_dict.keys())}
         new_field = key_list.get(field)
         if original is None and new_field is not None:
@@ -125,20 +139,12 @@ class Dag(AbstractDag):
 #Allows arbitrary number of inputs and outputs
 class IODag(AbstractDag):
     def __init__(self, inputs, outputs, sources: tp.List[Visited] = [], sinks: tp.List[Visited] = []):
-        if len(sources) != len(sinks):
-            raise ValueError("each source must have a matching sink")
-        if not all(isinstance(i, Input) for i in inputs):
-            raise ValueError("Each input needs to be instance of Input")
-        if not all(isinstance(o, Output) for o in outputs):
-            raise ValueError("Each output needs to be instance of Output")
-        if not all(isinstance(source, Source) for source in sources):
-            raise ValueError("Each source needs to be instance of Source")
-        if not all(isinstance(sink, Sink) for sink in sinks):
-            raise ValueError("Each sink needs to be instance of Sink")
         for source, sink in zip(sources, sinks):
             source.set_sink(sink)
             sink.set_source(source)
 
+        self.non_input_sources = sources
+        self.non_output_sinks = sinks
         self.inputs = inputs
         self.outputs = outputs
         self.sources = [*inputs, *sources]
@@ -164,6 +170,8 @@ class Nodes:
         #if node is stateful, it points to a tuple(Source, Sink)
         self.dag_nodes = {}
         self.peak_nodes = {}
+        self.custom_nodes = []
+        self.custom_inline = {}
         self.coreir_modules: tp.Mapping[str, coreir.Module] = {}
 
     def __str__(self):
@@ -174,18 +182,26 @@ class Nodes:
 
     #returns Node name from coreir module name
     def name_from_coreir(self, cmod) -> str:
+        if f"{cmod.namespace.name}.{cmod.name}" in self.custom_nodes and f"{cmod.namespace.name}.{cmod.name}" in self.dag_nodes:
+            return f"{cmod.namespace.name}.{cmod.name}"
         names = [k for k,v in self.coreir_modules.items() if v == cmod]
-        assert len(names) <2
-        if len(names) == 1:
+        if len(names) > 0:
             return names[0]
+        if f"{cmod.namespace.name}.{cmod.name}" in self.coreir_modules:
+            return f"{cmod.namespace.name}.{cmod.name}"
         return None
 
+
     #returns Node name from coreir module name or None if not found
-    def name_from_peak(self, peak_fc) -> str:
+    def name_from_peak(self, peak_fc, name = None) -> str:
+        if name in self.custom_nodes and name in self.dag_nodes:
+            return name
+
         names = [k for k,v in self.peak_nodes.items() if v is peak_fc]
-        assert len(names) <2
+        assert len(names) <2, names
         if len(names) == 1:
             return names[0]
+
         return None
 
     #Adds all 3 kinds of nodes under one name
@@ -238,21 +254,27 @@ class Nodes:
             input_t = static_attrs["input_t"] if "input_t" in static_attrs else None
             output_t = static_attrs["output_t"] if "output_t" in static_attrs else None
             assert (input_t is None and output_t is None) or (input_t is not None and output_t is not None)
-            sink_node = type(node_name + "_sink", parents + (Sink,), dict(
+            snk_static_attrs = {}
+            src_static_attrs = {}
+            if (input_t is not None):
+                snk_static_attrs = dict(type=input_t)
+            if (output_t is not None):
+                src_static_attrs = dict(type=output_t)
+            sink_node = type(node_name + "Sink", parents + (Sink,), dict(
                 num_children=num_children,
                 nodes=self,
                 node_name=node_name,
                 attributes=attrs,
-                static_attributes=dict(type=input_t),
+                static_attributes=snk_static_attrs,
                 modparams=modparams
             ))
             #Create the 'source node'
-            src_node = type(node_name + "_source", parents + (Source,), dict(
+            src_node = type(node_name + "Source", parents + (Source,), dict(
                 num_children=0,
                 nodes=self,
                 node_name=node_name,
                 attributes=attrs,
-                static_attributes=dict(type=output_t),
+                static_attributes=src_static_attrs,
                 modparams=()
             ))
             sink_node.source_t = src_node
@@ -278,6 +300,11 @@ class Nodes:
 Common = Nodes("Common")
 Select = Common.create_dag_node("Select", 1, False, ("field",))
 Select.__str__ = lambda self: f"Select<{self.field}>"
+
+#Represents a delay of 1 cycle
+PipelineRegister = Common.create_dag_node("PipelineRegister", 1, False, ("type",))
+
+
 
 
 from hwtypes import AbstractBitVector, AbstractBit
@@ -305,7 +332,7 @@ class ConstAssemble:
 
 
 Constant = Common.create_dag_node("Constant", 0, False, attrs=("value",), parents=(ConstAssemble,))
-#Constant.__str__ = lambda self: f"Constant<{self.value}>"
+Constant.__str__ = lambda self: f"C<{self.value}>"
 
 class State(object): pass
 class Source(State):
@@ -320,6 +347,11 @@ Input = Common.create_dag_node("Input", 0, False, parents=(Source,))
 Output = Common.create_dag_node("Output", -1, False, parents=(Sink,))
 Input.sink_t = Output
 Output.source_t = Input
+
+
+#Generic register that could have backedges
+RegisterSource, RegisterSink = Common.create_dag_node("Register", 1, True, attrs=("type",))
+
 
 InstanceInput = Common.create_dag_node("InstanceInput", 0, False, parents=(Source,))
 InstanceOutput = Common.create_dag_node("InstanceOutput", -1, False, parents=(Sink,))
@@ -378,3 +410,4 @@ class Combine(DagNode):
 
     static_attributes = {}
     nodes = Common
+    node_name = "Combine"

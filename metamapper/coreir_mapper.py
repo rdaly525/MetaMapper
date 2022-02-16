@@ -1,71 +1,44 @@
-from metamapper.common_passes import VerifyNodes, print_dag, count_pes, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const
+from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
+    Clone, ExtractNames, Unbound2Const, gen_dag_img
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
+from metamapper.delay_matching import DelayMatching, KernelDelay
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
 import coreir
 import json
 
-#conv_ops = (
-#    "corebit.const",
-#    "coreir.add",
-#    "coreir.mul",
-#    "coreir.const",
-#)
-#camera_ops = (
-#    "corebit.const",
-#    "corebit.or_",
-#    "corebit.and_",
-#    "coreir.add",
-#    "coreir.and_",
-#    "coreir.ashr",
-#    "coreir.const",
-#    "coreir.eq",
-#    "coreir.lshr",
-#    "coreir.mul",
-#    "coreir.mux",
-#    "coreir.slt",
-#    "coreir.sub",
-#    "coreir.ult",
-#    "commonlib.abs",
-#    "commonlib.smax",
-#    "commonlib.smin",
-#    "commonlib.umax",
-#    "commonlib.umin",
-#)
+
+class DefaultLatency:
+
+    @staticmethod
+    def get(node):
+        return 0
 
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
     # rule_file #pointer to serialized rule file
-    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=[], rule_file=None, rrules=None):
+    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rule_file=None, rrules=None):
+    
 
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
+        self.kernel_cycles = {}
 
-        if not lazy and rule_file is None and len(ops) == 0:
-            raise ValueError("If not lazy, need ops specified!")
-        if lazy and len(ops) > 0:
-            raise ValueError("if lazy, needs no ops specified!")
 
-        if not lazy:
-            self.gen_rules(ops, rule_file, rrules)
-            self.compile_time_rule_gen = lambda dag : None
-        else:
-            def lazy_rule_gen(dag: Dag):
-                op_dict = ExtractNames(self.CoreIRNodes).extract(dag)
-                ops = list(op_dict.keys())
-                self.gen_rules(ops, rule_file, rrules)
-            self.compile_time_rule_gen = lazy_rule_gen
-
+        
+        self.gen_rules(ops, rule_file, rrules)
+        self.compile_time_rule_gen = lambda dag : None
+        
         self.inst_sel = alg(self.table)
 
     def gen_rules(self, ops, rule_file=None, rrules=None):
+
         if rule_file is None and rrules is None:
             for node_name in self.ArchNodes._node_names:
                 # auto discover the rules for CoreIR
@@ -77,49 +50,38 @@ class Mapper:
                         pass
                     else:
                         print(f"  Found!")
-        elif rrules is None:
-            
-            for arch_name in self.ArchNodes._node_names:
-                if arch_name != "global.PE":
-                    continue
-                arch_fc = self.ArchNodes.peak_nodes[arch_name]
-                with open(rule_file, "r") as read_file:
-                    rrs = json.loads(read_file.read())
-                    for op, rr in rrs.items():
-                        ir_fc = self.CoreIRNodes.peak_nodes[op]
-                        new_rewrite_rule = read_serialized_bindings(rr, ir_fc, arch_fc)
-                        counter_example = new_rewrite_rule.verify()
-
-                        if counter_example is not None:
-                            print(counter_example)
-                            raise ValueError(f"RR for {op} fails with ^ Counter Example")
-                        self.table.add_peak_rule(new_rewrite_rule)
         else:
             for ind, peak_rule in enumerate(rrules):
-                self.table.add_peak_rule(peak_rule, name="test_name_" + str(ind))
+                if ops != None:
+                    op = ops[ind]
+                    if "fp" in op and "pipelined" in op:
+                        op = op.split("_pipelined")[0]
+                    
+                    self.table.add_peak_rule(peak_rule, op)
+                else:
+                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
+            self.table.sort_rules()
 
-    def do_mapping(self, dag, convert_unbound=True, prove_mapping=True) -> coreir.Module:
-        #Preprocess isolates coreir primitive modules
-        #inline inlines them back in
-        #print("premapped")
-        #print_dag(dag)
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
-
+        CustomInline(self.CoreIRNodes.custom_inline).run(dag)
         mapped_dag = self.inst_sel(dag)
-        #print("postmapped")
-        #print_dag(mapped_dag)
         SimplifyCombines().run(mapped_dag)
-        #print("simplifyCombines")
-        #print_dag(mapped_dag)
         RemoveSelects().run(mapped_dag)
-        #print("RemovedSelects")
-        #print_dag(mapped_dag)
+
         self.num_pes += count_pes(mapped_dag)
+        print(count_pes(mapped_dag))
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
+        
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
+
+        if node_cycles is not None:
+            DelayMatching(node_cycles).run(mapped_dag)
+            self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
+
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
