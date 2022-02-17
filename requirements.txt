@@ -8,4 +8,3 @@ DagVisitor
 -e git+git://github.com/leonardt/hwtypes#egg=hwtypes
 -e git+git://github.com/jack-melchert/peak_generator#egg=peak_gen
 delegator.py
-jsonpickle
