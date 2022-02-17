@@ -15,7 +15,6 @@ import delegator
 import pytest
 import glob
 import importlib
-import jsonpickle
 import sys, os
 import json
 
@@ -69,7 +68,7 @@ def gen_rrules():
         mapping_funcs.append(ir_fc)
 
         with open(f"{DSE_PE_location}/rewrite_rules/rewrite_rule_" + str(ind) + ".json", "r") as json_file:
-            rewrite_rule_in = jsonpickle.decode(json_file.read())
+            rewrite_rule_in = json.load(json_file)
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, PE_fc)
         counter_example = rewrite_rule.verify()
