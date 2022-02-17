@@ -16,6 +16,7 @@ setup(
         "coreir >= 2.0.1",
         "peak",
         "DagVisitor",
+        "delegator.py"
     ],
     python_requires='>=3.6'
 )

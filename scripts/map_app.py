@@ -1,5 +1,4 @@
 import glob
-import jsonpickle
 import sys
 import importlib
 import os
@@ -61,7 +60,7 @@ def gen_rrules(pipelined=False):
         mapping_funcs.append(ir_fc)
 
         with open(rrule, "r") as json_file:
-            rewrite_rule_in = jsonpickle.decode(json_file.read())
+            rewrite_rule_in = json.load(json_file)
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
         if False:
