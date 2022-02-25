@@ -26,8 +26,8 @@ class _ArchCycles:
             return pe_cycles
         return 0
 
-lassen_location = "/aha/lassen"
-lassen_header = "/aha/MetaMapper/libs/lassen_header.json"
+lassen_location = os.path.join(Path(__file__).parent.parent.parent.resolve(), "lassen")
+lassen_header = os.path.join(Path(__file__).parent.parent.resolve(), "libs/lassen_header.json")
 
 def gen_rrules(pipelined=False):
 
