@@ -34,6 +34,7 @@ class DelayMatching(Transformer):
                 new_child = child
                 pipeline_type = child.type
                 for reg_index in range(diff):  # diff = number of pipeline reg
+                    print("Adding pipe for branch delay matching")
                     new_child = PipelineRegister(new_child, type=pipeline_type)
                 new_children[i] = new_child
             node.set_children(*new_children)

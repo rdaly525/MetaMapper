@@ -456,6 +456,7 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
                         Rom = gen_rom(CoreIRNodes)
                         CoreIRNodes.add("memory.rom2", rom_fc, rom2, Rom)
                         mr = "memory.rom2"
+                        print("added rom of size", depth)
                         archnodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
                     continue
                 if is_const(inst.module) or is_reg(inst.module):

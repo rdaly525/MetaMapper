@@ -611,6 +611,7 @@ class Schedule(Visitor):
 class addPipeliningPonds(Visitor):
     def __init__(self, nodes: Nodes):
         self.nodes = nodes
+        self.added_ponds = 0
 
     def doit(self, dag: Dag):
         assert dag is not None
@@ -629,12 +630,13 @@ class addPipeliningPonds(Visitor):
         children = (self.node_map[child] for child in node.children())
         new_children = []
         for child in children:
-            if hasattr(child, "node_name") and child.node_name == "Select" and child.children()[0].node_name == "global.PE":
+            if hasattr(child, "node_name") and child.node_name == "Select" and child.children()[0].node_name == "global.PE" and child.type != ht.Bit:
                 # Add pond
                 flush = Constant(type=ht.Bit, value=ht.Bit(0)) 
                 clk_en = Constant(type=ht.Bit, value=ht.Bit(1))
-                pond = self.nodes.dag_nodes['global.Pond'](flush, clk_en, child, iname=f"pond_{child.children()[0].iname}")
+                pond = self.nodes.dag_nodes['global.Pond'](flush, clk_en, child, iname=f"pond_{self.added_ponds}_{child.children()[0].iname}")
                 new_children.append(pond.select("O0"))
+                self.added_ponds += 1
             else:
                 new_children.append(child)
         new_node.set_children(*new_children)
