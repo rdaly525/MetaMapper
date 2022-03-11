@@ -14,7 +14,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, gen_dag_img_simp, Constant2CoreIRConstant, addPipeliningPonds
+from metamapper.common_passes import print_dag, gen_dag_img_simp, Constant2CoreIRConstant, AddPipeliningPonds
 from metamapper.delay_matching import STA
 from peak.mapper import read_serialized_bindings
 from metamapper.lake_pond import gen_Pond_fc
@@ -43,8 +43,9 @@ def gen_rrules(pipelined=False):
     rrules = []
     ops = []
 
-    if False:
+    if pipelined:
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*_pipelined.json')
+        rrule_files = [rrule_file for rrule_file in rrule_files if "fp_" not in rrule_file]
     else:
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
@@ -122,7 +123,7 @@ for kname, kmod in kernels.items():
      #gen_dag_img_simp(mapped_dag, f"img/{kname}")
     # print(STA(pe_cycles).doit(mapped_dag))
     
-    mapped_dag = addPipeliningPonds(ArchNodes).doit(mapped_dag)
+    mapped_dag = AddPipeliningPonds(ArchNodes).doit(mapped_dag)
     print_dag(mapped_dag)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
