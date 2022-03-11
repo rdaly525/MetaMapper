@@ -85,18 +85,18 @@ def gen_Pond_fc(data_width=16,  # CGRA Params
             #     self.circ = circ()
 
             @name_outputs(
-                data_out_pond_0=BV[16],
+                data_out_pond=BV[16],
                 valid_out_pond=Bit
             )
             def __call__(
                 self,
                 flush: Bit,
                 clk_en: Bit,
-                data_in_pond_0: BV[16]
+                data_in_pond: BV[16]
             ) -> (BV[16], Bit):
 
                 circ_inputs = {}
-                circ_inputs["data_in_pond"] = data_in_pond_0
+                circ_inputs["data_in_pond"] = data_in_pond
                 circ_inputs["clk_en"] = clk_en.ite(BV[1](1), BV[1](0))
                 circ_inputs["flush"] = flush.ite(BV[1](1), BV[1](0))
 
@@ -107,7 +107,7 @@ def gen_Pond_fc(data_width=16,  # CGRA Params
                 #     outputs[port] = circ_output
 
                 return (
-                    data_in_pond_0,
+                    data_in_pond,
                     flush
                 )
 

@@ -14,7 +14,7 @@ def gen_peak_CoreIR(width):
         Bit = family.Bit
         class pond(Peak):
             @name_outputs(data_out_pond=Data)
-            def __call__(self, flush: Bit, clk_en: Bit, data_in_pond_0: Data) -> Data:
+            def __call__(self, flush: Bit, clk_en: Bit, data_in_pond: Data) -> Data:
                 return rdata
         return pond
 

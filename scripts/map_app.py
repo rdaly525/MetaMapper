@@ -48,6 +48,7 @@ def gen_rrules(pipelined=False):
     else:
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
+        rrule_files = [rrule_file for rrule_file in rrule_files if "fp_" not in rrule_file]
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem

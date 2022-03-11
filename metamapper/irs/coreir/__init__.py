@@ -82,8 +82,8 @@ def gen_CoreIRNodes(width):
     # assert CoreIRNodes.dag_nodes["commonlib.mult_middle"] is not None
 
     class Pond(DagNode):
-        def __init__(self, flush, clk_en, data_in_pond_0, *, iname):
-            super().__init__(flush, clk_en, data_in_pond_0, iname=iname)
+        def __init__(self, flush, clk_en, data_in_pond, *, iname):
+            super().__init__(flush, clk_en, data_in_pond, iname=iname)
             self.modparams=()
 
         @property
