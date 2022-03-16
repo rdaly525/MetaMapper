@@ -1,33 +1,32 @@
+import glob
+import sys
+import importlib
+import os
+import json
+from pathlib import Path
+import delegator
+
 from metamapper.irs.coreir import gen_CoreIRNodes
 import metamapper.coreir_util as cutil
 import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, Constant2CoreIRConstant, gen_dag_img
-
+from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant
+from peak.mapper import read_serialized_bindings
 from peak_gen.arch import read_arch
 from peak_gen.peak_wrapper import wrapped_peak_class
 
-from peak.mapper import read_serialized_bindings
 
-import delegator
-import pytest
-import glob
-import importlib
-import sys, os
-import json
-
-class _ArchLatency:
+class _ArchCycles:
     def get(self, node):
         kind = node.kind()[0]
-        print(kind)
-        if kind == "Rom":
+        if kind == "Rom" or kind == "FPRom":
             return 1
         elif kind == "global.PE":
-            return latency
-        
+            return pe_cycles
         return 0
+
 
 app = str(sys.argv[1])
 if len(sys.argv) > 2:
@@ -80,12 +79,14 @@ def gen_rrules():
 
 
 arch_fc, rrules = gen_rrules()
-verilog = False
-print("STARTING TEST")
 
 file_name = str(sys.argv[1])
 app = os.path.basename(file_name).split(".json")[0]
 output_dir = os.path.dirname(file_name)
+if len(sys.argv) > 2:
+    pe_cycles = int(sys.argv[2])
+else:
+    pe_cycles = 0
 
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib"])
@@ -101,19 +102,17 @@ putil.load_and_link_peak(
     pe_header,
     {"global.PE": arch_fc}
 )
-# putil.load_from_peak(ArchNodes, arch_fc)
-#mr = "memory.rom2"
-#ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
+c.run_passes(["rungenerators", "deletedeadinstances"])
 
 mods = []
 for kname, kmod in kernels.items():
-    print(kname)
+    print(f"Mapping kernel {kname}")
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
-    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchLatency(), convert_unbound=False, prove_mapping=False)        
-    mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)        
+    mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=False)
     mods.append(mod)
 
 print(f"Num PEs used: {mapper.num_pes}")
