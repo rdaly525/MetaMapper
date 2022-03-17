@@ -659,7 +659,9 @@ class ConstantPacking(Transformer):
     def __init__(self, pe_reg_info):
         self.pe_reg_info = pe_reg_info
 
-    def pack_constant(self, node, value, port, instr):
+    def pack_constant(self, node, value, port):
+        aadt = AssembledADT[strip_modifiers(node.type), Assembler, family.PyFamily().BitVector]
+        instr = node.assemble(family.PyFamily())
         reg = self.pe_reg_info["port_to_reg"][port]
         reg_instr = getattr(instr, reg)
         const_instr = getattr(instr, port)
@@ -667,20 +669,25 @@ class ConstantPacking(Transformer):
         if reg_instr._value_.value == self.pe_reg_info['instrs']['bypass'] or \
            reg_instr._value_.value == self.pe_reg_info['instrs']['reg']:
             # Can constant pack
+            print("Packing constant")
 
             # Change register mode to const
             instr_size = reg_instr._to_bitvector_().size
-            reg_instr.from_fields(ht.BitVector[instr_size](self.pe_reg_info['instrs']['const']))
+            new_reg_instr = reg_instr.from_fields(ht.BitVector[instr_size](self.pe_reg_info['instrs']['const']))
+            setattr(instr, reg, new_reg_instr)
 
             # Set value of const
             setattr(instr, port, value)
+            
+            const_dict = OrderedDict()
+            for field in node.type.field_dict.keys():
+                const_dict[field] = getattr(instr, field)
 
-            print("Packing constant")
-
+            node.value = aadt(**const_dict)._value_
+            
             return True
         return False
         
-
 
     def generic_visit(self, node):
         Transformer.generic_visit(self, node)
@@ -691,7 +698,7 @@ class ConstantPacking(Transformer):
                 if child.node_name == "Select":
                     for child_ in child.children():
                         if child_.node_name == "coreir.const":
-                            if self.pack_constant(node, child_.child.value, ports[port_idx][0], new_children[0].assemble(family.PyFamily())):
+                            if self.pack_constant(new_children[0], child_.child.value, ports[port_idx][0]):
                                 new_children[port_idx] = Constant(type=ht.BitVector[16],value=Unbound)
             node.set_children(*new_children)
         return node

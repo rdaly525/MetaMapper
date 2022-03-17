@@ -55,11 +55,7 @@ class Mapper:
                     op = ops[ind]
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
-                    # if op == 'const' or op == 'const_pipelined':
-                    #     self.const_rr = peak_rule
-                    # elif op == 'bit_const' or op == 'bit_const_pipelined':
-                    #     self.bit_const_rr = peak_rule
-                    # else:
+
                     self.table.add_peak_rule(peak_rule, op)
                 else:
                     self.table.add_peak_rule(peak_rule, None)
@@ -67,20 +63,29 @@ class Mapper:
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None) -> coreir.Module:
         self.compile_time_rule_gen(dag)
+        
+        rule_names = [rule.name for rule in self.table.rules]
+        if "const" in rule_names:
+            const_rule = self.table.rules.pop(rule_names.index("const"))
+
+        rule_names = [rule.name for rule in self.table.rules]
+        if "bit_const" in rule_names:
+            bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
+
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
-        mapped_dag = self.inst_sel(dag)
+        pre_packing = self.inst_sel(dag)
 
-        # if pe_reg_info is not None:
-        #     ConstantPacking(pe_reg_info).run(mapped_dag)
+        if pe_reg_info is not None:
+            ConstantPacking(pe_reg_info).run(pre_packing)
+        
+        if const_rule is not None:
+            self.table.rules.append(const_rule)
 
-        # if self.const_rr is not None:
-        #     self.table.add_peak_rule(self.const_rr, "const")
-        # if self.bit_const_rr is not None:
-        #     self.table.add_peak_rule(self.bit_const_rr, "bit_const")
+        if bit_const_rule is not None:
+            self.table.rules.append(bit_const_rule)
 
-
-        # mapped_dag = self.inst_sel(mapped_dag)
+        mapped_dag = self.inst_sel(pre_packing)
 
         SimplifyCombines().run(mapped_dag)
         RemoveSelects().run(mapped_dag)
