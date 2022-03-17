@@ -1,5 +1,5 @@
 from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const, gen_dag_img
+    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -29,9 +29,8 @@ class Mapper:
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
         self.kernel_cycles = {}
-
-
-        
+        self.const_rr = None
+        self.bit_const_rr = None        
         self.gen_rules(ops, rule_file, rrules)
         self.compile_time_rule_gen = lambda dag : None
         
@@ -56,17 +55,33 @@ class Mapper:
                     op = ops[ind]
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
-                    
+                    # if op == 'const' or op == 'const_pipelined':
+                    #     self.const_rr = peak_rule
+                    # elif op == 'bit_const' or op == 'bit_const_pipelined':
+                    #     self.bit_const_rr = peak_rule
+                    # else:
                     self.table.add_peak_rule(peak_rule, op)
                 else:
-                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
+                    self.table.add_peak_rule(peak_rule, None)
             self.table.sort_rules()
 
-    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None) -> coreir.Module:
         self.compile_time_rule_gen(dag)
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
         mapped_dag = self.inst_sel(dag)
+
+        # if pe_reg_info is not None:
+        #     ConstantPacking(pe_reg_info).run(mapped_dag)
+
+        # if self.const_rr is not None:
+        #     self.table.add_peak_rule(self.const_rr, "const")
+        # if self.bit_const_rr is not None:
+        #     self.table.add_peak_rule(self.bit_const_rr, "bit_const")
+
+
+        # mapped_dag = self.inst_sel(mapped_dag)
+
         SimplifyCombines().run(mapped_dag)
         RemoveSelects().run(mapped_dag)
 

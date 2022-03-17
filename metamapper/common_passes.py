@@ -7,6 +7,7 @@ from .family import fam
 from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
+from peak import family
 from .node import DagNode
 import hwtypes as ht
 from graphviz import Digraph
@@ -652,3 +653,45 @@ class Schedule(Visitor):
     def visit_R32I_mappable(self, node):
         Visitor.generic_visit(self, node)
         self.insts.append(node)
+
+
+class ConstantPacking(Transformer):
+    def __init__(self, pe_reg_info):
+        self.pe_reg_info = pe_reg_info
+
+    def pack_constant(self, node, value, port, instr):
+        reg = self.pe_reg_info["port_to_reg"][port]
+        reg_instr = getattr(instr, reg)
+        const_instr = getattr(instr, port)
+
+        if reg_instr._value_.value == self.pe_reg_info['instrs']['bypass'] or \
+           reg_instr._value_.value == self.pe_reg_info['instrs']['reg']:
+            # Can constant pack
+
+            # Change register mode to const
+            instr_size = reg_instr._to_bitvector_().size
+            reg_instr.from_fields(ht.BitVector[instr_size](self.pe_reg_info['instrs']['const']))
+
+            # Set value of const
+            setattr(instr, port, value)
+
+            print("Packing constant")
+
+            return True
+        return False
+        
+
+
+    def generic_visit(self, node):
+        Transformer.generic_visit(self, node)
+        if node.node_name == "global.PE":
+            ports = node._metadata_
+            new_children = [child for child in node.children()]
+            for port_idx, child in enumerate(node.children()):
+                if child.node_name == "Select":
+                    for child_ in child.children():
+                        if child_.node_name == "coreir.const":
+                            if self.pack_constant(node, child_.child.value, ports[port_idx][0], new_children[0].assemble(family.PyFamily())):
+                                new_children[port_idx] = Constant(type=ht.BitVector[16],value=Unbound)
+            node.set_children(*new_children)
+        return node
