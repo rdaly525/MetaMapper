@@ -660,8 +660,10 @@ class ConstantPacking(Transformer):
         self.pe_reg_info = pe_reg_info
 
     def pack_constant(self, node, value, port):
-        aadt = AssembledADT[strip_modifiers(node.type), Assembler, family.PyFamily().BitVector]
+        if not hasattr(node, "assemble"):
+            return False
         instr = node.assemble(family.PyFamily())
+        aadt = AssembledADT[strip_modifiers(node.type), Assembler, family.PyFamily().BitVector]
         reg = self.pe_reg_info["port_to_reg"][port]
         reg_instr = getattr(instr, reg)
         const_instr = getattr(instr, port)

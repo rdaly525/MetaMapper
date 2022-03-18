@@ -55,7 +55,6 @@ class Mapper:
                     op = ops[ind]
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
-
                     self.table.add_peak_rule(peak_rule, op)
                 else:
                     self.table.add_peak_rule(peak_rule, None)
@@ -67,10 +66,14 @@ class Mapper:
         rule_names = [rule.name for rule in self.table.rules]
         if "const" in rule_names:
             const_rule = self.table.rules.pop(rule_names.index("const"))
+        elif "const_pipelined" in rule_names:
+            const_rule = self.table.rules.pop(rule_names.index("const_pipelined"))
 
         rule_names = [rule.name for rule in self.table.rules]
         if "bit_const" in rule_names:
             bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
+        elif "bit_const_pipelined" in rule_names:
+            bit_const_rule = self.table.rules.pop(rule_names.index("bit_const_pipelined"))
 
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
