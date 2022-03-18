@@ -126,7 +126,7 @@ for kname, kmod in kernels.items():
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
-print(f"Num PEs used: {mapper.num_pes}")
+print(f"Total num PEs used: {mapper.num_pes}")
 output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)

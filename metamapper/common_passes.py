@@ -671,7 +671,6 @@ class ConstantPacking(Transformer):
         if reg_instr._value_.value == self.pe_reg_info['instrs']['bypass'] or \
            reg_instr._value_.value == self.pe_reg_info['instrs']['reg']:
             # Can constant pack
-            print("Packing constant")
 
             # Change register mode to const
             instr_size = reg_instr._to_bitvector_().size
