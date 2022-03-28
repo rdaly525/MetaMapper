@@ -73,16 +73,20 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
     cfgs = extract_top_config(mem_tile.dut)
 
     def BV(width):
-        # if width == 1:
-        #     return family.MagmaFamily().Bit
-        # else:
+        if width == 1:
+            return family.MagmaFamily().Bit
+        else:
+            return family.MagmaFamily().BitVector[width]
+
+    def BV_c(width):
         return family.MagmaFamily().BitVector[width]
 
+
     def BV_out(width):
-        #if width == 1:
-        #    return family.MagmaFamily().Bit
-        #else:
-        return family.MagmaFamily().BitVector[width]
+        if width == 1:
+            return family.MagmaFamily().Bit
+        else:
+            return family.MagmaFamily().BitVector[width]
 
     peak_inputs = {}
     peak_outputs = {}
@@ -112,9 +116,9 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
     for io_info in cfgs:
         if io_info.expl_arr and io_info.port_size[0] > 1:
             for idx in range(io_info.port_size[0]):
-                peak_configs[f"{io_info.port_name}_{idx}"] = BV(io_info.port_width)
+                peak_configs[f"{io_info.port_name}_{idx}"] = BV_c(io_info.port_width)
         else:
-            peak_configs[io_info.port_name] = BV(io_info.port_width)
+            peak_configs[io_info.port_name] = BV_c(io_info.port_width)
 
     for k, v in peak_inputs.items(): print(k, v)
     print("\n")
@@ -132,9 +136,12 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
     @family_closure
     def MEM_fc(family):
 
-        BV = family.BitVector
+        def BV(width):
+            if width == 1:
+                return family.Bit
+            else:
+                return family.BitVector[width]
         Bit = family.Bit
-
 
         @family.assemble(locals(), globals())
         class MEM(Peak):
@@ -143,51 +150,51 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
 
             @apply_passes([loop_unroll()])
             @name_outputs(
-                output_width_16_num_0 = BV[16],
-                output_width_16_num_1 = BV[16],
-                output_width_1_num_1 = BV[1],
-                output_width_1_num_2 = BV[1],
-                output_width_1_num_3 = BV[1],
-                config_data_out_0 = BV[32],
-                config_data_out_1 = BV[32],
-                output_width_1_num_0 = BV[1]
+                output_width_16_num_0 = BV(16),
+                output_width_16_num_1 = BV(16),
+                output_width_1_num_1 = BV(1),
+                output_width_1_num_2 = BV(1),
+                output_width_1_num_3 = BV(1),
+                config_data_out_0 = BV(32),
+                config_data_out_1 = BV(32),
+                output_width_1_num_0 = BV(1)
             )
             def __call__(
                 self,
                 configs: Const(configs_adt),
-                clk_en: BV[1],
-                config_write: BV[1],
-                flush: BV[1],
-                input_width_16_num_3: BV[16],
-                input_width_16_num_0: BV[16],
-                config_en: BV[2],
-                config_read: BV[1],
-                input_width_1_num_1: BV[1],
-                input_width_16_num_2: BV[16],
-                input_width_16_num_1: BV[16],
-                config_addr_in: BV[8],
-                config_data_in: BV[32],
-                input_width_1_num_0: BV[1]
-            ) -> (BV[16], BV[16], BV[1], BV[1], BV[1], BV[32], BV[32], BV[1]):
+                clk_en: BV(1),
+                config_write: BV(1),
+                flush: BV(1),
+                input_width_16_num_3: BV(16),
+                input_width_16_num_0: BV(16),
+                config_en: BV(2),
+                config_read: BV(1),
+                input_width_1_num_1: BV(1),
+                input_width_16_num_2: BV(16),
+                input_width_16_num_1: BV(16),
+                config_addr_in: BV(8),
+                config_data_in: BV(32),
+                input_width_1_num_0: BV(1)
+            ) -> (BV(16), BV(16), BV(1), BV(1), BV(1), BV(32), BV(32), BV(1)):
 
                 circ_inputs = {}
                 for port_idx in unroll(range(len(peak_configs))):
                     port = list(peak_configs)[port_idx]
                     circ_inputs[port] = getattr(configs, port)
 
-                circ_inputs["clk_en"] = clk_en.ite(BV[1](1), BV[1](0))
-                circ_inputs["config_write"] = config_write.ite(BV[1](1), BV[1](0))
-                circ_inputs["flush"] = flush.ite(BV[1](1), BV[1](0))
+                circ_inputs["clk_en"] = clk_en.ite(family.BitVector[1](1), family.BitVector[1](0))
+                circ_inputs["config_write"] = config_write.ite(family.BitVector[1](1), family.BitVector[1](0))
+                circ_inputs["flush"] = flush.ite(family.BitVector[1](1), family.BitVector[1](0))
                 circ_inputs["config_en"] = config_en
-                circ_inputs["config_read"] = config_read.ite(BV[1](1), BV[1](0))
+                circ_inputs["config_read"] = config_read.ite(family.BitVector[1](1), family.BitVector[1](0))
                 circ_inputs["config_addr_in"] = config_addr_in
                 circ_inputs["config_data_in"] = config_data_in
                 circ_inputs["input_width_16_num_3"] = input_width_16_num_3
                 circ_inputs["input_width_16_num_0"] = input_width_16_num_0
-                circ_inputs["input_width_1_num_1"] = input_width_1_num_1
+                circ_inputs["input_width_1_num_1"] = input_width_1_num_1.ite(family.BitVector[1](1), family.BitVector[1](0))
                 circ_inputs["input_width_16_num_2"] = input_width_16_num_2
                 circ_inputs["input_width_16_num_1"] = input_width_16_num_1
-                circ_inputs["input_width_1_num_0"] = input_width_1_num_0
+                circ_inputs["input_width_1_num_0"] = input_width_1_num_0.ite(family.BitVector[1](1), family.BitVector[1](0))
 
                 circ_outputs = self.circ(**circ_inputs)
 
@@ -197,17 +204,16 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                     circ_output = circ_outputs[output_idx]
                     outputs[port] = circ_output
 
-                # empty = outputs["empty"] == BV[1](1)
-
+                
                 return (
                     outputs["output_width_16_num_0"],
                     outputs["output_width_16_num_1"],
-                    outputs["output_width_1_num_1"],
-                    outputs["output_width_1_num_2"],
-                    outputs["output_width_1_num_3"],
+                    outputs["output_width_1_num_1"] == family.BitVector[1](1),
+                    outputs["output_width_1_num_2"] == family.BitVector[1](1),
+                    outputs["output_width_1_num_3"] == family.BitVector[1](1),
                     outputs["config_data_out_0"],
                     outputs["config_data_out_1"],
-                    outputs["output_width_1_num_0"]
+                    outputs["output_width_1_num_0"] == family.BitVector[1](1)
                 )
 
         return MEM
