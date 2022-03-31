@@ -454,6 +454,8 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
                         mr = "memory.rom2"
                         archnodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
                     continue
+                if inst.module.name == "xor":
+                    continue
                 if is_const(inst.module) or is_reg(inst.module):
                     continue
                 node_name = nodes.name_from_coreir(inst.module)

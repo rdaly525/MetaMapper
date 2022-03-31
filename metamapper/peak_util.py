@@ -59,7 +59,7 @@ def peak_to_dag(nodes: Nodes, peak_fc, name=None):
         flatten(cmod)
         dag = coreir_to_dag(nodes, cmod)
         #print("pre-fix")
-        #print_dag(dag)
+        # print_dag(dag)
         FixConsts(peak_fc, nodes).run(dag)
         # print("post-fix")
         # print_dag(dag)
