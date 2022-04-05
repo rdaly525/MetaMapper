@@ -184,6 +184,8 @@ class Nodes:
     def name_from_coreir(self, cmod) -> str:
         if cmod.name == "xor":
             return "commonlib.mult_middle"
+        if f"{cmod.namespace.name}.{cmod.name}" == "coreir.and":
+            return "commonlib.absd"
         if f"{cmod.namespace.name}.{cmod.name}" in self.custom_nodes and f"{cmod.namespace.name}.{cmod.name}" in self.dag_nodes:
             return f"{cmod.namespace.name}.{cmod.name}"
         names = [k for k,v in self.coreir_modules.items() if v == cmod]

@@ -975,6 +975,7 @@ def gen_custom_ops_peak_CoreIR(width):
     CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
 
 
+
     @family_closure
     def sext_fc(family: AbstractFamily):
         Data = family.BitVector[16]

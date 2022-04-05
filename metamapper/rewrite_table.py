@@ -65,6 +65,7 @@ class RewriteTable:
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
         # print("from_dag", name)
         # print_dag(from_dag)
+        # gen_dag_img(from_dag, str(name))
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 

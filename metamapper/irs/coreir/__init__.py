@@ -26,7 +26,7 @@ def gen_CoreIRNodes(width):
     for namespace, ops, is_module in (
         ("corebit", bit_ops, True),
         ("coreir", basic + other, False)
-        #("commonlib", commonlib_ops, False)
+        # ("commonlib", commonlib_ops, False)
     ):
         for op in ops:
             assert c.get_namespace(namespace) is c.get_namespace(namespace)
@@ -139,7 +139,12 @@ def gen_CoreIRNodes(width):
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.mult_middle", modparams=())
 
-    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
+    name = f"commonlib.absd"
+    peak_fc = peak_ir.instructions[name]
+    cmod = None
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.absd", modparams=())
+
+    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.absd", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
 
     # class FPRom(DagNode):
