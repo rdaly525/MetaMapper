@@ -1,6 +1,7 @@
 from lake.top.extract_tile_info import get_interface, extract_top_config
 from lake.top.lake_top import LakeTop
 from lake.utils.sram_macro import SRAMMacroInfo
+from lake.top.tech_maps import *
 from lake.passes.passes import change_sram_port_names
 from hwtypes.adt import Tuple, Product
 from peak import family, family_closure, Peak, name_outputs, Const
@@ -21,8 +22,6 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                  mem_input_ports=1,
                  mem_output_ports=1,
                  use_sim_sram=True,
-                 sram_macro_info=SRAMMacroInfo("TS1N16FFCLLSBLVTC512X32M4S",
-                                               wtsel_value=0, rtsel_value=1),
                  read_delay=1,  # Cycle delay in read (SRAM vs Register File)
                  rw_same_cycle=False,  # Does the memory allow r+w in same cycle?
                  agg_height=4,
@@ -34,7 +33,7 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                  add_flush=True,
                  override_name=None,
                  gen_addr=True,
-                 GF=True):
+                 tech_map=TSMC_Tech_Map):
 
     mem_tile = LakeTop(data_width=data_width,
                               mem_width=mem_width,
@@ -46,7 +45,6 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                               interconnect_input_ports=interconnect_input_ports,
                               interconnect_output_ports=interconnect_output_ports,
                               use_sim_sram=use_sim_sram,
-                              sram_macro_info=sram_macro_info,
                               read_delay=read_delay,
                               rw_same_cycle=rw_same_cycle,
                               agg_height=agg_height,
@@ -58,16 +56,14 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                               add_flush=add_flush,
                               name="LakeTop",
                               gen_addr=gen_addr,
-                              GF=GF)
+                              tech_map=tech_map)
 
 
-    change_sram_port_pass = change_sram_port_names(use_sim_sram, sram_macro_info)
     circ = kts.util.to_magma(mem_tile.dut,
                                      flatten_array=True,
                                      check_multiple_driver=False,
                                      optimize_if=False,
-                                     check_flip_flop_always_ff=False,
-                                     additional_passes={"change_sram_port": change_sram_port_pass})
+                                     check_flip_flop_always_ff=False)
     
     core_interface = get_interface(mem_tile.dut)
     cfgs = extract_top_config(mem_tile.dut)
