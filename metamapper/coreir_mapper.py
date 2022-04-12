@@ -1,5 +1,5 @@
 from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const, gen_dag_img
+    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -20,26 +20,23 @@ class DefaultLatency:
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
-    # rule_file #pointer to serialized rule file
-    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rule_file=None, rrules=None):
+    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rrules=None):
     
-
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
         self.kernel_cycles = {}
-
-
-        
-        self.gen_rules(ops, rule_file, rrules)
+        self.const_rr = None
+        self.bit_const_rr = None        
+        self.gen_rules(ops, rrules)
         self.compile_time_rule_gen = lambda dag : None
         
         self.inst_sel = alg(self.table)
 
-    def gen_rules(self, ops, rule_file=None, rrules=None):
+    def gen_rules(self, ops, rrules=None):
 
-        if rule_file is None and rrules is None:
+        if rrules is None:
             for node_name in self.ArchNodes._node_names:
                 # auto discover the rules for CoreIR
                 for op in ops:
@@ -56,22 +53,49 @@ class Mapper:
                     op = ops[ind]
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
-                    
                     self.table.add_peak_rule(peak_rule, op)
                 else:
-                    self.table.add_peak_rule(self.CoreIRNodes, peak_rule, None)
+                    self.table.add_peak_rule(peak_rule, None)
             self.table.sort_rules()
 
-    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None) -> coreir.Module:
         self.compile_time_rule_gen(dag)
+        
+        use_constant_packing = pe_reg_info != None
+        
+        if use_constant_packing:
+            rule_names = [rule.name for rule in self.table.rules]
+            if "const" in rule_names:
+                const_rule = self.table.rules.pop(rule_names.index("const"))
+            elif "const_pipelined" in rule_names:
+                const_rule = self.table.rules.pop(rule_names.index("const_pipelined"))
+
+            rule_names = [rule.name for rule in self.table.rules]
+            if "bit_const" in rule_names:
+                bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
+            elif "bit_const_pipelined" in rule_names:
+                bit_const_rule = self.table.rules.pop(rule_names.index("bit_const_pipelined"))
+
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
-        mapped_dag = self.inst_sel(dag)
+        pre_packing = self.inst_sel(dag)
+
+        if use_constant_packing:
+            ConstantPacking(pe_reg_info).run(pre_packing)
+        
+            if const_rule is not None:
+                self.table.rules.append(const_rule)
+
+            if bit_const_rule is not None:
+                self.table.rules.append(bit_const_rule)
+
+        mapped_dag = self.inst_sel(pre_packing)
+
         SimplifyCombines().run(mapped_dag)
         RemoveSelects().run(mapped_dag)
 
         self.num_pes += count_pes(mapped_dag)
-        print(count_pes(mapped_dag))
+        print("Used", count_pes(mapped_dag), "PEs")
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         
         if unmapped is not None:

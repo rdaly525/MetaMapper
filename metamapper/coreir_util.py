@@ -462,7 +462,6 @@ def coreir_to_dag(nodes: Nodes, cmod: coreir.Module, inline=True, archnodes=None
                 if node_name is None:
                     to_inline.append(inst)
             for inst in to_inline:
-                print("inlining", inst.name, inst.module.name)
                 coreir.inline_instance(inst)
     return Loader(cmod, nodes, allow_unknown_instances=False).dag
 
