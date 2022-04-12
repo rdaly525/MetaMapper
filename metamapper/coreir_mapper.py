@@ -20,10 +20,8 @@ class DefaultLatency:
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
-    # rule_file #pointer to serialized rule file
-    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rule_file=None, rrules=None):
+    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rrules=None):
     
-
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
@@ -31,14 +29,14 @@ class Mapper:
         self.kernel_cycles = {}
         self.const_rr = None
         self.bit_const_rr = None        
-        self.gen_rules(ops, rule_file, rrules)
+        self.gen_rules(ops, rrules)
         self.compile_time_rule_gen = lambda dag : None
         
         self.inst_sel = alg(self.table)
 
-    def gen_rules(self, ops, rule_file=None, rrules=None):
+    def gen_rules(self, ops, rrules=None):
 
-        if rule_file is None and rrules is None:
+        if rrules is None:
             for node_name in self.ArchNodes._node_names:
                 # auto discover the rules for CoreIR
                 for op in ops:
@@ -63,30 +61,33 @@ class Mapper:
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None) -> coreir.Module:
         self.compile_time_rule_gen(dag)
         
-        rule_names = [rule.name for rule in self.table.rules]
-        if "const" in rule_names:
-            const_rule = self.table.rules.pop(rule_names.index("const"))
-        elif "const_pipelined" in rule_names:
-            const_rule = self.table.rules.pop(rule_names.index("const_pipelined"))
+        use_constant_packing = pe_reg_info != None
+        
+        if use_constant_packing:
+            rule_names = [rule.name for rule in self.table.rules]
+            if "const" in rule_names:
+                const_rule = self.table.rules.pop(rule_names.index("const"))
+            elif "const_pipelined" in rule_names:
+                const_rule = self.table.rules.pop(rule_names.index("const_pipelined"))
 
-        rule_names = [rule.name for rule in self.table.rules]
-        if "bit_const" in rule_names:
-            bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
-        elif "bit_const_pipelined" in rule_names:
-            bit_const_rule = self.table.rules.pop(rule_names.index("bit_const_pipelined"))
+            rule_names = [rule.name for rule in self.table.rules]
+            if "bit_const" in rule_names:
+                bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
+            elif "bit_const_pipelined" in rule_names:
+                bit_const_rule = self.table.rules.pop(rule_names.index("bit_const_pipelined"))
 
         original_dag = Clone().clone(dag, iname_prefix=f"original_")
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
         pre_packing = self.inst_sel(dag)
 
-        if pe_reg_info is not None:
+        if use_constant_packing:
             ConstantPacking(pe_reg_info).run(pre_packing)
         
-        if const_rule is not None:
-            self.table.rules.append(const_rule)
+            if const_rule is not None:
+                self.table.rules.append(const_rule)
 
-        if bit_const_rule is not None:
-            self.table.rules.append(bit_const_rule)
+            if bit_const_rule is not None:
+                self.table.rules.append(bit_const_rule)
 
         mapped_dag = self.inst_sel(pre_packing)
 
