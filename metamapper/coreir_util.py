@@ -15,7 +15,6 @@ from hwtypes.adt import Product
 import hwtypes as ht
 from hwtypes import BitVector, Bit
 from hwtypes.modifiers import strip_modifiers, is_modified
-import random
 from peak import Peak, name_outputs, family_closure, Const
 from peak.family import AbstractFamily
 
@@ -154,6 +153,7 @@ class Loader:
         self.c = cmod.context
         self.node_map: tp.Mapping[coreir.Instance, str] = {}
         self.const_cache = {}
+        self.unqiue = 0
 
         inputs, outputs = parse_rtype(cmod.type)
         input_adt = fields_to_adt(inputs, "Input")
@@ -289,7 +289,9 @@ class Loader:
 
             if isinstance(w, coreir.Select):
                 adt = ctype_to_adt(w.type)
-                return Combine(*children, iname=f"UC{random.randint(0, 1000)}", type=adt)
+                self.unique += 1
+                return Combine(*children, iname=f"UC{self.unique}", type=adt)
+                
 
             # inst is named w in this function
             inst = w
@@ -488,6 +490,7 @@ class ToCoreir(Visitor):
         self.def_ = def_
         self.node_to_inst: tp.Mapping[DagNode, coreir.Wireable] = {}  # inst is really the output port of the instance
         self.convert_unbounds=convert_unbounds
+        self.unique_name = 0
 
     def doit(self, dag: Dag):
         #Create all the instances for the Source/Sinks first
@@ -533,7 +536,8 @@ class ToCoreir(Visitor):
         else:
             const_mod = self.coreir_const(width=bv_val.size)
         config = CoreIRContext().new_values(fields=dict(value=bv_val))
-        iname = "c" + str(id(node))
+        iname = "c" + str(self.unique_name)
+        self.unique_name += 1
         inst = self.def_.add_module_instance(iname, const_mod, config=config)
         self.node_to_inst[node] = inst.select("out")
 
