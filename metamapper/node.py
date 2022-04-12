@@ -10,6 +10,8 @@ from hwtypes.adt import Product, Tuple, Sum, TaggedUnion
 import hwtypes as ht
 from . import CoreIRContext
 
+unique_name = 0
+
 #Passes will be run on this
 class DagNode(Visited):
     def __init__(self, *args, **kwargs):
@@ -39,7 +41,9 @@ class DagNode(Visited):
 
     def set_kwargs(self, **kwargs):
         if "iname" not in kwargs:
-            kwargs.update({"iname": f"i{id(self)}"})
+            global unique_name
+            kwargs.update({"iname": f"i{unique_name}"})
+            unique_name += 1
         if "type" in self.static_attributes and "type" in kwargs:
             kt =  kwargs["type"]
             sat = self.static_attributes["type"]

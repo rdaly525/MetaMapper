@@ -69,6 +69,19 @@ def gen_rrules(pipelined=False):
 
     return rrules, ops
 
+pe_reg_instrs = {}
+pe_reg_instrs["const"] = 0
+pe_reg_instrs["bypass"] = 2
+pe_reg_instrs["reg"] = 3
+
+pe_port_to_reg = {}
+pe_port_to_reg["data0"] = "rega"
+pe_port_to_reg["data1"] = "regb"
+pe_port_to_reg["data2"] = "regc"
+
+pe_reg_info = {}
+pe_reg_info['instrs'] = pe_reg_instrs
+pe_reg_info['port_to_reg'] = pe_port_to_reg
 
 file_name = str(sys.argv[1])
 if len(sys.argv) > 2:
@@ -109,11 +122,11 @@ for kname, kmod in kernels.items():
     dag = cutil.coreir_to_dag(CoreIRNodes, kmod, archnodes=ArchNodes)
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
-    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
+    mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False, pe_reg_info=pe_reg_info)
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 
-print(f"Num PEs used: {mapper.num_pes}")
+print(f"Total num PEs used: {mapper.num_pes}")
 output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)

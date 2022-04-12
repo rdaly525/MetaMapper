@@ -84,6 +84,7 @@ class RewriteTable:
         #input -> ibinding node
         ibind_children = []
         ibind_paths = []
+        port_names = ["inst"]
         #pretty_print_binding(rule.ibinding)
         #pretty_print_binding(rule.obinding)
         for from_b, to_b in rule.ibinding:
@@ -96,6 +97,8 @@ class RewriteTable:
                     T = T.field_dict[path[0]]
                     path = path[1:]
                 child = Constant(value=from_b, type=T)
+            if to_b[0] != "inst":
+                port_names.append(to_b)
             ibind_paths.append(to_b)
             ibind_children.append(child)
 
@@ -104,6 +107,7 @@ class RewriteTable:
         #ibinding node -> to_node
         to_children = [ibind.select(field) for field in to_bv.input_t.field_dict]
         to_node = to_node_t(*to_children)
+        to_node.add_metadata(port_names)
 
         #to_node -> obinding_node
         obind_children = []
@@ -129,11 +133,11 @@ class RewriteTable:
         # print("Before combine")
         # print_dag(to_dag)
         BindsToCombines().run(to_dag)
-        #print("After combine")
-        #print_dag(to_dag)
+        # print("After combine")
+        # print_dag(to_dag)
         SimplifyCombines().run(to_dag)
-        #print("After Simplify")
-        #print_dag(to_dag)
+        # print("After Simplify")
+        # print_dag(to_dag)
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
         #print_dag(to_dag)
