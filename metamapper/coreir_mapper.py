@@ -26,6 +26,7 @@ class Mapper:
         self.ArchNodes = ArchNodes
         self.table = RewriteTable(CoreIRNodes, ArchNodes)
         self.num_pes = 0
+        self.num_regs = 0
         self.kernel_cycles = {}
         self.const_rr = None
         self.bit_const_rr = None        
@@ -95,7 +96,7 @@ class Mapper:
         RemoveSelects().run(mapped_dag)
 
         self.num_pes += count_pes(mapped_dag)
-        print("Used", count_pes(mapped_dag), "PEs")
+        print("\tUsed", count_pes(mapped_dag), "PEs")
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         
         if unmapped is not None:
@@ -103,7 +104,10 @@ class Mapper:
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
         if node_cycles is not None:
-            DelayMatching(node_cycles).run(mapped_dag)
+            # delay_matching = DelayMatching(node_cycles)
+            # delay_matching.run(mapped_dag)
+            # print("\tAdded", delay_matching.inserted_regs, "during branch delay matching")
+            # self.num_regs += delay_matching.inserted_regs
             self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
 
         if prove_mapping:

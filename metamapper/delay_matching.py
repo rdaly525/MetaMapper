@@ -6,6 +6,7 @@ class DelayMatching(Transformer):
     def __init__(self, node_latencies):
         self.node_latencies = node_latencies
         self.aggregate_latencies = {}
+        self.inserted_regs = 0
 
     def visit_Constant(self, node):
         self.aggregate_latencies[node] = None
@@ -35,6 +36,7 @@ class DelayMatching(Transformer):
                 pipeline_type = child.type
                 for reg_index in range(diff):  # diff = number of pipeline reg
                     new_child = PipelineRegister(new_child, type=pipeline_type)
+                    self.inserted_regs += 1
                 new_children[i] = new_child
             node.set_children(*new_children)
             this_latency = self.node_latencies.get(node)
@@ -50,15 +52,15 @@ class KernelDelay(Visitor):
         self.aggregate_latencies = {}
         self.run(dag)
         output_latencies = [self.aggregate_latencies[root] if self.aggregate_latencies[root] != None else 0 for root in dag.roots()]
-        if not all(output_latencies[0] == l for l in output_latencies):
-            raise ValueError("Mismatched output latencies")
+        # if not all(output_latencies[0] == l for l in output_latencies):
+        #     raise ValueError("Mismatched output latencies")
         return output_latencies[0]
 
     def visit_Constant(self, node):
         self.aggregate_latencies[node] = None
 
     def visit_Source(self, node):
-        self.aggregate_latencies[node] = 0
+        self.aggregate_latencies[node] = [(node, 0)]
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
@@ -66,17 +68,20 @@ class KernelDelay(Visitor):
                      for child in node.children()]
         if len(latencies) == 0:
             return
-        unique_latencies = set(latencies)
-        if None in unique_latencies:
-            unique_latencies.remove(None)
-        if len(unique_latencies)==0:
+
+        latencies = [lat for lat in latencies if lat is not None]
+        
+        if len(latencies)==0:
             self.aggregate_latencies[node] = None
-        elif len(unique_latencies) == 1:
-            child_latency = unique_latencies.pop()
+        else: 
             this_latency = self.node_latencies.get(node)
-            self.aggregate_latencies[node] = child_latency + this_latency
-        else:
-            raise ValueError("Dag is not delay matched", unique_latencies)
+            self.aggregate_latencies[node] = [] 
+            for child_latency_list in latencies:
+                for (child_node, child_latency) in child_latency_list:
+                    if node.node_name == "Select" and node.child.node_name == "Select" and node.child.child == child_node:
+                        child_node =  f"{node.child.field}_{str(node.field)}"
+                    self.aggregate_latencies[node].append((child_node, child_latency + this_latency))
+       
 
     def visit_PipelineRegister(self, node):
         Visitor.generic_visit(self, node)
