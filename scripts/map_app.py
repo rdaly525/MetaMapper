@@ -133,6 +133,6 @@ print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)
 
 with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
-    json.dump(mapper.kernel_cycles, outfile)
+    json.dump(mapper.kernel_cycles, outfile, indent=4)
 
 
