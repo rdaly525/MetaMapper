@@ -33,7 +33,7 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                  add_flush=True,
                  override_name=None,
                  gen_addr=True,
-                 tech_map=TSMC_Tech_Map):
+                 tech_map=TSMC_Tech_Map(depth=512, width=32)):
 
     mem_tile = LakeTop(data_width=data_width,
                               mem_width=mem_width,
