@@ -150,7 +150,7 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                 output_width_16_num_1 = BV(16),
                 output_width_1_num_1 = BV(1),
                 output_width_1_num_2 = BV(1),
-                output_width_1_num_3 = BV(1),
+                output_width_1_num_4 = BV(1),
                 config_data_out_0 = BV(32),
                 config_data_out_1 = BV(32),
                 output_width_1_num_0 = BV(1)
@@ -206,7 +206,7 @@ def gen_MEM_fc(data_width=16,  # CGRA Params
                     outputs["output_width_16_num_1"],
                     outputs["output_width_1_num_1"] == family.BitVector[1](1),
                     outputs["output_width_1_num_2"] == family.BitVector[1](1),
-                    outputs["output_width_1_num_3"] == family.BitVector[1](1),
+                    outputs["output_width_1_num_4"] == family.BitVector[1](1),
                     outputs["config_data_out_0"],
                     outputs["config_data_out_1"],
                     outputs["output_width_1_num_0"] == family.BitVector[1](1)
