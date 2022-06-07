@@ -1,11 +1,12 @@
 from DagVisitor import Transformer, Visitor
 from metamapper.node import Constant, PipelineRegister
-
+from hwtypes import Bit
 
 class DelayMatching(Transformer):
-    def __init__(self, node_latencies):
+    def __init__(self, node_latencies, bit_only=False):
         self.node_latencies = node_latencies
         self.aggregate_latencies = {}
+        self.bit_only = bit_only
 
     def visit_Constant(self, node):
         self.aggregate_latencies[node] = None
@@ -33,8 +34,9 @@ class DelayMatching(Transformer):
                     continue
                 new_child = child
                 pipeline_type = child.type
-                for reg_index in range(diff):  # diff = number of pipeline reg
-                    new_child = PipelineRegister(new_child, type=pipeline_type)
+                if not self.bit_only or pipeline_type == Bit:
+                    for reg_index in range(diff):  # diff = number of pipeline reg
+                        new_child = PipelineRegister(new_child, type=pipeline_type)
                 new_children[i] = new_child
             node.set_children(*new_children)
             this_latency = self.node_latencies.get(node)

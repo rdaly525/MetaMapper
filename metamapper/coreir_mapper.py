@@ -106,6 +106,7 @@ class Mapper:
         
         if 'POND_PIPELINED' in os.environ and os.environ['POND_PIPELINED'] == '1':
             self.kernel_cycles[kname] = 0
+            DelayMatching(node_cycles, bit_only=True).run(mapped_dag)
         else:
             if node_cycles is not None:
                 DelayMatching(node_cycles).run(mapped_dag)
