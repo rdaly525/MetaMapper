@@ -13,6 +13,18 @@ def gen_peak_CoreIR(width):
     CoreIR = gen_custom_ops_peak_CoreIR(DATAWIDTH)
 
     @family_closure
+    def pond_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class pond(Peak):
+            @name_outputs(data_out_pond_0=Data)
+            def __call__(self, flush: Bit, clk_en: Bit, data_in_pond_0: Data) -> Data:
+                return rdata
+        return pond
+
+    CoreIR.add_instruction("global.Pond", pond_fc)
+
+    @family_closure
     def rom_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         Bit = family.Bit

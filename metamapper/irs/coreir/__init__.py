@@ -318,7 +318,26 @@ def gen_CoreIRNodes(width):
 
     CoreIRNodes.custom_inline["coreir.neq"] = (Dag(sources=[source_node4], sinks=[sink_node]), [eq])
  
+    class Pond(DagNode):
+        def __init__(self, flush, clk_en, data_in_pond_0, *, iname):
+            super().__init__(flush, clk_en, data_in_pond_0, iname=iname)
+            self.modparams=()
 
+        @property
+        def attributes(self):
+            return ("iname",)
+
+        nodes = CoreIRNodes
+        static_attributes = {}
+        node_name = "global.Pond"
+        num_children = 3
+        type = Product.from_fields("Output",{"data_out_pond_0":BitVector[16]})
+
+    header_modules = c.load_header("/aha/MetaMapper/libs/pond_header.json")
+    cmod = header_modules[0]
+    CoreIRNodes.add("global.Pond", peak_ir.instructions["global.Pond"], cmod, Pond)
+    assert "global.Pond" in CoreIRNodes.dag_nodes
+    assert CoreIRNodes.dag_nodes["global.Pond"] is not None
 
     return CoreIRNodes
 

@@ -13,7 +13,7 @@ import metamapper.peak_util as putil
 from metamapper.node import Nodes
 from metamapper import CoreIRContext
 from metamapper.coreir_mapper import Mapper
-from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant
+from metamapper.common_passes import print_dag, gen_dag_img, Constant2CoreIRConstant, AddPipeliningPonds
 from peak.mapper import read_serialized_bindings
 
 from peak_gen.arch import read_arch
@@ -82,16 +82,19 @@ output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib", "float_DW"])
-CoreIRNodes = gen_CoreIRNodes(16)
 cutil.load_from_json(file_name) #libraries=["lakelib"])
 kernels = dict(c.global_namespace.modules)
 
+CoreIRNodes = gen_CoreIRNodes(16)
 ArchNodes = Nodes("Arch")
 putil.load_and_link_peak(
     ArchNodes,
     pe_header,
     {"global.PE": arch_fc}
 )
+
+mr = "global.Pond"
+ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=True, rrules=rrules)
 
@@ -104,6 +107,9 @@ for kname, kmod in kernels.items():
     Constant2CoreIRConstant(CoreIRNodes).run(dag)
 
     mapped_dag = mapper.do_mapping(dag, kname=kname, node_cycles=_ArchCycles(), convert_unbound=False, prove_mapping=False)
+    if 'POND_PIPELINED' in os.environ and os.environ['POND_PIPELINED'] == '1':
+        mapped_dag = AddPipeliningPonds(ArchNodes).doit(mapped_dag)
+
     mod = cutil.dag_to_coreir(ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog)
     mods.append(mod)
 

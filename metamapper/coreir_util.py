@@ -669,7 +669,7 @@ class FixSelects(Transformer):
                 dag_node = dag_node[0] #Use the source
             assert issubclass(dag_node, DagNode), f"{dag_node}"
             peak_outputs = list(peak_fc(fam().PyFamily()).output_t.field_dict.keys())
-            assert len(peak_outputs) == len(c_output_keys)
+            #assert len(peak_outputs) == len(c_output_keys)
             self.field_map[dag_node] = {name: c_output_keys[i] for i, name in enumerate(peak_outputs)}
             #if len(peak_outputs) == 1:
             #    self.field_map[dag_node] = {peak_outputs[0]: }

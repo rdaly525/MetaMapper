@@ -9,7 +9,7 @@ from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
 import coreir
 import json
-
+import os
 
 class DefaultLatency:
 
@@ -103,9 +103,13 @@ class Mapper:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
-        if node_cycles is not None:
-            DelayMatching(node_cycles).run(mapped_dag)
-            self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
+        
+        if 'POND_PIPELINED' in os.environ and os.environ['POND_PIPELINED'] == '1':
+            self.kernel_cycles[kname] = 0
+        else:
+            if node_cycles is not None:
+                DelayMatching(node_cycles).run(mapped_dag)
+                self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)
