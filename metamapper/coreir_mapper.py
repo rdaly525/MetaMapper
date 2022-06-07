@@ -55,6 +55,7 @@ class Mapper:
                         op = op.split("_pipelined")[0]
                     self.table.add_peak_rule(peak_rule, op)
                 else:
+                    print(ind)
                     self.table.add_peak_rule(peak_rule, ind)
             self.table.sort_rules()
 

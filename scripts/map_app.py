@@ -109,8 +109,8 @@ putil.load_and_link_peak(
     {"global.PE": arch_fc}
 )
 
-mr = "memory.fprom2"
-ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
+# mr = "memory.fprom2"
+# ArchNodes.add(mr, CoreIRNodes.peak_nodes[mr], CoreIRNodes.coreir_modules[mr], CoreIRNodes.dag_nodes[mr])
 
 mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops = ops, rrules=rrules)
 
