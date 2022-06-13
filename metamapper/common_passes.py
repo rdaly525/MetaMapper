@@ -726,16 +726,38 @@ class AddPipeliningPonds(Visitor):
         children = (self.node_map[child] for child in node.children())
         new_children = []
         for child in children:
+            added_pond = False
             if node.node_name == "global.PE" and child.type == ht.BitVector[16] and len(child.children()) != 0:
                 # Add pond
-                flush = Constant(type=ht.Bit, value=ht.Bit(0))
-                clk_en = Constant(type=ht.Bit, value=ht.Bit(1))
-                pond = self.nodes.dag_nodes['global.Pond'](flush, clk_en, child, iname=f"pond_{self.added_ponds}_{node.iname}")
-                new_children.append(pond.select("O0"))
-                self.added_ponds += 1
-            else:
+                if len(child.children()) == 1 and len(child.child.children()) == 1:
+                    if child.child.child.node_name == "Input":
+                        flush = Constant(type=ht.Bit, value=ht.Bit(0))
+                        clk_en = Constant(type=ht.Bit, value=ht.Bit(1))
+                        pond = self.nodes.dag_nodes['global.Pond'](flush, clk_en, child, iname=f"pond_{self.added_ponds}_{node.iname}")
+                        new_children.append(pond.select("O0"))
+                        self.added_ponds += 1
+                        added_pond = True
+            if not added_pond:
                 new_children.append(child)
         new_node.set_children(*new_children)
         new_node.iname =  new_node.iname
         self.node_map[node] = new_node
 
+    # def generic_visit(self, node):
+    #     Visitor.generic_visit(self, node)
+    #     new_node = node.copy()
+    #     children = (self.node_map[child] for child in node.children())
+    #     new_children = []
+    #     for child in children:
+    #         if hasattr(child, "node_name") and child.node_name == "Select" and child.children()[0].node_name == "global.PE" and child.type != ht.Bit:
+    #             # Add pond
+    #             flush = Constant(type=ht.Bit, value=ht.Bit(0)) 
+    #             clk_en = Constant(type=ht.Bit, value=ht.Bit(1))
+    #             pond = self.nodes.dag_nodes['global.Pond'](flush, clk_en, child, iname=f"pond_{self.added_ponds}_{child.children()[0].iname}")
+    #             new_children.append(pond.select("O0"))
+    #             self.added_ponds += 1
+    #         else:
+    #             new_children.append(child)
+    #     new_node.set_children(*new_children)
+    #     new_node.iname =  new_node.iname
+    #     self.node_map[node] = new_node
