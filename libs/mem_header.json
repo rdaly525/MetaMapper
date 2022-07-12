@@ -1,4 +1,70 @@
 {"namespaces":{
+  "corebit":{
+    "modules":{
+      "reg":{
+        "type":["Record",[
+          ["clk",["Named","coreir.clkIn"]],
+          ["in","BitIn"],
+          ["out","Bit"]
+        ]],
+        "modparams":{"clk_posedge":"Bool", "init":"Bool"},
+        "defaultmodargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+      }
+    }
+  },
+  "coreir":{
+    "generators":{
+      "const":{
+        "typegen":"coreir.singleOutType",
+        "genparams":{"width":"Int"},
+        "modules":[
+          [
+            {"width":["Int",67]},
+            {
+              "type":["Record",[
+                ["out",["Array",67,"Bit"]]
+              ]],
+              "modparams":{"value":["BitVector",67]}
+            }
+          ]
+        ]
+      },
+      "reg":{
+        "typegen":"coreir.regType",
+        "genparams":{"width":"Int"},
+        "modules":[
+          [
+            {"width":["Int",16]},
+            {
+              "type":["Record",[
+                ["clk",["Named","coreir.clkIn"]],
+                ["in",["Array",16,"BitIn"]],
+                ["out",["Array",16,"Bit"]]
+              ]],
+              "modparams":{"clk_posedge":"Bool", "init":["BitVector",16]},
+              "defaultmodargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+            }
+          ]
+        ]
+      }
+    },
+    "typegens":{
+      "regType":[
+        {"width":"Int"},
+        "sparse",
+        [
+          [{"width":["Int",16]},["Record",[["clk",["Named","coreir.clkIn"]],["in",["Array",16,"BitIn"]],["out",["Array",16,"Bit"]]]]]
+        ]
+      ],
+      "singleOutType":[
+        {"width":"Int"},
+        "sparse",
+        [
+          [{"width":["Int",67]},["Record",[["out",["Array",67,"Bit"]]]]]
+        ]
+      ]
+    }
+  },
   "global":{
     "modules":{
       "MEM":{
@@ -28,6 +94,3248 @@
           ["CLK",["Named","coreir.clkIn"]],
           ["ASYNCRESET",["Named","coreir.arstIn"]]
         ]]
+      },
+      "PE":{
+        "type":["Record",[
+          ["inst",["Array",67,"BitIn"]],
+          ["data0",["Array",16,"BitIn"]],
+          ["data1",["Array",16,"BitIn"]],
+          ["bit0","BitIn"],
+          ["bit1","BitIn"],
+          ["bit2","BitIn"],
+          ["clk_en","BitIn"],
+          ["config_addr",["Array",8,"BitIn"]],
+          ["config_data",["Array",32,"BitIn"]],
+          ["config_en","BitIn"],
+          ["O0",["Array",16,"Bit"]],
+          ["O1","Bit"],
+          ["O2",["Array",32,"Bit"]],
+          ["CLK",["Named","coreir.clkIn"]],
+          ["ASYNCRESET",["Named","coreir.arstIn"]]
+        ]]
+      },
+      "hcompute_cim_output_stencil_mapped":{
+        "type":["Record",[
+          ["in0_cim_stencil",["Array",9,["Array",16,"BitIn"]]],
+          ["out_cim_output_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "bitand_635_636_637_i66686_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_637_638_639_i66689_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_639_640_641_i66692_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_641_642_643_i66695_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_643_644_645_i66698_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_645_646_647_i66701_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_647_648_649_i66704_i63580":{
+            "modref":"global.PE"
+          },
+          "bitand_649_651_652_i66707_i63580":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800000000880008"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h000000100ff080004"]}
+          },
+          "c10":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c11":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c12":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c13":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c14":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c15":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c16":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c17":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h24400020000940606"]}
+          },
+          "c18":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h000000400009f8104"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c8":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "c9":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h1480002d0001c1100"]}
+          },
+          "i66711_i66712_i63334":{
+            "modref":"global.PE"
+          },
+          "i66718":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66719":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66720":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66721":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66722":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66723":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66724":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66725":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66726":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66727":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66728":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66729":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66730":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66731":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66732":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66733":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66734":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66735":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66736":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66737":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66738":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66739":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66740":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66741":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66742":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66743":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66744":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66745":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66746":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66747":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66748":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66749":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66750":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66751":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66752":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66753":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66754":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66755":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66756":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66757":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66758":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66759":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66760":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66761":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66762":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66763":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66764":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66765":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66766":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66767":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66768":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66769":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66770":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66771":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66772":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "i66773":{
+            "modref":"corebit.reg",
+            "modargs":{"clk_posedge":["Bool",true], "init":["Bool",false]}
+          },
+          "mux_6522550_i66708_i62887":{
+            "modref":"global.PE"
+          },
+          "sle_650_cim_stencil_2_651_i66706_i65773":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_1_cim_stencil_2_635_i66683_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_3_cim_stencil_2_636_i66685_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_4_cim_stencil_2_638_i66688_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_5_cim_stencil_2_640_i66691_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_6_cim_stencil_2_642_i66694_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_7_cim_stencil_2_644_i66697_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_8_cim_stencil_2_646_i66700_i64943":{
+            "modref":"global.PE"
+          },
+          "slt_cim_stencil_9_cim_stencil_2_648_i66703_i64943":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["bitand_637_638_639_i66689_i63580.bit0","bitand_635_636_637_i66686_i63580.O1"],
+          ["slt_cim_stencil_1_cim_stencil_2_635_i66683_i64943.O1","bitand_635_636_637_i66686_i63580.bit0"],
+          ["slt_cim_stencil_3_cim_stencil_2_636_i66685_i64943.O1","bitand_635_636_637_i66686_i63580.bit1"],
+          ["c9.out","bitand_635_636_637_i66686_i63580.inst"],
+          ["bitand_639_640_641_i66692_i63580.bit0","bitand_637_638_639_i66689_i63580.O1"],
+          ["i66719.out","bitand_637_638_639_i66689_i63580.bit1"],
+          ["c8.out","bitand_637_638_639_i66689_i63580.inst"],
+          ["bitand_641_642_643_i66695_i63580.bit0","bitand_639_640_641_i66692_i63580.O1"],
+          ["i66723.out","bitand_639_640_641_i66692_i63580.bit1"],
+          ["c7.out","bitand_639_640_641_i66692_i63580.inst"],
+          ["bitand_643_644_645_i66698_i63580.bit0","bitand_641_642_643_i66695_i63580.O1"],
+          ["i66729.out","bitand_641_642_643_i66695_i63580.bit1"],
+          ["c6.out","bitand_641_642_643_i66695_i63580.inst"],
+          ["bitand_645_646_647_i66701_i63580.bit0","bitand_643_644_645_i66698_i63580.O1"],
+          ["i66737.out","bitand_643_644_645_i66698_i63580.bit1"],
+          ["c5.out","bitand_643_644_645_i66698_i63580.inst"],
+          ["bitand_647_648_649_i66704_i63580.bit0","bitand_645_646_647_i66701_i63580.O1"],
+          ["i66747.out","bitand_645_646_647_i66701_i63580.bit1"],
+          ["c4.out","bitand_645_646_647_i66701_i63580.inst"],
+          ["bitand_649_651_652_i66707_i63580.bit0","bitand_647_648_649_i66704_i63580.O1"],
+          ["i66759.out","bitand_647_648_649_i66704_i63580.bit1"],
+          ["c3.out","bitand_647_648_649_i66704_i63580.inst"],
+          ["mux_6522550_i66708_i62887.bit0","bitand_649_651_652_i66707_i63580.O1"],
+          ["i66773.out","bitand_649_651_652_i66707_i63580.bit1"],
+          ["c2.out","bitand_649_651_652_i66707_i63580.inst"],
+          ["mux_6522550_i66708_i62887.inst","c0.out"],
+          ["i66711_i66712_i63334.inst","c1.out"],
+          ["slt_cim_stencil_1_cim_stencil_2_635_i66683_i64943.inst","c10.out"],
+          ["slt_cim_stencil_3_cim_stencil_2_636_i66685_i64943.inst","c11.out"],
+          ["slt_cim_stencil_4_cim_stencil_2_638_i66688_i64943.inst","c12.out"],
+          ["slt_cim_stencil_5_cim_stencil_2_640_i66691_i64943.inst","c13.out"],
+          ["slt_cim_stencil_6_cim_stencil_2_642_i66694_i64943.inst","c14.out"],
+          ["slt_cim_stencil_7_cim_stencil_2_644_i66697_i64943.inst","c15.out"],
+          ["slt_cim_stencil_8_cim_stencil_2_646_i66700_i64943.inst","c16.out"],
+          ["slt_cim_stencil_9_cim_stencil_2_648_i66703_i64943.inst","c17.out"],
+          ["sle_650_cim_stencil_2_651_i66706_i65773.inst","c18.out"],
+          ["mux_6522550_i66708_i62887.data0","i66711_i66712_i63334.O0"],
+          ["slt_cim_stencil_4_cim_stencil_2_638_i66688_i64943.O1","i66718.in"],
+          ["i66719.in","i66718.out"],
+          ["slt_cim_stencil_5_cim_stencil_2_640_i66691_i64943.O1","i66720.in"],
+          ["i66721.in","i66720.out"],
+          ["i66722.in","i66721.out"],
+          ["i66723.in","i66722.out"],
+          ["slt_cim_stencil_6_cim_stencil_2_642_i66694_i64943.O1","i66724.in"],
+          ["i66725.in","i66724.out"],
+          ["i66726.in","i66725.out"],
+          ["i66727.in","i66726.out"],
+          ["i66728.in","i66727.out"],
+          ["i66729.in","i66728.out"],
+          ["slt_cim_stencil_7_cim_stencil_2_644_i66697_i64943.O1","i66730.in"],
+          ["i66731.in","i66730.out"],
+          ["i66732.in","i66731.out"],
+          ["i66733.in","i66732.out"],
+          ["i66734.in","i66733.out"],
+          ["i66735.in","i66734.out"],
+          ["i66736.in","i66735.out"],
+          ["i66737.in","i66736.out"],
+          ["slt_cim_stencil_8_cim_stencil_2_646_i66700_i64943.O1","i66738.in"],
+          ["i66739.in","i66738.out"],
+          ["i66740.in","i66739.out"],
+          ["i66741.in","i66740.out"],
+          ["i66742.in","i66741.out"],
+          ["i66743.in","i66742.out"],
+          ["i66744.in","i66743.out"],
+          ["i66745.in","i66744.out"],
+          ["i66746.in","i66745.out"],
+          ["i66747.in","i66746.out"],
+          ["slt_cim_stencil_9_cim_stencil_2_648_i66703_i64943.O1","i66748.in"],
+          ["i66749.in","i66748.out"],
+          ["i66750.in","i66749.out"],
+          ["i66751.in","i66750.out"],
+          ["i66752.in","i66751.out"],
+          ["i66753.in","i66752.out"],
+          ["i66754.in","i66753.out"],
+          ["i66755.in","i66754.out"],
+          ["i66756.in","i66755.out"],
+          ["i66757.in","i66756.out"],
+          ["i66758.in","i66757.out"],
+          ["i66759.in","i66758.out"],
+          ["sle_650_cim_stencil_2_651_i66706_i65773.O1","i66760.in"],
+          ["i66761.in","i66760.out"],
+          ["i66762.in","i66761.out"],
+          ["i66763.in","i66762.out"],
+          ["i66764.in","i66763.out"],
+          ["i66765.in","i66764.out"],
+          ["i66766.in","i66765.out"],
+          ["i66767.in","i66766.out"],
+          ["i66768.in","i66767.out"],
+          ["i66769.in","i66768.out"],
+          ["i66770.in","i66769.out"],
+          ["i66771.in","i66770.out"],
+          ["i66772.in","i66771.out"],
+          ["i66773.in","i66772.out"],
+          ["self.out_cim_output_stencil","mux_6522550_i66708_i62887.O0"],
+          ["slt_cim_stencil_1_cim_stencil_2_635_i66683_i64943.data1","self.in0_cim_stencil.0"],
+          ["sle_650_cim_stencil_2_651_i66706_i65773.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_1_cim_stencil_2_635_i66683_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_3_cim_stencil_2_636_i66685_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_4_cim_stencil_2_638_i66688_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_5_cim_stencil_2_640_i66691_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_6_cim_stencil_2_642_i66694_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_7_cim_stencil_2_644_i66697_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_8_cim_stencil_2_646_i66700_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_9_cim_stencil_2_648_i66703_i64943.data0","self.in0_cim_stencil.1"],
+          ["slt_cim_stencil_3_cim_stencil_2_636_i66685_i64943.data1","self.in0_cim_stencil.2"],
+          ["slt_cim_stencil_4_cim_stencil_2_638_i66688_i64943.data1","self.in0_cim_stencil.3"],
+          ["slt_cim_stencil_5_cim_stencil_2_640_i66691_i64943.data1","self.in0_cim_stencil.4"],
+          ["slt_cim_stencil_6_cim_stencil_2_642_i66694_i64943.data1","self.in0_cim_stencil.5"],
+          ["slt_cim_stencil_7_cim_stencil_2_644_i66697_i64943.data1","self.in0_cim_stencil.6"],
+          ["slt_cim_stencil_8_cim_stencil_2_646_i66700_i64943.data1","self.in0_cim_stencil.7"],
+          ["slt_cim_stencil_9_cim_stencil_2_648_i66703_i64943.data1","self.in0_cim_stencil.8"]
+        ]
+      },
+      "hcompute_cim_stencil_mapped":{
+        "type":["Record",[
+          ["in0_lgxx_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_lgxy_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in2_lgyy_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["out_cim_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "add_587_588_593_i66808_i65523":{
+            "modref":"global.PE"
+          },
+          "ashr_594_595_596_i66811_i63664":{
+            "modref":"global.PE"
+          },
+          "ashr_lgxx_stencil_2_586_587_i66796_i63664":{
+            "modref":"global.PE"
+          },
+          "ashr_lgxy_stencil_2_586_590_i66805_i63664":{
+            "modref":"global.PE"
+          },
+          "ashr_lgyy_stencil_2_586_588_i66800_i63664":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002000080000b"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000018000080010f"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000018000080010f"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002000080000b"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000018000080010f"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000010000080010f"]}
+          },
+          "c8":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002000080000b"]}
+          },
+          "c9":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "i66825":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66826":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "mul_587_588_589_i66801_i66343":{
+            "modref":"global.PE"
+          },
+          "mul_590_590_591_i66806_i66343":{
+            "modref":"global.PE"
+          },
+          "mul_593_593_594_i66809_i66343":{
+            "modref":"global.PE"
+          },
+          "sub_589_591_592_i66807_i64491":{
+            "modref":"global.PE"
+          },
+          "sub_592_596_597_i66812_i64491":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["mul_593_593_594_i66809_i66343.data0","add_587_588_593_i66808_i65523.O0"],
+          ["mul_593_593_594_i66809_i66343.data1","add_587_588_593_i66808_i65523.O0"],
+          ["ashr_lgyy_stencil_2_586_588_i66800_i63664.O0","add_587_588_593_i66808_i65523.data0"],
+          ["ashr_lgxx_stencil_2_586_587_i66796_i63664.O0","add_587_588_593_i66808_i65523.data1"],
+          ["c9.out","add_587_588_593_i66808_i65523.inst"],
+          ["sub_592_596_597_i66812_i64491.data1","ashr_594_595_596_i66811_i63664.O0"],
+          ["mul_593_593_594_i66809_i66343.O0","ashr_594_595_596_i66811_i63664.data0"],
+          ["c7.out","ashr_594_595_596_i66811_i63664.inst"],
+          ["mul_587_588_589_i66801_i66343.data1","ashr_lgxx_stencil_2_586_587_i66796_i63664.O0"],
+          ["self.in0_lgxx_stencil.0","ashr_lgxx_stencil_2_586_587_i66796_i63664.data0"],
+          ["c4.out","ashr_lgxx_stencil_2_586_587_i66796_i63664.inst"],
+          ["mul_590_590_591_i66806_i66343.data0","ashr_lgxy_stencil_2_586_590_i66805_i63664.O0"],
+          ["mul_590_590_591_i66806_i66343.data1","ashr_lgxy_stencil_2_586_590_i66805_i63664.O0"],
+          ["self.in1_lgxy_stencil.0","ashr_lgxy_stencil_2_586_590_i66805_i63664.data0"],
+          ["c6.out","ashr_lgxy_stencil_2_586_590_i66805_i63664.inst"],
+          ["mul_587_588_589_i66801_i66343.data0","ashr_lgyy_stencil_2_586_588_i66800_i63664.O0"],
+          ["self.in2_lgyy_stencil.0","ashr_lgyy_stencil_2_586_588_i66800_i63664.data0"],
+          ["c3.out","ashr_lgyy_stencil_2_586_588_i66800_i63664.inst"],
+          ["sub_592_596_597_i66812_i64491.inst","c0.out"],
+          ["sub_589_591_592_i66807_i64491.inst","c1.out"],
+          ["mul_587_588_589_i66801_i66343.inst","c2.out"],
+          ["mul_590_590_591_i66806_i66343.inst","c5.out"],
+          ["mul_593_593_594_i66809_i66343.inst","c8.out"],
+          ["sub_589_591_592_i66807_i64491.O0","i66825.in"],
+          ["i66826.in","i66825.out"],
+          ["sub_592_596_597_i66812_i64491.data0","i66826.out"],
+          ["sub_589_591_592_i66807_i64491.data0","mul_587_588_589_i66801_i66343.O0"],
+          ["sub_589_591_592_i66807_i64491.data1","mul_590_590_591_i66806_i66343.O0"],
+          ["sub_592_596_597_i66812_i64491.O0","self.out_cim_stencil"]
+        ]
+      },
+      "hcompute_grad_x_unclamp_stencil_1_mapped":{
+        "type":["Record",[
+          ["in0_grad_x_unclamp_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_padded16_global_wrapper_stencil",["Array",6,["Array",16,"BitIn"]]],
+          ["out_grad_x_unclamp_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "add_grad_x_unclamp_stencil_1_280_281_i66852_i65523":{
+            "modref":"global.PE"
+          },
+          "add_padded16_global_wrapper_stencil_1_279_280_i66851_i65523":{
+            "modref":"global.PE"
+          },
+          "add_padded16_global_wrapper_stencil_2_278_279_i66850_i65523":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000008000080000b"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000008000080000b"]}
+          },
+          "i66867":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66868":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66869":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66870":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66871":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66872":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66873":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66874":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66875":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66876":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66877":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66878":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66879":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66880":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66881":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66882":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66883":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66884":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66885":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66886":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66887":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66888":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66889":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66890":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66891":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66892":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66893":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66894":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66895":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66896":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66897":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66898":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66899":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66900":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66901":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66902":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66903":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66904":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66905":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66906":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "mul_padded16_global_wrapper_stencil_3_277_278_i66849_i64076":{
+            "modref":"global.PE"
+          },
+          "mul_padded16_global_wrapper_stencil_5_277_283_i66857_i64076":{
+            "modref":"global.PE"
+          },
+          "sub_281_padded16_global_wrapper_stencil_4_282_i66854_i64491":{
+            "modref":"global.PE"
+          },
+          "sub_282_283_284_i66858_i64491":{
+            "modref":"global.PE"
+          },
+          "sub_284_padded16_global_wrapper_stencil_6_285_i66860_i64491":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["sub_281_padded16_global_wrapper_stencil_4_282_i66854_i64491.data0","add_grad_x_unclamp_stencil_1_280_281_i66852_i65523.O0"],
+          ["add_padded16_global_wrapper_stencil_1_279_280_i66851_i65523.O0","add_grad_x_unclamp_stencil_1_280_281_i66852_i65523.data0"],
+          ["i66878.out","add_grad_x_unclamp_stencil_1_280_281_i66852_i65523.data1"],
+          ["c3.out","add_grad_x_unclamp_stencil_1_280_281_i66852_i65523.inst"],
+          ["add_padded16_global_wrapper_stencil_2_278_279_i66850_i65523.O0","add_padded16_global_wrapper_stencil_1_279_280_i66851_i65523.data0"],
+          ["i66872.out","add_padded16_global_wrapper_stencil_1_279_280_i66851_i65523.data1"],
+          ["c4.out","add_padded16_global_wrapper_stencil_1_279_280_i66851_i65523.inst"],
+          ["mul_padded16_global_wrapper_stencil_3_277_278_i66849_i64076.O0","add_padded16_global_wrapper_stencil_2_278_279_i66850_i65523.data0"],
+          ["i66868.out","add_padded16_global_wrapper_stencil_2_278_279_i66850_i65523.data1"],
+          ["c5.out","add_padded16_global_wrapper_stencil_2_278_279_i66850_i65523.inst"],
+          ["sub_284_padded16_global_wrapper_stencil_6_285_i66860_i64491.inst","c0.out"],
+          ["sub_282_283_284_i66858_i64491.inst","c1.out"],
+          ["sub_281_padded16_global_wrapper_stencil_4_282_i66854_i64491.inst","c2.out"],
+          ["mul_padded16_global_wrapper_stencil_3_277_278_i66849_i64076.inst","c6.out"],
+          ["mul_padded16_global_wrapper_stencil_5_277_283_i66857_i64076.inst","c7.out"],
+          ["self.in1_padded16_global_wrapper_stencil.1","i66867.in"],
+          ["i66868.in","i66867.out"],
+          ["self.in1_padded16_global_wrapper_stencil.0","i66869.in"],
+          ["i66870.in","i66869.out"],
+          ["i66871.in","i66870.out"],
+          ["i66872.in","i66871.out"],
+          ["self.in0_grad_x_unclamp_stencil.0","i66873.in"],
+          ["i66874.in","i66873.out"],
+          ["i66875.in","i66874.out"],
+          ["i66876.in","i66875.out"],
+          ["i66877.in","i66876.out"],
+          ["i66878.in","i66877.out"],
+          ["self.in1_padded16_global_wrapper_stencil.3","i66879.in"],
+          ["i66880.in","i66879.out"],
+          ["i66881.in","i66880.out"],
+          ["i66882.in","i66881.out"],
+          ["i66883.in","i66882.out"],
+          ["i66884.in","i66883.out"],
+          ["i66885.in","i66884.out"],
+          ["i66886.in","i66885.out"],
+          ["sub_281_padded16_global_wrapper_stencil_4_282_i66854_i64491.data1","i66886.out"],
+          ["mul_padded16_global_wrapper_stencil_5_277_283_i66857_i64076.O0","i66887.in"],
+          ["i66888.in","i66887.out"],
+          ["i66889.in","i66888.out"],
+          ["i66890.in","i66889.out"],
+          ["i66891.in","i66890.out"],
+          ["i66892.in","i66891.out"],
+          ["i66893.in","i66892.out"],
+          ["i66894.in","i66893.out"],
+          ["sub_282_283_284_i66858_i64491.data1","i66894.out"],
+          ["self.in1_padded16_global_wrapper_stencil.5","i66895.in"],
+          ["i66896.in","i66895.out"],
+          ["i66897.in","i66896.out"],
+          ["i66898.in","i66897.out"],
+          ["i66899.in","i66898.out"],
+          ["i66900.in","i66899.out"],
+          ["i66901.in","i66900.out"],
+          ["i66902.in","i66901.out"],
+          ["i66903.in","i66902.out"],
+          ["i66904.in","i66903.out"],
+          ["i66905.in","i66904.out"],
+          ["i66906.in","i66905.out"],
+          ["sub_284_padded16_global_wrapper_stencil_6_285_i66860_i64491.data1","i66906.out"],
+          ["self.in1_padded16_global_wrapper_stencil.2","mul_padded16_global_wrapper_stencil_3_277_278_i66849_i64076.data0"],
+          ["self.in1_padded16_global_wrapper_stencil.4","mul_padded16_global_wrapper_stencil_5_277_283_i66857_i64076.data0"],
+          ["sub_284_padded16_global_wrapper_stencil_6_285_i66860_i64491.O0","self.out_grad_x_unclamp_stencil"],
+          ["sub_282_283_284_i66858_i64491.data0","sub_281_padded16_global_wrapper_stencil_4_282_i66854_i64491.O0"],
+          ["sub_284_padded16_global_wrapper_stencil_6_285_i66860_i64491.data0","sub_282_283_284_i66858_i64491.O0"]
+        ]
+      },
+      "hcompute_grad_x_unclamp_stencil_mapped":{
+        "type":["Record",[
+          ["out_grad_x_unclamp_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00000010000080004"]}
+          },
+          "i66838_i66839_i63334":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["i66838_i66839_i63334.inst","c0.out"],
+          ["self.out_grad_x_unclamp_stencil","i66838_i66839_i63334.O0"]
+        ]
+      },
+      "hcompute_grad_y_unclamp_stencil_1_mapped":{
+        "type":["Record",[
+          ["in0_grad_y_unclamp_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_padded16_global_wrapper_stencil",["Array",6,["Array",16,"BitIn"]]],
+          ["out_grad_y_unclamp_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "add_grad_y_unclamp_stencil_1_396_397_i66930_i65523":{
+            "modref":"global.PE"
+          },
+          "add_padded16_global_wrapper_stencil_7_395_396_i66929_i65523":{
+            "modref":"global.PE"
+          },
+          "add_padded16_global_wrapper_stencil_8_394_395_i66928_i65523":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h01000020000880106"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000008000080000b"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000008000080000b"]}
+          },
+          "i66945":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66946":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66947":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66948":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66949":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66950":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66951":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66952":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66953":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66954":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66955":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66956":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66957":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66958":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66959":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66960":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66961":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66962":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66963":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66964":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66965":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66966":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66967":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66968":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66969":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66970":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66971":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66972":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66973":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66974":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66975":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66976":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66977":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66978":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66979":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66980":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66981":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66982":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66983":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i66984":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "mul_padded16_global_wrapper_stencil_11_393_399_i66935_i64076":{
+            "modref":"global.PE"
+          },
+          "mul_padded16_global_wrapper_stencil_9_393_394_i66927_i64076":{
+            "modref":"global.PE"
+          },
+          "sub_397_padded16_global_wrapper_stencil_10_398_i66932_i64491":{
+            "modref":"global.PE"
+          },
+          "sub_398_399_400_i66936_i64491":{
+            "modref":"global.PE"
+          },
+          "sub_400_padded16_global_wrapper_stencil_12_401_i66938_i64491":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["sub_397_padded16_global_wrapper_stencil_10_398_i66932_i64491.data0","add_grad_y_unclamp_stencil_1_396_397_i66930_i65523.O0"],
+          ["add_padded16_global_wrapper_stencil_7_395_396_i66929_i65523.O0","add_grad_y_unclamp_stencil_1_396_397_i66930_i65523.data0"],
+          ["i66956.out","add_grad_y_unclamp_stencil_1_396_397_i66930_i65523.data1"],
+          ["c3.out","add_grad_y_unclamp_stencil_1_396_397_i66930_i65523.inst"],
+          ["add_padded16_global_wrapper_stencil_8_394_395_i66928_i65523.O0","add_padded16_global_wrapper_stencil_7_395_396_i66929_i65523.data0"],
+          ["i66950.out","add_padded16_global_wrapper_stencil_7_395_396_i66929_i65523.data1"],
+          ["c4.out","add_padded16_global_wrapper_stencil_7_395_396_i66929_i65523.inst"],
+          ["mul_padded16_global_wrapper_stencil_9_393_394_i66927_i64076.O0","add_padded16_global_wrapper_stencil_8_394_395_i66928_i65523.data0"],
+          ["i66946.out","add_padded16_global_wrapper_stencil_8_394_395_i66928_i65523.data1"],
+          ["c5.out","add_padded16_global_wrapper_stencil_8_394_395_i66928_i65523.inst"],
+          ["sub_400_padded16_global_wrapper_stencil_12_401_i66938_i64491.inst","c0.out"],
+          ["sub_398_399_400_i66936_i64491.inst","c1.out"],
+          ["sub_397_padded16_global_wrapper_stencil_10_398_i66932_i64491.inst","c2.out"],
+          ["mul_padded16_global_wrapper_stencil_9_393_394_i66927_i64076.inst","c6.out"],
+          ["mul_padded16_global_wrapper_stencil_11_393_399_i66935_i64076.inst","c7.out"],
+          ["self.in1_padded16_global_wrapper_stencil.4","i66945.in"],
+          ["i66946.in","i66945.out"],
+          ["self.in1_padded16_global_wrapper_stencil.3","i66947.in"],
+          ["i66948.in","i66947.out"],
+          ["i66949.in","i66948.out"],
+          ["i66950.in","i66949.out"],
+          ["self.in0_grad_y_unclamp_stencil.0","i66951.in"],
+          ["i66952.in","i66951.out"],
+          ["i66953.in","i66952.out"],
+          ["i66954.in","i66953.out"],
+          ["i66955.in","i66954.out"],
+          ["i66956.in","i66955.out"],
+          ["self.in1_padded16_global_wrapper_stencil.0","i66957.in"],
+          ["i66958.in","i66957.out"],
+          ["i66959.in","i66958.out"],
+          ["i66960.in","i66959.out"],
+          ["i66961.in","i66960.out"],
+          ["i66962.in","i66961.out"],
+          ["i66963.in","i66962.out"],
+          ["i66964.in","i66963.out"],
+          ["sub_397_padded16_global_wrapper_stencil_10_398_i66932_i64491.data1","i66964.out"],
+          ["mul_padded16_global_wrapper_stencil_11_393_399_i66935_i64076.O0","i66965.in"],
+          ["i66966.in","i66965.out"],
+          ["i66967.in","i66966.out"],
+          ["i66968.in","i66967.out"],
+          ["i66969.in","i66968.out"],
+          ["i66970.in","i66969.out"],
+          ["i66971.in","i66970.out"],
+          ["i66972.in","i66971.out"],
+          ["sub_398_399_400_i66936_i64491.data1","i66972.out"],
+          ["self.in1_padded16_global_wrapper_stencil.2","i66973.in"],
+          ["i66974.in","i66973.out"],
+          ["i66975.in","i66974.out"],
+          ["i66976.in","i66975.out"],
+          ["i66977.in","i66976.out"],
+          ["i66978.in","i66977.out"],
+          ["i66979.in","i66978.out"],
+          ["i66980.in","i66979.out"],
+          ["i66981.in","i66980.out"],
+          ["i66982.in","i66981.out"],
+          ["i66983.in","i66982.out"],
+          ["i66984.in","i66983.out"],
+          ["sub_400_padded16_global_wrapper_stencil_12_401_i66938_i64491.data1","i66984.out"],
+          ["self.in1_padded16_global_wrapper_stencil.1","mul_padded16_global_wrapper_stencil_11_393_399_i66935_i64076.data0"],
+          ["self.in1_padded16_global_wrapper_stencil.5","mul_padded16_global_wrapper_stencil_9_393_394_i66927_i64076.data0"],
+          ["sub_400_padded16_global_wrapper_stencil_12_401_i66938_i64491.O0","self.out_grad_y_unclamp_stencil"],
+          ["sub_398_399_400_i66936_i64491.data0","sub_397_padded16_global_wrapper_stencil_10_398_i66932_i64491.O0"],
+          ["sub_400_padded16_global_wrapper_stencil_12_401_i66938_i64491.data0","sub_398_399_400_i66936_i64491.O0"]
+        ]
+      },
+      "hcompute_grad_y_unclamp_stencil_mapped":{
+        "type":["Record",[
+          ["out_grad_y_unclamp_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00000010000080004"]}
+          },
+          "i66916_i66917_i63334":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["i66916_i66917_i63334.inst","c0.out"],
+          ["self.out_grad_y_unclamp_stencil","i66916_i66917_i63334.O0"]
+        ]
+      },
+      "hcompute_hw_output_stencil_mapped":{
+        "type":["Record",[
+          ["in0_cim_output_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["out_hw_output_stencil",["Array",16,"Bit"]]
+        ]],
+        "connections":[
+          ["self.out_hw_output_stencil","self.in0_cim_output_stencil.0"]
+        ]
+      },
+      "hcompute_lgxx_stencil_1_mapped":{
+        "type":["Record",[
+          ["in0_lgxx_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_lxx_stencil",["Array",9,["Array",16,"BitIn"]]],
+          ["out_lgxx_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "add_lgxx_stencil_1_351_352_i67019_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_1_352_353_i67020_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_2_350_351_i67018_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_3_349_350_i67017_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_4_348_349_i67016_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_5_347_348_i67015_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_6_346_347_i67014_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_7_345_346_i67013_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxx_stencil_8_lxx_stencil_9_345_i67012_i65523":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c8":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "i67021":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67022":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67023":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67024":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67025":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67026":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67027":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67028":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67029":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67030":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67031":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67032":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67033":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67034":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67035":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67036":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67037":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67038":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67039":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67040":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67041":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67042":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67043":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67044":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67045":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67046":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67047":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67048":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67049":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67050":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67051":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67052":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67053":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67054":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67055":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67056":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67057":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67058":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67059":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67060":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67061":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67062":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67063":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67064":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67065":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67066":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67067":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67068":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67069":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67070":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67071":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67072":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67073":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67074":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67075":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67076":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67077":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67078":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67079":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67080":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67081":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67082":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67083":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67084":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67085":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67086":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67087":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67088":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67089":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67090":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67091":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67092":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          }
+        },
+        "connections":[
+          ["add_lxx_stencil_1_352_353_i67020_i65523.data0","add_lgxx_stencil_1_351_352_i67019_i65523.O0"],
+          ["add_lxx_stencil_2_350_351_i67018_i65523.O0","add_lgxx_stencil_1_351_352_i67019_i65523.data0"],
+          ["i67076.out","add_lgxx_stencil_1_351_352_i67019_i65523.data1"],
+          ["c1.out","add_lgxx_stencil_1_351_352_i67019_i65523.inst"],
+          ["self.out_lgxx_stencil","add_lxx_stencil_1_352_353_i67020_i65523.O0"],
+          ["i67092.out","add_lxx_stencil_1_352_353_i67020_i65523.data1"],
+          ["c0.out","add_lxx_stencil_1_352_353_i67020_i65523.inst"],
+          ["add_lxx_stencil_3_349_350_i67017_i65523.O0","add_lxx_stencil_2_350_351_i67018_i65523.data0"],
+          ["i67062.out","add_lxx_stencil_2_350_351_i67018_i65523.data1"],
+          ["c2.out","add_lxx_stencil_2_350_351_i67018_i65523.inst"],
+          ["add_lxx_stencil_4_348_349_i67016_i65523.O0","add_lxx_stencil_3_349_350_i67017_i65523.data0"],
+          ["i67050.out","add_lxx_stencil_3_349_350_i67017_i65523.data1"],
+          ["c3.out","add_lxx_stencil_3_349_350_i67017_i65523.inst"],
+          ["add_lxx_stencil_5_347_348_i67015_i65523.O0","add_lxx_stencil_4_348_349_i67016_i65523.data0"],
+          ["i67040.out","add_lxx_stencil_4_348_349_i67016_i65523.data1"],
+          ["c4.out","add_lxx_stencil_4_348_349_i67016_i65523.inst"],
+          ["add_lxx_stencil_6_346_347_i67014_i65523.O0","add_lxx_stencil_5_347_348_i67015_i65523.data0"],
+          ["i67032.out","add_lxx_stencil_5_347_348_i67015_i65523.data1"],
+          ["c5.out","add_lxx_stencil_5_347_348_i67015_i65523.inst"],
+          ["add_lxx_stencil_7_345_346_i67013_i65523.O0","add_lxx_stencil_6_346_347_i67014_i65523.data0"],
+          ["i67026.out","add_lxx_stencil_6_346_347_i67014_i65523.data1"],
+          ["c6.out","add_lxx_stencil_6_346_347_i67014_i65523.inst"],
+          ["add_lxx_stencil_8_lxx_stencil_9_345_i67012_i65523.O0","add_lxx_stencil_7_345_346_i67013_i65523.data0"],
+          ["i67022.out","add_lxx_stencil_7_345_346_i67013_i65523.data1"],
+          ["c7.out","add_lxx_stencil_7_345_346_i67013_i65523.inst"],
+          ["self.in1_lxx_stencil.8","add_lxx_stencil_8_lxx_stencil_9_345_i67012_i65523.data0"],
+          ["self.in1_lxx_stencil.7","add_lxx_stencil_8_lxx_stencil_9_345_i67012_i65523.data1"],
+          ["c8.out","add_lxx_stencil_8_lxx_stencil_9_345_i67012_i65523.inst"],
+          ["self.in1_lxx_stencil.6","i67021.in"],
+          ["i67022.in","i67021.out"],
+          ["self.in1_lxx_stencil.5","i67023.in"],
+          ["i67024.in","i67023.out"],
+          ["i67025.in","i67024.out"],
+          ["i67026.in","i67025.out"],
+          ["self.in1_lxx_stencil.4","i67027.in"],
+          ["i67028.in","i67027.out"],
+          ["i67029.in","i67028.out"],
+          ["i67030.in","i67029.out"],
+          ["i67031.in","i67030.out"],
+          ["i67032.in","i67031.out"],
+          ["self.in1_lxx_stencil.3","i67033.in"],
+          ["i67034.in","i67033.out"],
+          ["i67035.in","i67034.out"],
+          ["i67036.in","i67035.out"],
+          ["i67037.in","i67036.out"],
+          ["i67038.in","i67037.out"],
+          ["i67039.in","i67038.out"],
+          ["i67040.in","i67039.out"],
+          ["self.in1_lxx_stencil.2","i67041.in"],
+          ["i67042.in","i67041.out"],
+          ["i67043.in","i67042.out"],
+          ["i67044.in","i67043.out"],
+          ["i67045.in","i67044.out"],
+          ["i67046.in","i67045.out"],
+          ["i67047.in","i67046.out"],
+          ["i67048.in","i67047.out"],
+          ["i67049.in","i67048.out"],
+          ["i67050.in","i67049.out"],
+          ["self.in1_lxx_stencil.1","i67051.in"],
+          ["i67052.in","i67051.out"],
+          ["i67053.in","i67052.out"],
+          ["i67054.in","i67053.out"],
+          ["i67055.in","i67054.out"],
+          ["i67056.in","i67055.out"],
+          ["i67057.in","i67056.out"],
+          ["i67058.in","i67057.out"],
+          ["i67059.in","i67058.out"],
+          ["i67060.in","i67059.out"],
+          ["i67061.in","i67060.out"],
+          ["i67062.in","i67061.out"],
+          ["self.in0_lgxx_stencil.0","i67063.in"],
+          ["i67064.in","i67063.out"],
+          ["i67065.in","i67064.out"],
+          ["i67066.in","i67065.out"],
+          ["i67067.in","i67066.out"],
+          ["i67068.in","i67067.out"],
+          ["i67069.in","i67068.out"],
+          ["i67070.in","i67069.out"],
+          ["i67071.in","i67070.out"],
+          ["i67072.in","i67071.out"],
+          ["i67073.in","i67072.out"],
+          ["i67074.in","i67073.out"],
+          ["i67075.in","i67074.out"],
+          ["i67076.in","i67075.out"],
+          ["self.in1_lxx_stencil.0","i67077.in"],
+          ["i67078.in","i67077.out"],
+          ["i67079.in","i67078.out"],
+          ["i67080.in","i67079.out"],
+          ["i67081.in","i67080.out"],
+          ["i67082.in","i67081.out"],
+          ["i67083.in","i67082.out"],
+          ["i67084.in","i67083.out"],
+          ["i67085.in","i67084.out"],
+          ["i67086.in","i67085.out"],
+          ["i67087.in","i67086.out"],
+          ["i67088.in","i67087.out"],
+          ["i67089.in","i67088.out"],
+          ["i67090.in","i67089.out"],
+          ["i67091.in","i67090.out"],
+          ["i67092.in","i67091.out"]
+        ]
+      },
+      "hcompute_lgxx_stencil_mapped":{
+        "type":["Record",[
+          ["out_lgxx_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00000010000080004"]}
+          },
+          "i66996_i66997_i63334":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["i66996_i66997_i63334.inst","c0.out"],
+          ["self.out_lgxx_stencil","i66996_i66997_i63334.O0"]
+        ]
+      },
+      "hcompute_lgxy_stencil_1_mapped":{
+        "type":["Record",[
+          ["in0_lgxy_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_lxy_stencil",["Array",9,["Array",16,"BitIn"]]],
+          ["out_lgxy_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "add_lgxy_stencil_1_474_475_i67126_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_1_475_476_i67127_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_2_473_474_i67125_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_3_472_473_i67124_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_4_471_472_i67123_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_5_470_471_i67122_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_6_469_470_i67121_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_7_468_469_i67120_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lxy_stencil_8_lxy_stencil_9_468_i67119_i65523":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c8":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "i67128":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67129":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67130":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67131":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67132":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67133":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67134":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67135":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67136":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67137":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67138":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67139":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67140":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67141":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67142":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67143":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67144":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67145":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67146":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67147":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67148":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67149":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67150":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67151":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67152":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67153":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67154":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67155":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67156":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67157":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67158":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67159":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67160":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67161":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67162":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67163":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67164":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67165":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67166":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67167":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67168":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67169":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67170":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67171":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67172":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67173":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67174":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67175":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67176":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67177":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67178":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67179":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67180":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67181":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67182":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67183":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67184":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67185":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67186":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67187":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67188":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67189":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67190":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67191":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67192":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67193":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67194":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67195":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67196":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67197":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67198":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67199":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          }
+        },
+        "connections":[
+          ["add_lxy_stencil_1_475_476_i67127_i65523.data0","add_lgxy_stencil_1_474_475_i67126_i65523.O0"],
+          ["add_lxy_stencil_2_473_474_i67125_i65523.O0","add_lgxy_stencil_1_474_475_i67126_i65523.data0"],
+          ["i67183.out","add_lgxy_stencil_1_474_475_i67126_i65523.data1"],
+          ["c1.out","add_lgxy_stencil_1_474_475_i67126_i65523.inst"],
+          ["self.out_lgxy_stencil","add_lxy_stencil_1_475_476_i67127_i65523.O0"],
+          ["i67199.out","add_lxy_stencil_1_475_476_i67127_i65523.data1"],
+          ["c0.out","add_lxy_stencil_1_475_476_i67127_i65523.inst"],
+          ["add_lxy_stencil_3_472_473_i67124_i65523.O0","add_lxy_stencil_2_473_474_i67125_i65523.data0"],
+          ["i67169.out","add_lxy_stencil_2_473_474_i67125_i65523.data1"],
+          ["c2.out","add_lxy_stencil_2_473_474_i67125_i65523.inst"],
+          ["add_lxy_stencil_4_471_472_i67123_i65523.O0","add_lxy_stencil_3_472_473_i67124_i65523.data0"],
+          ["i67157.out","add_lxy_stencil_3_472_473_i67124_i65523.data1"],
+          ["c3.out","add_lxy_stencil_3_472_473_i67124_i65523.inst"],
+          ["add_lxy_stencil_5_470_471_i67122_i65523.O0","add_lxy_stencil_4_471_472_i67123_i65523.data0"],
+          ["i67147.out","add_lxy_stencil_4_471_472_i67123_i65523.data1"],
+          ["c4.out","add_lxy_stencil_4_471_472_i67123_i65523.inst"],
+          ["add_lxy_stencil_6_469_470_i67121_i65523.O0","add_lxy_stencil_5_470_471_i67122_i65523.data0"],
+          ["i67139.out","add_lxy_stencil_5_470_471_i67122_i65523.data1"],
+          ["c5.out","add_lxy_stencil_5_470_471_i67122_i65523.inst"],
+          ["add_lxy_stencil_7_468_469_i67120_i65523.O0","add_lxy_stencil_6_469_470_i67121_i65523.data0"],
+          ["i67133.out","add_lxy_stencil_6_469_470_i67121_i65523.data1"],
+          ["c6.out","add_lxy_stencil_6_469_470_i67121_i65523.inst"],
+          ["add_lxy_stencil_8_lxy_stencil_9_468_i67119_i65523.O0","add_lxy_stencil_7_468_469_i67120_i65523.data0"],
+          ["i67129.out","add_lxy_stencil_7_468_469_i67120_i65523.data1"],
+          ["c7.out","add_lxy_stencil_7_468_469_i67120_i65523.inst"],
+          ["self.in1_lxy_stencil.8","add_lxy_stencil_8_lxy_stencil_9_468_i67119_i65523.data0"],
+          ["self.in1_lxy_stencil.7","add_lxy_stencil_8_lxy_stencil_9_468_i67119_i65523.data1"],
+          ["c8.out","add_lxy_stencil_8_lxy_stencil_9_468_i67119_i65523.inst"],
+          ["self.in1_lxy_stencil.6","i67128.in"],
+          ["i67129.in","i67128.out"],
+          ["self.in1_lxy_stencil.5","i67130.in"],
+          ["i67131.in","i67130.out"],
+          ["i67132.in","i67131.out"],
+          ["i67133.in","i67132.out"],
+          ["self.in1_lxy_stencil.4","i67134.in"],
+          ["i67135.in","i67134.out"],
+          ["i67136.in","i67135.out"],
+          ["i67137.in","i67136.out"],
+          ["i67138.in","i67137.out"],
+          ["i67139.in","i67138.out"],
+          ["self.in1_lxy_stencil.3","i67140.in"],
+          ["i67141.in","i67140.out"],
+          ["i67142.in","i67141.out"],
+          ["i67143.in","i67142.out"],
+          ["i67144.in","i67143.out"],
+          ["i67145.in","i67144.out"],
+          ["i67146.in","i67145.out"],
+          ["i67147.in","i67146.out"],
+          ["self.in1_lxy_stencil.2","i67148.in"],
+          ["i67149.in","i67148.out"],
+          ["i67150.in","i67149.out"],
+          ["i67151.in","i67150.out"],
+          ["i67152.in","i67151.out"],
+          ["i67153.in","i67152.out"],
+          ["i67154.in","i67153.out"],
+          ["i67155.in","i67154.out"],
+          ["i67156.in","i67155.out"],
+          ["i67157.in","i67156.out"],
+          ["self.in1_lxy_stencil.1","i67158.in"],
+          ["i67159.in","i67158.out"],
+          ["i67160.in","i67159.out"],
+          ["i67161.in","i67160.out"],
+          ["i67162.in","i67161.out"],
+          ["i67163.in","i67162.out"],
+          ["i67164.in","i67163.out"],
+          ["i67165.in","i67164.out"],
+          ["i67166.in","i67165.out"],
+          ["i67167.in","i67166.out"],
+          ["i67168.in","i67167.out"],
+          ["i67169.in","i67168.out"],
+          ["self.in0_lgxy_stencil.0","i67170.in"],
+          ["i67171.in","i67170.out"],
+          ["i67172.in","i67171.out"],
+          ["i67173.in","i67172.out"],
+          ["i67174.in","i67173.out"],
+          ["i67175.in","i67174.out"],
+          ["i67176.in","i67175.out"],
+          ["i67177.in","i67176.out"],
+          ["i67178.in","i67177.out"],
+          ["i67179.in","i67178.out"],
+          ["i67180.in","i67179.out"],
+          ["i67181.in","i67180.out"],
+          ["i67182.in","i67181.out"],
+          ["i67183.in","i67182.out"],
+          ["self.in1_lxy_stencil.0","i67184.in"],
+          ["i67185.in","i67184.out"],
+          ["i67186.in","i67185.out"],
+          ["i67187.in","i67186.out"],
+          ["i67188.in","i67187.out"],
+          ["i67189.in","i67188.out"],
+          ["i67190.in","i67189.out"],
+          ["i67191.in","i67190.out"],
+          ["i67192.in","i67191.out"],
+          ["i67193.in","i67192.out"],
+          ["i67194.in","i67193.out"],
+          ["i67195.in","i67194.out"],
+          ["i67196.in","i67195.out"],
+          ["i67197.in","i67196.out"],
+          ["i67198.in","i67197.out"],
+          ["i67199.in","i67198.out"]
+        ]
+      },
+      "hcompute_lgxy_stencil_mapped":{
+        "type":["Record",[
+          ["out_lgxy_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00000010000080004"]}
+          },
+          "i67103_i67104_i63334":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["i67103_i67104_i63334.inst","c0.out"],
+          ["self.out_lgxy_stencil","i67103_i67104_i63334.O0"]
+        ]
+      },
+      "hcompute_lgyy_stencil_1_mapped":{
+        "type":["Record",[
+          ["in0_lgyy_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_lyy_stencil",["Array",9,["Array",16,"BitIn"]]],
+          ["out_lgyy_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "add_lgyy_stencil_1_546_547_i67233_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_1_547_548_i67234_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_2_545_546_i67232_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_3_544_545_i67231_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_4_543_544_i67230_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_5_542_543_i67229_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_6_541_542_i67228_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_7_540_541_i67227_i65523":{
+            "modref":"global.PE"
+          },
+          "add_lyy_stencil_8_lyy_stencil_9_540_i67226_i65523":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c6":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c7":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "c8":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00800020000880000"]}
+          },
+          "i67235":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67236":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67237":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67238":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67239":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67240":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67241":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67242":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67243":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67244":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67245":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67246":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67247":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67248":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67249":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67250":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67251":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67252":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67253":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67254":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67255":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67256":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67257":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67258":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67259":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67260":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67261":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67262":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67263":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67264":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67265":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67266":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67267":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67268":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67269":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67270":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67271":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67272":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67273":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67274":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67275":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67276":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67277":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67278":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67279":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67280":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67281":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67282":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67283":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67284":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67285":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67286":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67287":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67288":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67289":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67290":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67291":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67292":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67293":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67294":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67295":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67296":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67297":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67298":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67299":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67300":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67301":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67302":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67303":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67304":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67305":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          },
+          "i67306":{
+            "genref":"coreir.reg",
+            "genargs":{"width":["Int",16]},
+            "modargs":{"clk_posedge":["Bool",true], "init":[["BitVector",16],"16'hxxxx"]}
+          }
+        },
+        "connections":[
+          ["add_lyy_stencil_1_547_548_i67234_i65523.data0","add_lgyy_stencil_1_546_547_i67233_i65523.O0"],
+          ["add_lyy_stencil_2_545_546_i67232_i65523.O0","add_lgyy_stencil_1_546_547_i67233_i65523.data0"],
+          ["i67290.out","add_lgyy_stencil_1_546_547_i67233_i65523.data1"],
+          ["c1.out","add_lgyy_stencil_1_546_547_i67233_i65523.inst"],
+          ["self.out_lgyy_stencil","add_lyy_stencil_1_547_548_i67234_i65523.O0"],
+          ["i67306.out","add_lyy_stencil_1_547_548_i67234_i65523.data1"],
+          ["c0.out","add_lyy_stencil_1_547_548_i67234_i65523.inst"],
+          ["add_lyy_stencil_3_544_545_i67231_i65523.O0","add_lyy_stencil_2_545_546_i67232_i65523.data0"],
+          ["i67276.out","add_lyy_stencil_2_545_546_i67232_i65523.data1"],
+          ["c2.out","add_lyy_stencil_2_545_546_i67232_i65523.inst"],
+          ["add_lyy_stencil_4_543_544_i67230_i65523.O0","add_lyy_stencil_3_544_545_i67231_i65523.data0"],
+          ["i67264.out","add_lyy_stencil_3_544_545_i67231_i65523.data1"],
+          ["c3.out","add_lyy_stencil_3_544_545_i67231_i65523.inst"],
+          ["add_lyy_stencil_5_542_543_i67229_i65523.O0","add_lyy_stencil_4_543_544_i67230_i65523.data0"],
+          ["i67254.out","add_lyy_stencil_4_543_544_i67230_i65523.data1"],
+          ["c4.out","add_lyy_stencil_4_543_544_i67230_i65523.inst"],
+          ["add_lyy_stencil_6_541_542_i67228_i65523.O0","add_lyy_stencil_5_542_543_i67229_i65523.data0"],
+          ["i67246.out","add_lyy_stencil_5_542_543_i67229_i65523.data1"],
+          ["c5.out","add_lyy_stencil_5_542_543_i67229_i65523.inst"],
+          ["add_lyy_stencil_7_540_541_i67227_i65523.O0","add_lyy_stencil_6_541_542_i67228_i65523.data0"],
+          ["i67240.out","add_lyy_stencil_6_541_542_i67228_i65523.data1"],
+          ["c6.out","add_lyy_stencil_6_541_542_i67228_i65523.inst"],
+          ["add_lyy_stencil_8_lyy_stencil_9_540_i67226_i65523.O0","add_lyy_stencil_7_540_541_i67227_i65523.data0"],
+          ["i67236.out","add_lyy_stencil_7_540_541_i67227_i65523.data1"],
+          ["c7.out","add_lyy_stencil_7_540_541_i67227_i65523.inst"],
+          ["self.in1_lyy_stencil.8","add_lyy_stencil_8_lyy_stencil_9_540_i67226_i65523.data0"],
+          ["self.in1_lyy_stencil.7","add_lyy_stencil_8_lyy_stencil_9_540_i67226_i65523.data1"],
+          ["c8.out","add_lyy_stencil_8_lyy_stencil_9_540_i67226_i65523.inst"],
+          ["self.in1_lyy_stencil.6","i67235.in"],
+          ["i67236.in","i67235.out"],
+          ["self.in1_lyy_stencil.5","i67237.in"],
+          ["i67238.in","i67237.out"],
+          ["i67239.in","i67238.out"],
+          ["i67240.in","i67239.out"],
+          ["self.in1_lyy_stencil.4","i67241.in"],
+          ["i67242.in","i67241.out"],
+          ["i67243.in","i67242.out"],
+          ["i67244.in","i67243.out"],
+          ["i67245.in","i67244.out"],
+          ["i67246.in","i67245.out"],
+          ["self.in1_lyy_stencil.3","i67247.in"],
+          ["i67248.in","i67247.out"],
+          ["i67249.in","i67248.out"],
+          ["i67250.in","i67249.out"],
+          ["i67251.in","i67250.out"],
+          ["i67252.in","i67251.out"],
+          ["i67253.in","i67252.out"],
+          ["i67254.in","i67253.out"],
+          ["self.in1_lyy_stencil.2","i67255.in"],
+          ["i67256.in","i67255.out"],
+          ["i67257.in","i67256.out"],
+          ["i67258.in","i67257.out"],
+          ["i67259.in","i67258.out"],
+          ["i67260.in","i67259.out"],
+          ["i67261.in","i67260.out"],
+          ["i67262.in","i67261.out"],
+          ["i67263.in","i67262.out"],
+          ["i67264.in","i67263.out"],
+          ["self.in1_lyy_stencil.1","i67265.in"],
+          ["i67266.in","i67265.out"],
+          ["i67267.in","i67266.out"],
+          ["i67268.in","i67267.out"],
+          ["i67269.in","i67268.out"],
+          ["i67270.in","i67269.out"],
+          ["i67271.in","i67270.out"],
+          ["i67272.in","i67271.out"],
+          ["i67273.in","i67272.out"],
+          ["i67274.in","i67273.out"],
+          ["i67275.in","i67274.out"],
+          ["i67276.in","i67275.out"],
+          ["self.in0_lgyy_stencil.0","i67277.in"],
+          ["i67278.in","i67277.out"],
+          ["i67279.in","i67278.out"],
+          ["i67280.in","i67279.out"],
+          ["i67281.in","i67280.out"],
+          ["i67282.in","i67281.out"],
+          ["i67283.in","i67282.out"],
+          ["i67284.in","i67283.out"],
+          ["i67285.in","i67284.out"],
+          ["i67286.in","i67285.out"],
+          ["i67287.in","i67286.out"],
+          ["i67288.in","i67287.out"],
+          ["i67289.in","i67288.out"],
+          ["i67290.in","i67289.out"],
+          ["self.in1_lyy_stencil.0","i67291.in"],
+          ["i67292.in","i67291.out"],
+          ["i67293.in","i67292.out"],
+          ["i67294.in","i67293.out"],
+          ["i67295.in","i67294.out"],
+          ["i67296.in","i67295.out"],
+          ["i67297.in","i67296.out"],
+          ["i67298.in","i67297.out"],
+          ["i67299.in","i67298.out"],
+          ["i67300.in","i67299.out"],
+          ["i67301.in","i67300.out"],
+          ["i67302.in","i67301.out"],
+          ["i67303.in","i67302.out"],
+          ["i67304.in","i67303.out"],
+          ["i67305.in","i67304.out"],
+          ["i67306.in","i67305.out"]
+        ]
+      },
+      "hcompute_lgyy_stencil_mapped":{
+        "type":["Record",[
+          ["out_lgyy_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00000010000080004"]}
+          },
+          "i67210_i67211_i63334":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["i67210_i67211_i63334.inst","c0.out"],
+          ["self.out_lgyy_stencil","i67210_i67211_i63334.O0"]
+        ]
+      },
+      "hcompute_lxx_stencil_mapped":{
+        "type":["Record",[
+          ["in0_grad_x_unclamp_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["out_lxx_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "ashr_318_319_320_i67326_i63664":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000018000080010f"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002000080000b"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002ff4c000104"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00002d00000880105"]}
+          },
+          "mul_317_317_318_i67324_i66343":{
+            "modref":"global.PE"
+          },
+          "smax_315_316_317$max_mux_i67323_i63541":{
+            "modref":"global.PE"
+          },
+          "smin_grad_x_unclamp_stencil_2_314_315$min_mux_i67321_i63050":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["self.out_lxx_stencil","ashr_318_319_320_i67326_i63664.O0"],
+          ["mul_317_317_318_i67324_i66343.O0","ashr_318_319_320_i67326_i63664.data0"],
+          ["c0.out","ashr_318_319_320_i67326_i63664.inst"],
+          ["mul_317_317_318_i67324_i66343.inst","c1.out"],
+          ["smax_315_316_317$max_mux_i67323_i63541.inst","c2.out"],
+          ["smin_grad_x_unclamp_stencil_2_314_315$min_mux_i67321_i63050.inst","c3.out"],
+          ["smax_315_316_317$max_mux_i67323_i63541.O0","mul_317_317_318_i67324_i66343.data0"],
+          ["smax_315_316_317$max_mux_i67323_i63541.O0","mul_317_317_318_i67324_i66343.data1"],
+          ["smin_grad_x_unclamp_stencil_2_314_315$min_mux_i67321_i63050.data0","self.in0_grad_x_unclamp_stencil.0"],
+          ["smin_grad_x_unclamp_stencil_2_314_315$min_mux_i67321_i63050.O0","smax_315_316_317$max_mux_i67323_i63541.data1"]
+        ]
+      },
+      "hcompute_lxy_stencil_mapped":{
+        "type":["Record",[
+          ["in0_grad_x_unclamp_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["in1_grad_y_unclamp_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["out_lxy_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "ashr_438_439_440_i67358_i63664":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000018000080010f"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002000080000b"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002ff4c000104"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00002d00000880105"]}
+          },
+          "c4":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002ff4c000104"]}
+          },
+          "c5":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00002d00000880105"]}
+          },
+          "mul_435_437_438_i67356_i66343":{
+            "modref":"global.PE"
+          },
+          "smax_433_434_435$max_mux_i67347_i63541":{
+            "modref":"global.PE"
+          },
+          "smax_436_434_437$max_mux_i67355_i63541":{
+            "modref":"global.PE"
+          },
+          "smin_grad_x_unclamp_stencil_3_432_433$min_mux_i67345_i63050":{
+            "modref":"global.PE"
+          },
+          "smin_grad_y_unclamp_stencil_2_432_436$min_mux_i67353_i63050":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["self.out_lxy_stencil","ashr_438_439_440_i67358_i63664.O0"],
+          ["mul_435_437_438_i67356_i66343.O0","ashr_438_439_440_i67358_i63664.data0"],
+          ["c0.out","ashr_438_439_440_i67358_i63664.inst"],
+          ["mul_435_437_438_i67356_i66343.inst","c1.out"],
+          ["smax_436_434_437$max_mux_i67355_i63541.inst","c2.out"],
+          ["smin_grad_y_unclamp_stencil_2_432_436$min_mux_i67353_i63050.inst","c3.out"],
+          ["smax_433_434_435$max_mux_i67347_i63541.inst","c4.out"],
+          ["smin_grad_x_unclamp_stencil_3_432_433$min_mux_i67345_i63050.inst","c5.out"],
+          ["smax_436_434_437$max_mux_i67355_i63541.O0","mul_435_437_438_i67356_i66343.data0"],
+          ["smax_433_434_435$max_mux_i67347_i63541.O0","mul_435_437_438_i67356_i66343.data1"],
+          ["smin_grad_x_unclamp_stencil_3_432_433$min_mux_i67345_i63050.data0","self.in0_grad_x_unclamp_stencil.0"],
+          ["smin_grad_y_unclamp_stencil_2_432_436$min_mux_i67353_i63050.data0","self.in1_grad_y_unclamp_stencil.0"],
+          ["smin_grad_x_unclamp_stencil_3_432_433$min_mux_i67345_i63050.O0","smax_433_434_435$max_mux_i67347_i63541.data1"],
+          ["smin_grad_y_unclamp_stencil_2_432_436$min_mux_i67353_i63050.O0","smax_436_434_437$max_mux_i67355_i63541.data1"]
+        ]
+      },
+      "hcompute_lyy_stencil_mapped":{
+        "type":["Record",[
+          ["in0_grad_y_unclamp_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["out_lyy_stencil",["Array",16,"Bit"]]
+        ]],
+        "instances":{
+          "ashr_513_514_515_i67390_i63664":{
+            "modref":"global.PE"
+          },
+          "c0":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000018000080010f"]}
+          },
+          "c1":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002000080000b"]}
+          },
+          "c2":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h0000002ff4c000104"]}
+          },
+          "c3":{
+            "genref":"coreir.const",
+            "genargs":{"width":["Int",67]},
+            "modargs":{"value":[["BitVector",67],"67'h00002d00000880105"]}
+          },
+          "mul_512_512_513_i67388_i66343":{
+            "modref":"global.PE"
+          },
+          "smax_510_511_512$max_mux_i67387_i63541":{
+            "modref":"global.PE"
+          },
+          "smin_grad_y_unclamp_stencil_3_509_510$min_mux_i67385_i63050":{
+            "modref":"global.PE"
+          }
+        },
+        "connections":[
+          ["self.out_lyy_stencil","ashr_513_514_515_i67390_i63664.O0"],
+          ["mul_512_512_513_i67388_i66343.O0","ashr_513_514_515_i67390_i63664.data0"],
+          ["c0.out","ashr_513_514_515_i67390_i63664.inst"],
+          ["mul_512_512_513_i67388_i66343.inst","c1.out"],
+          ["smax_510_511_512$max_mux_i67387_i63541.inst","c2.out"],
+          ["smin_grad_y_unclamp_stencil_3_509_510$min_mux_i67385_i63050.inst","c3.out"],
+          ["smax_510_511_512$max_mux_i67387_i63541.O0","mul_512_512_513_i67388_i66343.data0"],
+          ["smax_510_511_512$max_mux_i67387_i63541.O0","mul_512_512_513_i67388_i66343.data1"],
+          ["smin_grad_y_unclamp_stencil_3_509_510$min_mux_i67385_i63050.data0","self.in0_grad_y_unclamp_stencil.0"],
+          ["smin_grad_y_unclamp_stencil_3_509_510$min_mux_i67385_i63050.O0","smax_510_511_512$max_mux_i67387_i63541.data1"]
+        ]
+      },
+      "hcompute_padded16_global_wrapper_stencil_mapped":{
+        "type":["Record",[
+          ["in0_padded16_stencil",["Array",1,["Array",16,"BitIn"]]],
+          ["out_padded16_global_wrapper_stencil",["Array",16,"Bit"]]
+        ]],
+        "connections":[
+          ["self.out_padded16_global_wrapper_stencil","self.in0_padded16_stencil.0"]
+        ]
       }
     }
   }
