@@ -1,27 +1,30 @@
 import ply.lex as lex
 import ply.yacc as yacc
+import typing as tp
+from .comb import *
 
-
-#'type : NSID'
-#'input : INPUT VARID COLON type'
-#'inputs : input'
-#'inputs : inputs input'
-#'output : OUTPUT VARID COLON TYPE'
+#'genarg  : NUMBER | ...
+#'genargs : genarg'
+#         | genargs COMMA genarg'
+#'qsym    : NSID'
+#         | NSID LANGLE genargs RANGLE'
+#'sym'    : VARID
+#'type'   : qsym
+#'input   : INPUT sym COLON type'
+#'inputs  : input'
+#'        | inputs input'
+#'output  : OUTPUT sym COLON type'
 #'outputs : output'
-#'outputs : outputs output'
-#'genargs : NUMBER'
-#'genargs : genargs COMMA NUMBER'
-#'op : NSID'
-#'op : NSID LANGLE genargs RANGLE'
-#'args : VARID'
-#'args : args COMMA VARID'
-#'stmt : VARID COLON type ASSIGN op LPAREN args RPAREN'
+#'        | outputs output'
+#'arg : sym | BVCONST
+#'args : arg
+#'     | args COMMA arg'
+#'stmt : args ASSIGN op LPAREN args RPAREN'
 #'stmts : stmt'
-#'stmts : stmts stmt'
+#'      | stmts stmt'
 
 # List of token names.   This is always required
 tokens = (
-    'ID',
     'NSID',
     'VARID',
     'COMB',
@@ -30,6 +33,7 @@ tokens = (
     'COLON',
     'COMMA',
     'NUMBER',
+    'BVCONST',
     'LPAREN',
     'RPAREN',
     'ASSIGN',
@@ -40,7 +44,7 @@ tokens = (
 # Regular expression rules for simple tokens
 t_COLON   = r':'
 t_COMMA   = r','
-t_ASSIGN  = r'\<\-'
+t_ASSIGN  = r'='
 t_LANGLE  = r'\<'
 t_RANGLE  = r'\>'
 t_LPAREN  = r'\('
@@ -52,7 +56,12 @@ _reserved = dict(
     output="OUTPUT",
 )
 
-def t_ID(t):
+def t_BVCONST(t):
+    r'\'h[0-9a-f]+'
+    t.value = int(t.value[2:],16)
+    return t
+
+def t_VARID(t):
     r'[a-zA-Z_][a-zA-Z0-9_\.]*'
     kind = _reserved.get(t.value)
     if kind is not None:
@@ -67,7 +76,16 @@ def t_ID(t):
             t.type = "VARID"
     return t
 
-# A regular expression rule with some action code
+#import re
+##like 13'h23
+#def parse_bv(s):
+#    m = re.search(r'([1-9]\d+)\'h([0-9a-f]*)',s)
+#    assert m is not None
+#    width = int(m.group(1))
+#    val = int(m.group(2))
+#    assert 0 <= val < 2**width
+#    return BVConst(width, val)
+
 def t_NUMBER(t):
     r'\d+'
     t.value = int(t.value)
@@ -87,45 +105,38 @@ def t_error(t):
     t.lexer.skip(1)
 
 lexer = lex.lex()
+
 #YACC
-#
-from dataclasses import dataclass
-import typing as tp
+start = 'comb'
 
-@dataclass
-class Type:
-    ns: str
-    type: str
 
-@dataclass
-class Var:
-    name: str
-    type: Type
+def p_genarg_0(p):
+    'genarg : NUMBER'
+    p[0] = p[1]
 
-@dataclass
-class Op:
-    ns: str
-    name: str
-    genargs: tp.Tuple[int] = ()
+def p_genargs_0(p):
+    'genargs : genarg'
+    p[0] = [p[1]]
 
-@dataclass
-class Stmt:
-    lhs: Var
-    op: Op
-    args: tp.Tuple[Var]
+def p_genargs_1(p):
+    'genargs : genargs COMMA genarg'
+    p[0] = p[1] + [p[3]]
 
-@dataclass
-class Comb:
-    ns: str
-    name: str
-    inputs: tp.Tuple[Var]
-    outputs: tp.Tuple[Var]
-    stmts: tp.Tuple[Stmt]
+def p_qsym_0(p):
+    'qsym : NSID'
+    p[0] = QSym(*p[1])
 
-# type ::= nsid
+def p_qsym_1(p):
+    'qsym : NSID LANGLE genargs RANGLE'
+    p[0] = QSym(*p[1], p[3])
+
+def p_sym_0(p):
+    'sym : VARID'
+    p[0] = p[1]
+
 def p_type_0(p):
-    'type : NSID'
-    p[0] = Type(*p[1])
+    'type : qsym'
+    p[0] = p[1]
 
 # input ::= input <varid> : <type>
 def p_input_0(p):
@@ -143,7 +154,7 @@ def p_inputs_1(p):
 
 # output ::= output <varid> : <type>
 def p_output_0(p):
-    'output : OUTPUT VARID COLON type'
+    'output : OUTPUT sym COLON type'
     p[0] = Var(p[2], p[4])
 
 # outputs ::= output
@@ -156,41 +167,32 @@ def p_outputs_1(p):
     'outputs : outputs output'
     p[0] = p[1] + [p[2]]
 
-# genargs ::= number
-#            | genargs comma number
-def p_genargs_0(p):
-    'genargs : NUMBER'
-    p[0] = [p[1]]
+def p_bvconst_0(p):
+    'bvconst : NUMBER BVCONST'
+    p[0] = BVConst(p[1], p[2])
 
-def p_genargs_1(p):
-    'genargs : genargs COMMA NUMBER'
-    p[0] = p[1] + [p[3]]
 
-# op ::= nsid
-#      | nsid langle genargs rangle
-def p_op_0(p):
-    'op : NSID'
-    p[0] = Op(*p[1])
+def p_arg_0(p):
+    'arg : sym'
+    p[0] = p[1]
 
-def p_op_0(p):
-    'op : NSID LANGLE genargs RANGLE'
-    p[0] = Op(*p[1], p[3])
+def p_arg_1(p):
+    'arg : bvconst'
+    p[0] = p[1]
 
-# args :: = varid
-#         | args comma varid
+# args :: = arg
+#         | args comma arg
 def p_args_0(p):
-    'args : VARID'
+    'args : arg'
     p[0] = [p[1]]
 
 def p_args_1(p):
-    'args : args COMMA VARID'
+    'args : args COMMA arg'
     p[0] = p[1] + [p[3]]
 
-# stmt ::= <varid> : <type> <- op "(" <id>(, <id>)
 def p_stmt_1(p):
-    'stmt : VARID COLON type ASSIGN op LPAREN args RPAREN'
-    lhs = Var(p[1], p[3])
-    p[0] = Stmt(lhs, p[5], p[7])
+    'stmt : args ASSIGN qsym LPAREN args RPAREN'
+    p[0] = Stmt(p[1], p[3], p[5])
 
 # stmts ::= stmt
 #         | stmts stmt
@@ -205,8 +207,8 @@ def p_stmts_1(p):
 
 # comb ::= <comb> <nsid> <inputs> <outputs> <stmts>
 def p_comb_0(p):
-    'comb : COMB NSID inputs outputs stmts'
-    p[0] = Comb(*p[2], p[3], p[4], p[5])
+    'comb : COMB qsym inputs outputs stmts'
+    p[0] = CombFun(p[2], p[3], p[4], p[5])
 
 # Error rule for syntax errors
 def p_error(p):
@@ -216,6 +218,6 @@ def p_error(p):
 parser = yacc.yacc()
 
 
-def program_to_ast(program: str):
-    return parser.parse(program, lexer=lexer)
+def program_to_ast(program: str, debug=False) -> CombFun:
+    return parser.parse(program, lexer=lexer, debug=debug)
 
