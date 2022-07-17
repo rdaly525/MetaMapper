@@ -9,12 +9,13 @@ class BV:
         self.N = N
         self.name = QSym('bv', 'bv', (N,))
 
-    def get_free_var(self, name):
+    def free_var(self, name):
         return ht.SMTBitVector[self.N](prefix=name)
 
 class Bool:
     name = QSym('bv', 'bool')
-    def get_free_var(self, name):
+
+    def free_var(self, name):
         return ht.SMTBit(prefix=name)
 
 
@@ -34,7 +35,7 @@ class BVBinary(Prim):
 
 
     def eval(self, a, b):
-        return self.op(a, b)
+        return (self.op(a, b),)
 
 class BVAddSub(Prim):
     def __init__(self, N):

@@ -218,6 +218,10 @@ def p_error(p):
 parser = yacc.yacc()
 
 
-def program_to_ast(program: str, debug=False) -> CombFun:
-    return parser.parse(program, lexer=lexer, debug=debug)
+def program_to_comb(program: str, modules, debug=False) -> CombFun:
+    comb = parser.parse(program, lexer=lexer, debug=debug)
+    if comb is None:
+        raise ValueError("Syntax Error!")
+    comb.resolve_qualified_symbols(modules)
+    return comb
 

@@ -1,1 +1,1 @@
-from .lexer import program_to_ast
+from .lexer import program_to_comb

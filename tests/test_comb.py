@@ -1,4 +1,4 @@
-from metamapper.irs.mmir import program_to_ast
+from metamapper.irs.mmir import program_to_comb
 from metamapper.irs.mmir.modules import Base
 import pytest
 
@@ -22,7 +22,7 @@ o0 = bv.add<13>(i0, 13'h23)
 
 pmulti_out = '''
 comb test.multi_out
-input  i0 : bv.bv<13>
+input i0 : bv.bv<13>
 output o0 : bv.bv<13>
 output o1 : bv.bv<13>
 o0, o1 = bv.addsub<13>(i0, 13'h23)
@@ -43,8 +43,23 @@ o0 : b.bv<n> = bv.add<n>(i0, i1)
     pconst,
     pmulti_out,
 ])
-def test_programs(p):
-    result = program_to_ast(p, debug=False)
-    assert result is not None
-    result.resolve_qualified_symbols(dict(bv=Base()))
-    print(result)
+def test_round_trip(p):
+    comb = program_to_comb(p, [Base()], debug=False)
+    p1 = comb.serialize()
+    comb1 = program_to_comb(p, [Base()], debug=False)
+    p2 = comb1.serialize()
+    assert p1 == p2
+
+@pytest.mark.parametrize("p", [
+    padd,
+    pconst,
+    pmulti_out,
+])
+def test_eval(p):
+    comb = program_to_comb(p, [Base()], debug=False)
+    args = comb.create_symbolic_inputs()
+    res = comb.eval(*args)
+    print(res)
+
+
+

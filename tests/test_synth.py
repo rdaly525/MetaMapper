@@ -1,4 +1,4 @@
-from metamapper.irs.mmir import program_to_ast
+from metamapper.irs.mmir import program_to_comb
 from metamapper.irs.mmir.lexer import lexer
 from metamapper.irs.mmir.modules import b
 import pytest
@@ -27,7 +27,7 @@ o0 : bv.13 = bv.add<13>(i0, 13'h23)
     pconst,
 ])
 def test_synth(p):
-    comb = program_to_ast(p, debug=False)
+    comb = program_to_comb(p, debug=False)
     comb.resolve_qualified_symbols()
 
 

@@ -12,6 +12,10 @@ class BVConst:
     def qsym(self):
         return QSym("bv","bv",(self.width,))
 
+    def serialize(self):
+        return f"{self.width}\'h{hex(self.val)[2:]}"
+
+
 @dataclass
 class QSym:
     ns: str
@@ -81,9 +85,9 @@ class Var:
 
 @dataclass
 class Stmt:
-    lhss: tp.Tuple[Var]
+    lhss: tp.Tuple[str]
     op: QSym
-    args: tp.Tuple[Var]
+    args: tp.Tuple[str]
 
 class Comb: pass
 
@@ -96,12 +100,35 @@ class CombFun:
     outputs: tp.Tuple[Var]
     stmts: tp.Tuple[Stmt]
 
+
+    def create_symbolic_inputs(self):
+        assert self._resolved
+        return (self.sym_table[ivar.name].free_var(ivar.name) for ivar in self.inputs)
+
+    def serialize(self):
+        assert self._resolved
+        lines = []
+        lines.append(f"comb {self.name}")
+        lines += [f"input {i.name} : {i.type}" for i in self.inputs]
+        lines += [f"output {o.name} : {o.type}" for o in self.outputs]
+        for stmt in self.stmts:
+            lhss = ", ".join(stmt.lhss)
+            args = []
+            for arg in stmt.args:
+                if isinstance(arg, BVConst):
+                    args.append(arg.serialize())
+                else:
+                    args.append(arg)
+            args = ", ".join(args)
+            lines.append(f"{lhss} = {stmt.op}({args})")
+        return "\n".join(lines)
+
     #Only evaling for SMT
     def eval(self, *args):
         if not self._resolved:
             raise ValueError("Link all libraries")
         assert len(args) == len(self.inputs)
-        val_table = {var.name:arg for var,arg in zip(args, self.inputs)}
+        val_table = {var.name:arg for arg, var in zip(args, self.inputs)}
         def get_val(arg):
             if isinstance(arg, BVConst):
                 return ht.SMTBitVector[arg.width](arg.val)
@@ -114,16 +141,17 @@ class CombFun:
             assert len(vals) == len(stmt.lhss)
             for val, sym in zip(vals, stmt.lhss):
                 val_table[sym] = val
-        return (val_table[var.name] for var in self.outputs)
+        return tuple(val_table[var.name] for var in self.outputs)
 
     def __post_init__(self):
         if len(self.name.genargs) > 0:
             raise NotImplementedError()
         self._resolved = False
 
-    def resolve_qualified_symbols(self, modules: tp.Dict[str,Module]):
+    def resolve_qualified_symbols(self, module_list: tp.List[Module]):
         if self._resolved:
             raise ValueError("Already resolved")
+        modules = {m.name:m for m in module_list}
 
         def resolve_type(qsym):
             if qsym.ns not in modules:
