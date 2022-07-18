@@ -24,14 +24,47 @@ _binops = dict(
     sub=lambda x, y: x - y,
     mul=lambda x, y: x + y,
 )
+
+_unary_ops = dict(
+    neg=lambda x: -x,
+    not_=lambda x: ~x,
+)
+
+class BVUnary(Prim):
+    def __init__(self, N, op):
+        self.N = N
+        self.name = QSym("bv", op, (N,))
+        assert op in _unary_ops
+        self.op = _unary_ops[op]
+        bv_t = QSym('bv','bv',(N,))
+        self.inputs = (Var('i0', bv_t),)
+        self.outputs = (Var('o0',bv_t),)
+        bv_t = Base().type_from_sym(bv_t)
+        self.sym_table = dict(
+            i0=bv_t,
+            o0=bv_t,
+        )
+
+
+    def eval(self, a):
+        return (self.op(a),)
+
+
 class BVBinary(Prim):
     def __init__(self, N, op):
         self.N = N
+        self.name = QSym("bv", op, (N,))
         assert op in _binops
         self.op = _binops[op]
         bv_t = QSym('bv','bv',(N,))
         self.inputs = (Var('i0', bv_t), Var('i1', bv_t))
         self.outputs = (Var('o0',bv_t),)
+        bv_t = Base().type_from_sym(bv_t)
+        self.sym_table = dict(
+            i0=bv_t,
+            i1=bv_t,
+            o0=bv_t,
+        )
 
 
     def eval(self, a, b):
@@ -63,6 +96,8 @@ class Base(Module):
 
     def comb_from_sym(self, qsym: QSym):
         assert qsym.ns == self.name
-        if qsym.name == "addsub":
-            return BVAddSub(*qsym.genargs)
-        return BVBinary(*qsym.genargs, qsym.name)
+        if qsym.name in _binops:
+            return BVBinary(*qsym.genargs, qsym.name)
+        elif qsym.name in _unary_ops:
+            return BVUnary(*qsym.genargs, qsym.name)
+        raise NotImplementedError()

@@ -89,12 +89,19 @@ class Stmt:
     op: QSym
     args: tp.Tuple[str]
 
-class Comb: pass
+class Comb:
+    def input_free_vars(self, prefix=""):
+        return [self.sym_table[ivar.name].free_var(f"{prefix}__{ivar.name}") for ivar in self.inputs]
+
+    def output_free_vars(self, prefix=""):
+        return [self.sym_table[ivar.name].free_var(f"{prefix}__{ivar.name}") for ivar in self.outputs]
+
 
 class Prim(Comb): pass
 
+
 @dataclass
-class CombFun:
+class CombFun(Comb):
     name: QSym
     inputs: tp.Tuple[Var]
     outputs: tp.Tuple[Var]
@@ -152,6 +159,7 @@ class CombFun:
         if self._resolved:
             raise ValueError("Already resolved")
         modules = {m.name:m for m in module_list}
+        self.module_list = module_list
 
         def resolve_type(qsym):
             if qsym.ns not in modules:
@@ -194,7 +202,7 @@ class CombFun:
                     if arg not in self.sym_table:
                         raise ValueError(f"TC: {arg} used before defined")
                     if expected_type != self.sym_table[arg].name:
-                        raise ValueError(f"TC: {arg} inconsistent types")
+                        raise ValueError(f"TC: {arg}: ({expected_type}!={self.sym_table[arg].name}) inconsistent types")
             #Verify same number of outputs
             if len(op_out_types) != len(stmt.lhss):
                 raise ValueError("TC: Wrong number of outputs")

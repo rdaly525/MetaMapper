@@ -1,35 +1,53 @@
 from metamapper.irs.mmir import program_to_comb
-from metamapper.irs.mmir.lexer import lexer
-from metamapper.irs.mmir.modules import b
+from metamapper.irs.mmir.comb import QSym
+from metamapper.irs.mmir.modules import Base
+from metamapper.irs.mmir.synth import SynthQuery
 import pytest
 
 
 padd = '''
 comb test.add3
-input i0 : b.bv<16>
-input i1 : b.bv<16>
-input i2 : b.bv<16>
-output o0 : b.bv<16>
-t0 : b.bv<16> = bv.add<16>(i0, i1)
-o0 : b.bv<16> = bv.add<16>(t0, i2)
-
+input i0 : bv.bv<16>
+input i1 : bv.bv<16>
+input i2 : bv.bv<16>
+input i3 : bv.bv<16>
+output o0 : bv.bv<16>
+t0 = bv.add<16>(i0, i1)
+t1 = bv.add<16>(i2, i3)
+o0 = bv.add<16>(t0, t1)
 '''
 
-pconst = '''
-comb test.pconst
-input i0 : bv.13
-output o0 : bv.13
-o0 : bv.13 = bv.add<13>(i0, 13'h23)
+psub = '''
+comb test.sub
+input i0 : bv.bv<13>
+input i1 : bv.bv<13>
+output o0 : bv.bv<13>
+o0 = bv.sub<13>(i0, i1)
+'''
+
+pnot = '''
+comb test.sub
+input i0 : bv.bv<13>
+output o0 : bv.bv<13>
+o0 = bv.not_<13>(i0)
 '''
 
 @pytest.mark.parametrize("p", [
-    padd,
-    pconst,
+    pnot,
+    psub,
 ])
 def test_synth(p):
-    comb = program_to_comb(p, debug=False)
-    comb.resolve_qualified_symbols()
+    comb = program_to_comb(p, [Base()], debug=False)
 
-
-    assert result is not None
-    print(result)
+    op_list = []
+    for op in (
+        QSym('bv','add',(13,)),
+        QSym('bv','add',(13,)),
+        QSym('bv','not_',(13,)),
+    ):
+        op_list.append(Base().comb_from_sym(op))
+    #print(comb)
+    sq = SynthQuery(comb,op_list,const_list=(1,0,-1))
+    #print(sq.query.serialize())
+    comb = sq.external_loop_solve()
+    print(comb.serialize())
