@@ -32,9 +32,11 @@ output o0 : bv.bv<13>
 o0 = bv.not_<13>(i0)
 '''
 
+
+
 @pytest.mark.parametrize("p", [
     pnot,
-    psub,
+    #psub,
 ])
 def test_synth(p):
     comb = program_to_comb(p, [Base()], debug=False)
@@ -47,7 +49,12 @@ def test_synth(p):
     ):
         op_list.append(Base().comb_from_sym(op))
     #print(comb)
-    sq = SynthQuery(comb,op_list,const_list=(1,0,-1))
-    #print(sq.query.serialize())
-    comb = sq.external_loop_solve()
-    print(comb.serialize())
+    sq = SynthQuery(comb, op_list, const_list=(1, 0))
+    comb = sq.cegis()
+
+    #Verify Round trip
+    p1 = comb.serialize()
+    print(p1)
+    comb1 = program_to_comb(p1)
+    p2 = comb1.serialize()
+    assert p1 == p2

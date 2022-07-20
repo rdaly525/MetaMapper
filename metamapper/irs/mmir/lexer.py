@@ -218,7 +218,10 @@ def p_error(p):
 parser = yacc.yacc()
 
 
-def program_to_comb(program: str, modules, debug=False) -> CombFun:
+def program_to_comb(program: str, modules=None, debug=False) -> CombFun:
+    if modules is None:
+        from .modules import Base
+        modules = [Base()]
     comb = parser.parse(program, lexer=lexer, debug=debug)
     if comb is None:
         raise ValueError("Syntax Error!")

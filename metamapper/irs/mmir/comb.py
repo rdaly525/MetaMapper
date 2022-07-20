@@ -1,4 +1,5 @@
 import abc
+import re
 from dataclasses import dataclass
 import typing as tp
 import hwtypes as ht
@@ -14,6 +15,11 @@ class BVConst:
 
     def serialize(self):
         return f"{self.width}\'h{hex(self.val)[2:]}"
+
+
+
+def get_sym(qsym_str):
+    m = re.search(r'')
 
 
 @dataclass
@@ -155,22 +161,22 @@ class CombFun(Comb):
             raise NotImplementedError()
         self._resolved = False
 
+    def resolve_type(self, qsym):
+        if qsym.ns not in self.modules:
+            raise ValueError("Missing module ", qsym.ns)
+        return self.modules[qsym.ns].type_from_sym(qsym)
+
     def resolve_qualified_symbols(self, module_list: tp.List[Module]):
         if self._resolved:
             raise ValueError("Already resolved")
         modules = {m.name:m for m in module_list}
         self.module_list = module_list
-
-        def resolve_type(qsym):
-            if qsym.ns not in modules:
-                raise ValueError("Missing module ", qsym.ns)
-            return modules[qsym.ns].type_from_sym(qsym)
+        self.modules = modules
 
         def resolve_op(qsym):
             if qsym.ns not in modules:
                 raise ValueError("Missing module ", qsym.ns)
             return modules[qsym.ns].comb_from_sym(qsym)
-
 
         #Resolve Ops
         self.ext_ops = {}
@@ -184,7 +190,7 @@ class CombFun(Comb):
         self.sym_table = {} #VARID -> Type
         for ivar in self.inputs:
             assert isinstance(ivar, Var)
-            self.sym_table[ivar.name] = resolve_type(ivar.type)
+            self.sym_table[ivar.name] = self.resolve_type(ivar.type)
         for stmt in self.stmts:
             op = self.ext_ops[stmt.op]
             op_in_types = [op_in.type for op_in in op.inputs]
@@ -208,7 +214,7 @@ class CombFun(Comb):
                 raise ValueError("TC: Wrong number of outputs")
             for lhs, t in zip(stmt.lhss, op_out_types):
                 assert not isinstance(lhs, BVConst)
-                self.sym_table[lhs] = resolve_type(t)
+                self.sym_table[lhs] = self.resolve_type(t)
 
         # Verify outputs are consistent
         for ovar in self.outputs:

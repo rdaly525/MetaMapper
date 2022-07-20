@@ -4,6 +4,7 @@ import peak.mapper.formula_constructor as fc
 import hwtypes as ht
 from dataclasses import dataclass
 from .comb import Comb, CombFun, Stmt, QSym, Var, BVConst
+from .modules import BV as mds_BV
 import typing as tp
 import pysmt.shortcuts as smt
 from pysmt.logics import QF_BV, BV
@@ -25,9 +26,9 @@ def flat(l):
 
 @dataclass
 class SynthQuery:
-    spec : CombFun
-    op_list : tp.List[Comb]
-    const_list : tp.Tuple[int] = (0,1,-1)
+    spec: CombFun
+    op_list: tp.List[Comb]
+    const_list: tp.Tuple[int] = (0, 1)
 
     def __post_init__(self):
         # Structure
@@ -152,7 +153,7 @@ class SynthQuery:
         ])
         #in fc form
         self.query = query
-    def external_loop_solve(self, logic=QF_BV, maxloops=1000, solver_name="z3"):
+    def cegis(self, logic=QF_BV, maxloops=1000, solver_name="z3"):
         assert maxloops > 0
         query = self.query.to_hwtypes()
         query = query.value
@@ -168,7 +169,8 @@ class SynthQuery:
             solver.add_assertion(query.substitute(A_vals).simplify())
             for i in range(maxloops):
                 E_res = solver.solve()
-                print(f"{i}..", end='',flush=True)
+                if i%10==0:
+                    print(f"{i}..", end='',flush=True)
 
                 if not E_res:
                     print("UNSAT")
@@ -182,7 +184,7 @@ class SynthQuery:
 
                     if model is None:
                         #Solved!
-                        print("SOLVED")
+                        print("SAT")
                         return self.comb_from_solved(E_guess)
                     else:
                         A_vals = {v: model.get_value(v) for v in A_vars}
@@ -201,12 +203,17 @@ class SynthQuery:
         def to_int(val:FNode):
             return int(val.constant_value())
         output_lvars = [to_int(lvals[lvar.value]) for lvar in output_lvars]
-        def name_from_loc(loc):
+        def name_from_loc(loc, src=None):
             if loc < len(inputs):
                 return f"i{loc}"
             elif loc < len(inputs) + len(hard_consts):
-                #TODO Replace 13 with the actual type
-                return BVConst(13, hard_consts[loc-len(inputs)])
+                assert src is not None
+                i, j = src
+                type = self.spec.resolve_type(self.op_list[i].inputs[j].type)
+                if isinstance(type, mds_BV):
+                    return BVConst(type.N, hard_consts[loc-len(inputs)])
+                else:
+                    raise NotImplementedError()
             else:
                 loc = loc - (len(inputs) + len(hard_consts))
                 return f"t{loc}"
@@ -222,7 +229,7 @@ class SynthQuery:
         for i, out_lvars in sorted(tmp_map.items(), key=lambda item: item[1][0]):
             lhss = [name_from_loc(loc) for loc in out_lvars]
             op = self.op_list[i]
-            args = [name_from_loc(loc) for loc in op_in_lvars[i]]
+            args = [name_from_loc(loc,src=(i,j)) for j, loc in enumerate(op_in_lvars[i])]
             stmts.append(Stmt(lhss, op.name, args))
         outputs = [Var(name_from_loc(output_lvars[i]),v.type) for i, v in enumerate(self.spec.outputs)]
         name = QSym('solved', 'v0')

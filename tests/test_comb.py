@@ -20,43 +20,23 @@ output o0 : bv.bv<13>
 o0 = bv.add<13>(i0, 13'h23)
 '''
 
-pmulti_out = '''
-comb test.multi_out
-input i0 : bv.bv<13>
-output o0 : bv.bv<13>
-output o1 : bv.bv<13>
-o0, o1 = bv.addsub<13>(i0, 13'h23)
-'''
-
-
-#TODO, small dependent typing
-pgen = '''
-comb test.addN<n>
-input i0 : b.bv<n>
-input i1 : b.bv<n>
-output o0 : b.bv<n>
-o0 : b.bv<n> = bv.add<n>(i0, i1)
-'''
-
 @pytest.mark.parametrize("p", [
     padd,
     pconst,
-    pmulti_out,
 ])
 def test_round_trip(p):
-    comb = program_to_comb(p, [Base()], debug=False)
+    comb = program_to_comb(p)
     p1 = comb.serialize()
-    comb1 = program_to_comb(p, [Base()], debug=False)
+    comb1 = program_to_comb(p)
     p2 = comb1.serialize()
     assert p1 == p2
 
 @pytest.mark.parametrize("p", [
     padd,
     pconst,
-    pmulti_out,
 ])
 def test_eval(p):
-    comb = program_to_comb(p, [Base()], debug=False)
+    comb = program_to_comb(p)
     args = comb.create_symbolic_inputs()
     res = comb.eval(*args)
     print(res)
