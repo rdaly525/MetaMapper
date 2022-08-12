@@ -179,6 +179,7 @@ class RewriteTable:
 
 
     def sort_rules(self):
+        self.rules.sort(key=lambda x: x.name)
         rule_nodes = []
         for rule in self.rules:
             dag = rule.tile
@@ -187,3 +188,13 @@ class RewriteTable:
 
         keydict = dict(zip(self.rules, rule_nodes))
         self.rules.sort(key=keydict.get, reverse=True)
+
+        mul_add_rules = []
+        for idx,rule in enumerate(self.rules):
+            if "mac" in rule.name or "muladd" in rule.name:
+                mul_add_rules.append(idx)
+
+        for idx in mul_add_rules:
+            self.rules.insert(0, self.rules.pop(idx))
+
+
