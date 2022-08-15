@@ -18,6 +18,7 @@ def gen_CoreIRNodes(width):
     CoreIRNodes = Nodes("CoreIR")
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
+    c.load_library("cgralib")
 
     basic = ("mul", "add", "const", "and_", "or_", "neg")
     other = ("ashr", "eq", "neq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
@@ -45,7 +46,6 @@ def gen_CoreIRNodes(width):
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
-    
     name = f"float_DW.fp_add"
     peak_fc = peak_ir.instructions[name]
     cmod = None
@@ -139,9 +139,33 @@ def gen_CoreIRNodes(width):
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.mult_middle", modparams=())
 
+    name = f"cgralib.Mem"
+    peak_fc = peak_ir.instructions[name]
+    cmod = c.get_namespace('cgralib').generators['Mem'](ctrl_width=16, has_chain_en=False, has_external_addrgen=False, has_flush=True, has_read_valid=False, has_reset=False, has_stencil_valid=True, has_valid=False, is_rom=False, num_inputs=2, num_outputs=2, use_prebuilt_mem=True, width=16)
+    cmod.print_()
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="cgralib.Mem", modparams=())
+
     CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
+    class Mem_amber(DagNode):
+        def __init__(self, clk_en, data_in_0, data_in_1, wen_in_0, wen_in_1, *, iname):
+            super().__init__(clk_en, data_in_0, data_in_1, wen_in_0, wen_in_1, iname=iname)
+            self.modparams=()
+        @property
+        def attributes(self):
+            return ("iname")
 
+        #Hack to get correct port name
+        #def select(self, field, original=None):
+        #    self._selects.add("data_out_0")
+        #    return Select(self, field="rdata",type=BitVector[16])
+
+        nodes = CoreIRNodes
+        static_attributes = {}
+        node_name = "cgralib.Mem_amber"
+        num_children = 3
+        type = Product.from_fields("Output",{"data_out_0":BitVector[16], "data_out_1":BitVector[16], "stencil_valid":BitVector[1]})
+ 
     class FPRom(DagNode):
         def __init__(self, raddr, ren, *, init, iname):
             super().__init__(raddr, ren, init=init, iname=iname)
