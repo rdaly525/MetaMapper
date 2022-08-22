@@ -18,9 +18,7 @@ def gen_peak_CoreIR(width):
         Bit = family.Bit
         class mem(Peak):
             @name_outputs(data_out_0=Data, data_out_1=Data, stencil_valid=Bit)
-            def __call__(self, data_in_0: Data, chain_data_in_0: Data, data_in_1: Data, 
-                               chain_data_in_1: Data, rst_n: Bit, clk_en: Bit, 
-                               flush: Bit) -> (Data, Data, Bit):
+            def __call__(self, rst_n: Bit, clk_en: Bit, data_in_0: Data, chain_data_in_0: Data, data_in_1: Data, chain_data_in_1: Data, flush: Bit) -> (Data, Data, Bit):
                 return Data(0), Data(0), Bit(0)
         return mem
 
