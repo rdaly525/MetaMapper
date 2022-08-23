@@ -141,7 +141,7 @@ def gen_CoreIRNodes(width):
 
     name = f"cgralib.Mem"
     peak_fc = peak_ir.instructions[name]
-    cmod = c.get_namespace('cgralib').generators['Mem'](ctrl_width=16, has_chain_en=False, has_external_addrgen=False, has_flush=True, has_read_valid=False, has_reset=False, has_stencil_valid=True, has_valid=False, is_rom=False, num_inputs=2, num_outputs=2, use_prebuilt_mem=True, width=16)
+    cmod = c.get_namespace('cgralib').generators['Mem'](ctrl_width=16, has_chain_en=False, has_external_addrgen=False, has_flush=True, has_read_valid=False, has_reset=False, has_stencil_valid=True, has_valid=False, is_rom=True, num_inputs=2, num_outputs=2, use_prebuilt_mem=True, width=16)
     cmod.print_()
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="cgralib.Mem", modparams=())
 
