@@ -153,10 +153,19 @@ class SynthQuery:
         ])
         #in fc form
         self.query = query
-    def cegis(self, logic=QF_BV, maxloops=1000, solver_name="z3"):
+        self.sols = []
+
+    def gen_all_sols(self, logic=QF_BV, maxloops=1000, solver_name="z3", verbose=True):
+        sol = self.cegis(logic, maxloops, solver_name, verbose)
+        while sol is not None:
+            pass
+
+
+
+    def cegis(self, logic=QF_BV, maxloops=1000, solver_name="z3", verbose=True, existing_sols=[]):
         assert maxloops > 0
-        query = self.query.to_hwtypes()
-        query = query.value
+        query = self.query.to_hwtypes().value
+
         #get exist vars:
         E_vars = set(var.value for var in self.E_vars)  # forall_vars
         A_vars = query.get_free_variables() - E_vars  # exist vars
@@ -169,27 +178,31 @@ class SynthQuery:
             solver.add_assertion(query.substitute(A_vals).simplify())
             for i in range(maxloops):
                 E_res = solver.solve()
-                if i%10==0:
-                    print(f"{i}..", end='',flush=True)
+                if verbose and i%10==0:
+                    print(f"{i}..", end='', flush=True)
 
                 if not E_res:
-                    print("UNSAT")
-                    #No Solution (UNSAT)
+                    if verbose:
+                        print("No solution, UNSAT")
                     return None
                 else:
                     E_guess = {v: solver.get_value(v) for v in E_vars}
-                    #print(E_guess)
                     query_guess = query.substitute(E_guess).simplify()
                     model = smt.get_model(smt.Not(query_guess), solver_name=solver_name, logic=logic)
 
                     if model is None:
-                        #Solved!
-                        print("SAT")
-                        return self.comb_from_solved(E_guess)
+                        if verbose:
+                            print("SAT")
+                        return E_guess
                     else:
                         A_vals = {v: model.get_value(v) for v in A_vars}
                         solver.add_assertion(query.substitute(A_vals).simplify())
             raise ValueError(f"Unknown result in CEGIS in {maxloops} number of iterations")
+
+    def cegis_comb(self, logic=QF_BV, maxloops=1000, solver_name="z3", verbose=True):
+        E_vals = self.cegis(logic, maxloops, solver_name, verbose)
+        if E_vals is not None:
+            return self.comb_from_solved(E_vals)
     def comb_from_solved(self, lvals):
 
         inputs = self.spec.inputs
@@ -236,6 +249,31 @@ class SynthQuery:
         comb = CombFun(name, inputs, outputs, stmts)
         comb.resolve_qualified_symbols(self.spec.module_list)
         return comb
+
+def verify(comb0: Comb, comb1: Comb, logic=QF_BV, solver_name='z3'):
+    #Verify that the two interfaces are identical
+    for i0, i1 in zip(comb0.inputs, comb1.inputs):
+        assert i0 == i1
+    for o0, o1 in zip(comb0.outputs, comb1.outputs):
+        assert o0 == o1
+
+    inputs = comb0.input_free_vars()
+    o0 = comb0.eval(*inputs)
+    o1 = comb1.eval(*inputs)
+
+    formula = fc.And(o0_ == o1_ for o0_, o1_ in zip(o0, o1))
+    formula = formula.serialize()
+
+    with smt.Solver(logic=logic, name=solver_name) as solver:
+        solver.add_assertion(formula.value)
+        res = solver.solve()
+        if res is None:
+            return None
+        vals = {v: v.constant_value for v in inputs}
+        return vals
+
+
+
 
 
 

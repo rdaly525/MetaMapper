@@ -27,7 +27,7 @@ o0 = bv.add<13>(i0, 13'h23)
 def test_round_trip(p):
     comb = program_to_comb(p)
     p1 = comb.serialize()
-    comb1 = program_to_comb(p)
+    comb1 = program_to_comb(p1)
     p2 = comb1.serialize()
     assert p1 == p2
 
@@ -40,6 +40,15 @@ def test_eval(p):
     args = comb.create_symbolic_inputs()
     res = comb.eval(*args)
     print(res)
+
+
+#with smt.Solver(logic=logic, name=solver_name) as solver:
+#    solver.add_assertion(smt.Bool(True))
+#
+#    # Start with checking all A vals beings 0
+#    A_vals = {v: _int_to_pysmt(0, v.get_type()) for v in A_vars}
+#    solver.add_assertion(query.substitute(A_vals).simplify())
+
 
 
 
