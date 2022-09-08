@@ -18,7 +18,11 @@ def gen_CoreIRNodes(width):
     CoreIRNodes = Nodes("CoreIR")
     peak_ir = gen_peak_CoreIR(width)
     c = CoreIRContext()
-    c.load_library("cgralib")
+    cgralib = True
+    try:
+        c.load_library("cgralib")
+    except:
+        cgralib = False
 
     basic = ("mul", "add", "const", "and_", "or_", "neg")
     other = ("ashr", "eq", "neq", "lshr", "mux", "sub", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge", "shl")
@@ -139,11 +143,12 @@ def gen_CoreIRNodes(width):
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.mult_middle", modparams=())
 
-    name = f"cgralib.Mem"
-    peak_fc = peak_ir.instructions[name]
-    cmod = c.get_namespace('cgralib').generators['Mem'](ctrl_width=16, has_chain_en=False, has_external_addrgen=False, has_flush=True, has_read_valid=False, has_reset=False, has_stencil_valid=True, has_valid=False, is_rom=True, num_inputs=2, num_outputs=2, use_prebuilt_mem=True, width=16)
-    cmod.print_()
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, stateful=True, name="cgralib.Mem", modparams=())
+    if cgralib:
+        name = f"cgralib.Mem"
+        peak_fc = peak_ir.instructions[name]
+        cmod = c.get_namespace('cgralib').generators['Mem'](ctrl_width=16, has_chain_en=False, has_external_addrgen=False, has_flush=True, has_read_valid=False, has_reset=False, has_stencil_valid=True, has_valid=False, is_rom=True, num_inputs=2, num_outputs=2, use_prebuilt_mem=True, width=16)
+        cmod.print_()
+        name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, stateful=True, name="cgralib.Mem", modparams=())
 
     CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
