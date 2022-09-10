@@ -20,9 +20,9 @@ class Bool:
 
 
 _binops = dict(
-    add=lambda x, y: x + y,
-    sub=lambda x, y: x - y,
-    mul=lambda x, y: x + y,
+    add=(lambda x, y: x + y, True),
+    sub=(lambda x, y: x - y, False),
+    mul=(lambda x, y: x * y, True),
 )
 
 _unary_ops = dict(
@@ -31,6 +31,7 @@ _unary_ops = dict(
 )
 
 class BVUnary(Prim):
+    commutitive = False
     def __init__(self, N, op):
         self.N = N
         self.name = QSym("bv", op, (N,))
@@ -55,7 +56,7 @@ class BVBinary(Prim):
         self.N = N
         self.name = QSym("bv", op, (N,))
         assert op in _binops
-        self.op = _binops[op]
+        self.op, self.commutative = _binops[op]
         bv_t = QSym('bv','bv',(N,))
         self.inputs = (Var('i0', bv_t), Var('i1', bv_t))
         self.outputs = (Var('o0',bv_t),)
