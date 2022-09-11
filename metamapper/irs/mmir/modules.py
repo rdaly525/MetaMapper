@@ -26,6 +26,7 @@ _binops = dict(
 )
 
 _unary_ops = dict(
+    identity=lambda x: x,
     neg=lambda x: -x,
     not_=lambda x: ~x,
 )
