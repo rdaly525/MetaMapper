@@ -40,9 +40,10 @@ lassen_header = "libs/lassen_header.json"
 
 def gen_rrules(pipelined=False):
 
-    c = CoreIRContext(reset=True)
+    c = CoreIRContext()
     cmod = putil.peak_to_coreir(lassen_fc)
     c.serialize_header(lassen_header, [cmod])
+    # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
     ops = []
@@ -53,7 +54,7 @@ def gen_rrules(pipelined=False):
         rrule_files = glob.glob(f'{lassen_location}/lassen/rewrite_rules/*.json')
         rrule_files = [rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file]
 
-    custom_rule_names = {"mult_middle":"commonlib.mult_middle","fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
+    custom_rule_names = {"mult_middle": "commonlib.mult_middle", "fp_exp": "float.exp", "fp_div": "float.div", "fp_mux": "float.mux", "fp_mul":"float_DW.fp_mul", "fp_add":"float_DW.fp_add", "fp_sub":"float.sub"}
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
@@ -71,7 +72,9 @@ def gen_rrules(pipelined=False):
             rewrite_rule_in = json.load(json_file)
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-
+        if False:
+            counter_example = rewrite_rule.verify()
+            assert counter_example == None, f"{rule_name} failed"
         rrules.append(rewrite_rule)
 
     return rrules, ops
@@ -103,13 +106,12 @@ def test_kernel_mapping(pipelined, app):
     c = CoreIRContext(reset=True)
     cutil.load_libs(["commonlib", "float_DW"])
     CoreIRNodes = gen_CoreIRNodes(16)
-
-    cutil.load_from_json(app_file)
-    c.run_passes(["rungenerators", "deletedeadinstances"])
+    cutil.load_from_json(app_file) #libraries=["lakelib"])
     kernels = dict(c.global_namespace.modules)
 
     arch_fc = lassen_fc
     ArchNodes = Nodes("Arch")
+
     putil.load_and_link_peak(
         ArchNodes,
         lassen_header,
