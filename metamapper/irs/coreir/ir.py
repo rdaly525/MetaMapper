@@ -25,6 +25,18 @@ def gen_peak_CoreIR(width):
     CoreIR.add_instruction("cgralib.Mem", mem_fc)
 
     @family_closure
+    def pond_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class pond(Peak):
+            @name_outputs(data_out_pond_0=Data, data_out_pond_1=Data, valid_out_pond=Bit)
+            def __call__(self, rst_n: Bit, clk_en: Bit, data_in_pond_0: Data, data_in_pond_1: Data, flush: Bit) -> (Data, Data, Bit):
+                return Data(0), Data(0), Bit(0)
+        return pond
+
+    CoreIR.add_instruction("cgralib.Pond", pond_fc)
+
+    @family_closure
     def rom_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         Bit = family.Bit
