@@ -105,7 +105,7 @@ pe_reg_info["port_to_reg"] = pe_port_to_reg
 
 file_name = str(sys.argv[1])
 if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
-    pe_cycles = os.environ["PIPELINED"]
+    pe_cycles = int(os.environ["PIPELINED"])
 else:
     pe_cycles = 1
 
