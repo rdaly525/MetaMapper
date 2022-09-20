@@ -13,6 +13,30 @@ def gen_peak_CoreIR(width):
     CoreIR = gen_custom_ops_peak_CoreIR(DATAWIDTH)
 
     @family_closure
+    def mem_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class mem(Peak):
+            @name_outputs(data_out_0=Data, data_out_1=Data, stencil_valid=Bit)
+            def __call__(self, rst_n: Bit, clk_en: Bit, data_in_0: Data, chain_data_in_0: Data, data_in_1: Data, chain_data_in_1: Data, wen_in_0: Bit, ren_in_0: Bit, addr_in_0: Data, flush: Bit) -> (Data, Data, Bit):
+                return Data(0), Data(0), Bit(0)
+        return mem
+
+    CoreIR.add_instruction("cgralib.Mem", mem_fc)
+
+    @family_closure
+    def pond_fc(family: AbstractFamily):
+        Data = family.BitVector[width]
+        Bit = family.Bit
+        class pond(Peak):
+            @name_outputs(data_out_pond_0=Data, data_out_pond_1=Data, valid_out_pond=Bit)
+            def __call__(self, rst_n: Bit, clk_en: Bit, data_in_pond_0: Data, data_in_pond_1: Data, flush: Bit) -> (Data, Data, Bit):
+                return Data(0), Data(0), Bit(0)
+        return pond
+
+    CoreIR.add_instruction("cgralib.Pond", pond_fc)
+
+    @family_closure
     def rom_fc(family: AbstractFamily):
         Data = family.BitVector[width]
         Bit = family.Bit
