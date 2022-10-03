@@ -179,6 +179,7 @@ class RewriteTable:
 
 
     def sort_rules(self):
+        self.rules.sort(key=lambda x: x.name)
         rule_nodes = []
         for rule in self.rules:
             dag = rule.tile
