@@ -654,6 +654,22 @@ class Schedule(Visitor):
         Visitor.generic_visit(self, node)
         self.insts.append(node)
 
+class GetSinks(Visitor):
+    def __init__(self):
+        self.sinks = {}
+
+    def doit(self, dag: Dag):
+        self.run(dag)
+        for sink in dag.sinks:
+            self.sinks[sink] = []
+        return self.sinks
+
+    def generic_visit(self, node: DagNode):
+        for child in node.children():
+            if child not in self.sinks:
+                self.sinks[child] = []
+            self.sinks[child].append(node)
+        Visitor.generic_visit(self, node)
 
 class ConstantPacking(Transformer):
     def __init__(self, pe_reg_info):

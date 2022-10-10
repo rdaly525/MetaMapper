@@ -43,50 +43,96 @@ class DelayMatching(Transformer):
             self.aggregate_latencies[node] = max_latency + this_latency
             return node
 
-#Verifies that a kernel is branch-delay matched
-class KernelDelay(Visitor):
-    def __init__(self, node_latencies):
-        self.node_latencies = node_latencies
+def topological_sort_helper(dag, node, stack, visited):
+    visited.add(node)
+    for ns in node.children():
+        if ns not in visited:
+            topological_sort_helper(dag, ns, stack, visited)
+    stack.append(node)
 
-    def doit(self, dag):
-        self.aggregate_latencies = {}
-        self.run(dag)
-        output_latencies = [self.aggregate_latencies[root] if self.aggregate_latencies[root] != None else 0 for root in dag.roots()]
-        # if not all(output_latencies[0] == l for l in output_latencies):
-        #     raise ValueError("Mismatched output latencies")
-        return output_latencies[0]
+def topological_sort(dag):
+    visited = set()
+    stack = []
+    for n in dag.roots():
+        if n not in visited:
+            topological_sort_helper(dag, n, stack, visited)
+    return stack[::-1]
 
-    def visit_Constant(self, node):
-        self.aggregate_latencies[node] = None
+def is_input_sel(node):
+    curr_node = node
 
-    def visit_Source(self, node):
-        self.aggregate_latencies[node] = [(node, 0)]
+    while True:
+        if curr_node.node_name != "Select":
+            return curr_node.node_name == "Input"
+        assert len(curr_node.children()) == 1
+        curr_node = curr_node.child
 
-    def generic_visit(self, node):
-        Visitor.generic_visit(self, node)
-        latencies = [self.aggregate_latencies[child]
-                     for child in node.children()]
-        if len(latencies) == 0:
-            return
+def get_connected_pe_name(node, sinks):
+    curr_node = node
+    while True:
+        if curr_node.node_name == "global.PE":
+            return curr_node.iname
 
-        latencies = [lat for lat in latencies if lat is not None]
+        if len(sinks[curr_node]) != 1:
+            return ""
+        curr_node = sinks[curr_node][0]
+
+def branch_delay_match(dag, node_latencies, sinks):
+
+    sorted_nodes = topological_sort(dag)
+
+    added_regs = 0
+    node_cycles = {}
+    input_latencies = {}
+
+    for node in sorted_nodes:
+        cycles = set()
+
+        if len(sinks[node]) == 0:
+            cycles = {0}
+
+        for sink in sinks[node]:
+            if sink not in node_cycles:
+                c = 0
+            else:
+                c = node_cycles[sink]
+
+            if c != None:
+                c += node_latencies.get(node)
+
+            cycles.add(c)
+
+        if None in cycles:
+            cycles.remove(None)
+
+        if is_input_sel(node):
+            if len(cycles) > 0:
+                if node.child.field not in input_latencies:
+                    input_latencies[node.child.field] = {}
+                input_latencies[node.child.field][str(node.field)] = {}
+                input_latencies[node.child.field][str(node.field)]["latency"] = max(cycles)
+                input_latencies[node.child.field][str(node.field)]["pe_port"] = get_connected_pe_name(node, sinks)
+            node_cycles[node] = None
+        else:
+            if len(cycles) > 1:
+                print(f"\t\tIncorrect node delay: {node} {cycles}")
+
+                max_cycles = max(cycles)
+                for sink in sinks[node]:
+                    new_child = node
+                    pipeline_type = node.type
+                    new_children = [child for child in sink.children()]
+                    for _ in range(max_cycles - node_cycles[sink]):
+                        print("\t\tbreak", node, sink)
+                        new_child = PipelineRegister(new_child, type=pipeline_type)
+                        added_regs += 1
+                    sink.set_children(*new_children)
+                    
+                node_cycles[node] = max_cycles
+            elif len(cycles) == 1:
+                node_cycles[node] = max(cycles)
+            else:
+                node_cycles[node] = None
+
+    return input_latencies, added_regs
         
-        if len(latencies)==0:
-            self.aggregate_latencies[node] = None
-        else: 
-            this_latency = self.node_latencies.get(node)
-            self.aggregate_latencies[node] = [] 
-            for child_latency_list in latencies:
-                for (child_node, child_latency) in child_latency_list:
-                    if node.node_name == "Select" and node.child.node_name == "Select" and node.child.child == child_node:
-                        child_node =  f"{node.child.field}_{str(node.field)}"
-                    self.aggregate_latencies[node].append((child_node, child_latency + this_latency))
-       
-
-    def visit_PipelineRegister(self, node):
-        Visitor.generic_visit(self, node)
-        child = list(node.children())[0]
-        if self.aggregate_latencies[child] is None:
-            raise ValueError("Child of pipe register is constant")
-        self.aggregate_latencies[node] = self.aggregate_latencies[child] + 1
-

@@ -20,7 +20,7 @@ from peak.mapper import read_serialized_bindings
 class _ArchCycles:
     def get(self, node):
         kind = node.kind()[0]
-        if kind == "Rom" or kind == "FPRom":
+        if kind == "Rom" or kind == "FPRom" or kind == "reg":
             return 1
         elif kind == "global.PE":
             return pe_cycles

@@ -1,9 +1,9 @@
 from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking
+    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking, GetSinks
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
-from metamapper.delay_matching import DelayMatching, KernelDelay
+from metamapper.delay_matching import DelayMatching, branch_delay_match
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
@@ -104,11 +104,10 @@ class Mapper:
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
         if node_cycles is not None:
-            # delay_matching = DelayMatching(node_cycles)
-            # delay_matching.run(mapped_dag)
-            # print("\tAdded", delay_matching.inserted_regs, "during branch delay matching")
-            # self.num_regs += delay_matching.inserted_regs
-            self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
+            sinks = GetSinks().doit(mapped_dag)
+            self.kernel_cycles[kname], added_regs = branch_delay_match(mapped_dag, node_cycles, sinks)
+            print("\tAdded", added_regs, "during branch delay matching")
+            self.num_regs += added_regs
 
         if prove_mapping:
             counter_example = prove_equal(original_dag, mapped_dag)
