@@ -1,6 +1,6 @@
 from DagVisitor import Transformer, Visitor
 from metamapper.node import Constant, PipelineRegister
-
+from metamapper.common_passes import print_dag
 
 class DelayMatching(Transformer):
     def __init__(self, node_latencies):
@@ -105,34 +105,38 @@ def branch_delay_match(dag, node_latencies, sinks):
         if None in cycles:
             cycles.remove(None)
 
+        if len(cycles) > 1:
+            print(f"\t\tIncorrect node delay: {node} {cycles}")
+
+            max_cycles = max(cycles)
+            for sink in sinks[node]:
+                new_child = node
+                pipeline_type = node.type
+                new_children = [child for child in sink.children()]
+                for idx, c in enumerate(new_children):
+                    if c == new_child:
+                        for _ in range(max_cycles - node_cycles[sink]):
+                            print("\t\tbreak", node, sink)
+                            new_child = PipelineRegister(new_child, type=pipeline_type)
+                            added_regs += 1
+
+                        new_children[idx] = new_child
+                sink.set_children(*new_children)
+                
+            node_cycles[node] = max_cycles
+        elif len(cycles) == 1:
+            node_cycles[node] = max(cycles)
+        else:
+            node_cycles[node] = None
+        
         if is_input_sel(node):
             if len(cycles) > 0:
                 if node.child.field not in input_latencies:
                     input_latencies[node.child.field] = {}
                 input_latencies[node.child.field][str(node.field)] = {}
-                input_latencies[node.child.field][str(node.field)]["latency"] = max(cycles)
+                input_latencies[node.child.field][str(node.field)]["latency"] = node_cycles[node]
                 input_latencies[node.child.field][str(node.field)]["pe_port"] = get_connected_pe_name(node, sinks)
             node_cycles[node] = None
-        else:
-            if len(cycles) > 1:
-                print(f"\t\tIncorrect node delay: {node} {cycles}")
-
-                max_cycles = max(cycles)
-                for sink in sinks[node]:
-                    new_child = node
-                    pipeline_type = node.type
-                    new_children = [child for child in sink.children()]
-                    for _ in range(max_cycles - node_cycles[sink]):
-                        print("\t\tbreak", node, sink)
-                        new_child = PipelineRegister(new_child, type=pipeline_type)
-                        added_regs += 1
-                    sink.set_children(*new_children)
-                    
-                node_cycles[node] = max_cycles
-            elif len(cycles) == 1:
-                node_cycles[node] = max(cycles)
-            else:
-                node_cycles[node] = None
 
     return input_latencies, added_regs
         
