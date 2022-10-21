@@ -1,5 +1,5 @@
 from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking
+    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking, eval_dag
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -9,7 +9,9 @@ from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
 import coreir
 import json
-
+from hwtypes.adt import Tuple
+from hwtypes import BitVector
+from peak.family import PyFamily, SMTFamily
 
 class DefaultLatency:
 
@@ -106,10 +108,25 @@ class Mapper:
             DelayMatching(node_cycles).run(mapped_dag)
             self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
 
-        if prove_mapping:
+        if kname == "hcompute_conv_stencil_1" and True:
+            print("Evaling dags")
+            PBV = PyFamily().BitVector
+            t = Tuple[PBV[16]]
+            inputs = (t(PBV[16](value = 16688)), t(PBV[16](value = 16688))) 
+            print("Inputs: ", inputs)
+            #inputs = (t(PBV[16](value = 16384)),)
+            o0 = eval_dag(original_dag, inputs)
+            o1 = eval_dag(mapped_dag, inputs)
+            print("original dag output: ", o0)
+            print("mapped dag output: ", o1)
+
+        if True:
+            print("Comparing coreir dag with mapped dag")
             counter_example = prove_equal(original_dag, mapped_dag)
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
+            else:
+                print("Mapped dag is the same!")
         #Create a new module representing the mapped_dag
 
         if convert_unbound:

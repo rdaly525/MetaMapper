@@ -7,7 +7,8 @@ from .family import fam
 from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
-from peak import family
+from peak import family, black_box
+from peak.black_box import BlackBox
 from .node import DagNode
 import hwtypes as ht
 from graphviz import Digraph
@@ -228,15 +229,65 @@ from pysmt.logics import QF_BV
 
 def prove_formula(formula, solver, i1):
     with smt.Solver(solver, logic=QF_BV) as solver:
-        solver.add_assertion(formula.value)
+        solver.add_assertion(formula)
+        print("Calling solver")
         verified = not solver.solve()
         if verified:
             return None
         else:
+            for op in list(BlackBox.black_boxes.values()):
+                print("New op")
+                for i,o in op:
+                    if not isinstance(i, tuple):
+                        i = (i,)
+                    print("inputs")
+                    for ii in i:
+                        print(solved_to_bv(ii, solver))
+                    print("outputs")
+                    if not isinstance(o, tuple):
+                        o = (o,)
+                    for oo in o:
+                        print(solved_to_bv(oo, solver))
             return solved_to_bv(i1._value_, solver)
+
+def make_black_box_condition(black_boxes):
+    black_box_conditions = []
+    for op in list(black_boxes.values()):
+        op_conditions = []
+        for i in range(len(op)-1):
+            for j in range(i+1, len(op)):
+                in0, out0 = op[i]
+                in1, out1 = op[j]
+                if not isinstance(in0, tuple):
+                    in0 = (in0,)
+                if not isinstance(in1, tuple):
+                    in1 = (in1,)
+                if not isinstance(out0, tuple):
+                    out0 = (out0,)
+                if not isinstance(out1, tuple):
+                    out1 = (out1,)
+
+                in_equals = []
+                out_equals = []
+
+                for i0,i1 in zip(in0, in1):
+                    in_equals.append(smt.Equals(i0._value, i1._value))
+                for o0,o1 in zip(out0, out1):
+                    out_equals.append(smt.Equals(o0._value, o1._value))
+
+                in_equal = smt.And(in_equals)           
+                out_equal = smt.And(out_equals)           
+                
+                op_conditions.append(smt.Implies(in_equal, out_equal))
+        op_condition = smt.And(op_conditions)
+        black_box_conditions.append(op_condition)
+    black_box_condition = smt.And(black_box_conditions)
+    return black_box_condition
+
 
 #Returns None if equal, counter example for one input otherwise
 def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
+    BlackBox.rst_black_boxes()
     if dag0.input.type != dag1.input.type:
         raise ValueError("Input types are not the same")
     if dag0.output.type != dag1.output.type:
@@ -244,9 +295,78 @@ def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
     i0, o0 = SMT().get(dag0)
     i1, o1 = SMT().get(dag1)
 
-    formula = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
+    black_box_condition = make_black_box_condition(BlackBox.black_boxes)
+    same_in_different_out = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
+    formula = smt.And(black_box_condition, same_in_different_out.value)
     return prove_formula(formula, solver_name, i1)
 
+def eval_dag(dag, inputs):
+    o = PY().get(dag, inputs)
+    return o
+
+class PY(Visitor):
+    def __init__(self):
+        pass
+
+    def get(self, dag: Dag, inputs):
+        self.values = {}
+        if not isinstance(inputs, tuple):
+            inputs = (inputs,)
+        self.inputs = inputs
+
+        #ensure inputs type is correct
+        aadt = _get_aadt_py(dag.input.type)
+        for exp, act in zip(aadt._fields_, inputs):
+            assert exp == type(act)
+
+        if len(dag.sources) !=1:
+            raise NotImplementedError
+        self.run(dag)
+        return self.values[dag.output]
+
+    def visit_Input(self, node : Input):
+        aadt = _get_aadt_py(node.type)
+        self.values[node] = aadt(*self.inputs)
+
+    def visit_Constant(self, node: Constant):
+        val = node.assemble(fam().PyFamily())
+        print(val)
+        self.values[node] = val
+
+    def visit_Select(self, node: Select):
+        Visitor.generic_visit(self, node)
+        val =self.values[node.children()[0]]
+        self.values[node] = val.value_dict[node.field]
+
+    def visit_Combine(self, node: Combine):
+        Visitor.generic_visit(self, node)
+        vals = {field: self.values[child] for field, child in zip(node.type.field_dict.keys(), node.children())}
+        aadt = _get_aadt_py(node.type)
+        self.values[node] = aadt.from_fields(**vals)
+
+    def visit_Output(self, node: Output):
+        Visitor.generic_visit(self, node)
+        vals = {field: self.values[child] for field, child in zip(node.type.field_dict.keys(), node.children())}
+        aadt = _get_aadt_py(node.type)
+        assert len(vals) == 1
+        self.values[node] = aadt(*vals.values())
+
+    def generic_visit(self, node: DagNode):
+        Visitor.generic_visit(self, node)
+        peak_fc = node.nodes.peak_nodes[node.node_name]
+        vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
+        py = peak_fc.Py()
+        outputs = py(**vals)
+        if not isinstance(outputs, tuple):
+            outputs = (outputs,)
+
+        aadt = _get_aadt_py(peak_fc.Py.output_t)
+        output_val = aadt(*outputs)
+        self.values[node] = output_val
+
+def _get_aadt_py(T):
+    T = rebind_type(T, fam().PyFamily())
+    return fam().PyFamily().get_adt_t(T)
 def _get_aadt(T):
     T = rebind_type(T, fam().SMTFamily())
     return fam().SMTFamily().get_adt_t(T)
@@ -260,11 +380,16 @@ class SMT(Visitor):
         if len(dag.sources) !=1:
             raise NotImplementedError
         self.run(dag)
+        if dag.input not in self.values:
+            aadt = _get_aadt(dag.input.type)
+            val = fam().SMTFamily().BitVector[1]()
+            self.values[dag.input] = aadt(val)
         return self.values[dag.input], self.values[dag.output]
 
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
         val = fam().SMTFamily().BitVector[aadt._assembler_.width]()
+        print(aadt._assembler_.width)
         self.values[node] = aadt(val)
 
     def visit_Constant(self, node: Constant):
@@ -303,6 +428,7 @@ class SMT(Visitor):
         peak_fc = node.nodes.peak_nodes[node.node_name]
         vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
         outputs = peak_fc.SMT()(**vals)
+        #outputs = peak_fc.SMT()(**vals)
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
 
