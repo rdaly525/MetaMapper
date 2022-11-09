@@ -372,7 +372,7 @@ class Printer(Visitor):
 
     def visit_Input(self, node):
         Visitor.generic_visit(self, node)
-        self.res += f"{node._id_}<Input>{hex(id(node))}\n"
+        self.res += f"{node._id_}<Input>\n"
 
     def visit_InstanceInput(self, node):
         self.res += f"{node._id_}<InstanceInput>\n"
@@ -531,7 +531,9 @@ class RemoveSelects(Transformer):
 
 def print_dag(dag: Dag):
     AddID().run(dag)
-    print(Printer().run(dag).res)
+    res = Printer().run(dag).res 
+    print(res)
+    return res
 
 def count_pes(dag: Dag):
     return CountPEs().run(dag).res
