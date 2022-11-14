@@ -230,27 +230,15 @@ from pysmt.logics import QF_BV
 def prove_formula(formula, solver, i1):
     with smt.Solver(solver, logic=QF_BV) as solver:
         solver.add_assertion(formula)
-        print("Calling solver")
         verified = not solver.solve()
         if verified:
             return None
         else:
-            for op in list(BlackBox.black_boxes.values()):
-                print("New op")
-                for i,o in op:
-                    if not isinstance(i, tuple):
-                        i = (i,)
-                    print("inputs")
-                    for ii in i:
-                        print(solved_to_bv(ii, solver))
-                    print("outputs")
-                    if not isinstance(o, tuple):
-                        o = (o,)
-                    for oo in o:
-                        print(solved_to_bv(oo, solver))
             return solved_to_bv(i1._value_, solver)
 
 def make_black_box_condition(black_boxes):
+    #for each type of black box, ensure that for each pairwise instance of that black box
+    #that if the inputs are equal then the outputs are equal
     black_box_conditions = []
     for op in list(black_boxes.values()):
         op_conditions = []
@@ -271,9 +259,9 @@ def make_black_box_condition(black_boxes):
                 out_equals = []
 
                 for i0,i1 in zip(in0, in1):
-                    in_equals.append(smt.Equals(i0._value, i1._value))
+                    in_equals.append(smt.Equals(i0.value, i1.value))
                 for o0,o1 in zip(out0, out1):
-                    out_equals.append(smt.Equals(o0._value, o1._value))
+                    out_equals.append(smt.Equals(o0.value, o1.value))
 
                 in_equal = smt.And(in_equals)           
                 out_equal = smt.And(out_equals)           
@@ -286,7 +274,7 @@ def make_black_box_condition(black_boxes):
 
 
 #Returns None if equal, counter example for one input otherwise
-def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
+def prove_equal(dag0: Dag, dag1: Dag, solver_name="btor"):
     BlackBox.rst_black_boxes()
     if dag0.input.type != dag1.input.type:
         raise ValueError("Input types are not the same")
@@ -295,9 +283,12 @@ def prove_equal(dag0: Dag, dag1: Dag, solver_name="z3"):
     i0, o0 = SMT().get(dag0)
     i1, o1 = SMT().get(dag1)
 
-    black_box_condition = make_black_box_condition(BlackBox.black_boxes)
-    same_in_different_out = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
-    formula = smt.And(black_box_condition, same_in_different_out.value)
+    bb_condition = make_black_box_condition(BlackBox.black_boxes)
+    notequal = o0._value_ != o1._value_
+    formula = smt.And(bb_condition, notequal.value).substitute({i0._value_.value: i1._value_.value})
+    #same_in_different_out = smt.And(smt.Equals(i0._value_.value, i1._value_.value), smt.NotEquals(o0._value_.value, o1._value_.value))
+    #same_in_different_out = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
+    #formula = smt.And(black_box_condition, same_in_different_out)
     return prove_formula(formula, solver_name, i1)
 
 def eval_dag(dag, inputs):
@@ -330,7 +321,6 @@ class PY(Visitor):
 
     def visit_Constant(self, node: Constant):
         val = node.assemble(fam().PyFamily())
-        print(val)
         self.values[node] = val
 
     def visit_Select(self, node: Select):
@@ -355,8 +345,7 @@ class PY(Visitor):
         Visitor.generic_visit(self, node)
         peak_fc = node.nodes.peak_nodes[node.node_name]
         vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
-        py = peak_fc.Py()
-        outputs = py(**vals)
+        outputs = peak_fc.Py()(**vals)
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
 
@@ -389,7 +378,6 @@ class SMT(Visitor):
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
         val = fam().SMTFamily().BitVector[aadt._assembler_.width]()
-        print(aadt._assembler_.width)
         self.values[node] = aadt(val)
 
     def visit_Constant(self, node: Constant):
@@ -428,7 +416,6 @@ class SMT(Visitor):
         peak_fc = node.nodes.peak_nodes[node.node_name]
         vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
         outputs = peak_fc.SMT()(**vals)
-        #outputs = peak_fc.SMT()(**vals)
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
 

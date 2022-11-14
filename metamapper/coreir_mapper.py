@@ -108,11 +108,11 @@ class Mapper:
             DelayMatching(node_cycles).run(mapped_dag)
             self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
 
-        if kname == "hcompute_conv_stencil_1" and True:
+        if kname == "hcompute_cim_stencil" and False:
             print("Evaling dags")
             PBV = PyFamily().BitVector
             t = Tuple[PBV[16]]
-            inputs = (t(PBV[16](value = 16688)), t(PBV[16](value = 16688))) 
+            inputs = (t(PBV[16](value = 5)), t(PBV[16](value = 3)), t(PBV[16](value = 10))) 
             print("Inputs: ", inputs)
             #inputs = (t(PBV[16](value = 16384)),)
             o0 = eval_dag(original_dag, inputs)
