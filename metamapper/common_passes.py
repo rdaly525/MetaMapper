@@ -9,11 +9,16 @@ from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
 from peak import family, black_box
 from peak.black_box import BlackBox
+from peak.family import _RegFamily
+from peak.register import gen_register
 from .node import DagNode
 import hwtypes as ht
 from graphviz import Digraph
 
-
+import pono
+import smt_switch.pysmt_frontend as fe
+from smt_switch.sortkinds import BV
+import smt_switch.primops as switch_ops
 
 
 def is_unbound_const(node):
@@ -273,19 +278,71 @@ def make_black_box_condition(black_boxes):
     return black_box_condition
 
 
+def _pysmt_to_pono(i, o, regs, solver, convert, cycles):
+    i = convert(i._value_.value) 
+    o = convert(o._value_.value) 
+    
+    fts = pono.FunctionalTransitionSystem(solver)
+    mapping = {} #input/register mapping from pysmt to pono
+
+    mapping[i] = fts.make_inputvar(f"IVAR_{repr(i)}", i.get_sort()) 
+    i = mapping[i]
+
+    for reg, _ in regs:
+        reg = convert(reg.value)
+        statevar = fts.make_statevar(f"SVAR_{repr(reg)}", reg.get_sort())
+        mapping[reg] = statevar
+   
+    for reg, reg_next in regs:
+        reg = convert(reg.value)
+        reg_next = convert(reg_next.value)
+        reg_next = solver.substitute(reg_next, mapping)
+        fts.assign_next(mapping[reg], reg_next)
+    
+    o = solver.substitute(o, mapping)
+    
+    ur = pono.Unroller(fts)
+    i = ur.at_time(i, 0)
+    o = ur.at_time(o, cycles)
+
+    solver.assert_formula(ur.at_time(fts.init, 0))
+    for cycle in range(cycles):
+        solver.assert_formula(ur.at_time(fts.trans, cycle))
+
+    return i, o
+
 #Returns None if equal, counter example for one input otherwise
-def prove_equal(dag0: Dag, dag1: Dag, solver_name="btor"):
-    BlackBox.rst_black_boxes()
+def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
+    #BlackBox.rst_black_boxes()
     if dag0.input.type != dag1.input.type:
         raise ValueError("Input types are not the same")
     if dag0.output.type != dag1.output.type:
         raise ValueError("Output types are not the same")
-    i0, o0 = SMT().get(dag0)
-    i1, o1 = SMT().get(dag1)
 
-    bb_condition = make_black_box_condition(BlackBox.black_boxes)
-    notequal = o0._value_ != o1._value_
-    formula = smt.And(bb_condition, notequal.value).substitute({i0._value_.value: i1._value_.value})
+    i0, o0, regs0 = SMT().get(dag0)
+    i1, o1, regs1 = SMT().get(dag1)
+
+    if regs0:
+        raise ValueError(f"Unmapped dag should not have registers: {regs0}")
+
+    s = fe.Solver(solver_name)
+    solver = s.solver
+    convert = s.converter.convert
+
+    i0, o0 = _pysmt_to_pono(i0, o0, [], solver, convert, 0)
+    i1, o1 = _pysmt_to_pono(i1, o1, regs1, solver, convert, cycles)
+
+    solver.assert_formula(solver.make_term(switch_ops.Equal, i0, i1))
+    solver.assert_formula(solver.make_term(switch_ops.Not, solver.make_term(switch_ops.Equal, o0, o1)))
+    res = solver.check_sat()
+
+    if res.is_unsat():
+        return None
+    else:
+        raise Exception("Uh oh")
+    #bb_condition = make_black_box_condition(BlackBox.black_boxes)
+    #notequal = o0._value_ != o1._value_
+    #formula = smt.And(bb_condition, notequal.value).substitute({i0._value_.value: i1._value_.value})
     #same_in_different_out = smt.And(smt.Equals(i0._value_.value, i1._value_.value), smt.NotEquals(o0._value_.value, o1._value_.value))
     #same_in_different_out = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
     #formula = smt.And(black_box_condition, same_in_different_out)
@@ -360,12 +417,22 @@ def _get_aadt(T):
     T = rebind_type(T, fam().SMTFamily())
     return fam().SMTFamily().get_adt_t(T)
 
+def _recursive_filter_fc(obj, cond, fc):
+    if cond(obj):
+        fc(obj)
+    elif hasattr(obj, "__dict__"):
+        for _, sub_obj in obj.__dict__.items():
+            _recursive_filter_fc(sub_obj, cond, fc)
+
+
 class SMT(Visitor):
     def __init__(self):
         pass
 
     def get(self, dag: Dag):
         self.values = {}
+        self.regs = []
+        self.regs_next = []
         if len(dag.sources) !=1:
             raise NotImplementedError
         self.run(dag)
@@ -373,7 +440,7 @@ class SMT(Visitor):
             aadt = _get_aadt(dag.input.type)
             val = fam().SMTFamily().BitVector[1]()
             self.values[dag.input] = aadt(val)
-        return self.values[dag.input], self.values[dag.output]
+        return self.values[dag.input], self.values[dag.output], list(zip(self.regs, self.regs_next))
 
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
@@ -413,9 +480,32 @@ class SMT(Visitor):
 
     def generic_visit(self, node: DagNode):
         Visitor.generic_visit(self, node)
-        peak_fc = node.nodes.peak_nodes[node.node_name]
-        vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
-        outputs = peak_fc.SMT()(**vals)
+        if node.node_name == "PipelineRegister":
+            #TODO this is a temporary fix for now
+            peak_fc = gen_register(node.type)
+            vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
+            vals["en"] = fam().SMTFamily().Bit(1)
+        else:
+            peak_fc = node.nodes.peak_nodes[node.node_name]
+            vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
+        peak_fc_smt = peak_fc.SMT()
+
+        def is_reg(x):
+            return isinstance(x, _RegFamily.RegBase) or isinstance(x, _RegFamily.AttrRegBase)
+        def make_freevar(x):
+            x.value = x.value.__class__()
+
+        _recursive_filter_fc(peak_fc_smt, is_reg, make_freevar)
+        _recursive_filter_fc(peak_fc_smt, is_reg, lambda x: self.regs.append(x.value))
+
+        outputs = peak_fc_smt(**vals)
+
+        _recursive_filter_fc(peak_fc_smt, is_reg, lambda x: self.regs_next.append(x.value))
+        
+        if node.node_name == "PipelineRegister":
+            self.values[node] = outputs
+            return
+
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
 

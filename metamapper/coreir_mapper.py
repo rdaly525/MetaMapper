@@ -122,7 +122,7 @@ class Mapper:
 
         if True:
             print("Comparing coreir dag with mapped dag")
-            counter_example = prove_equal(original_dag, mapped_dag)
+            counter_example = prove_equal(original_dag, mapped_dag ,self.kernel_cycles[kname])
             if counter_example is not None:
                 raise ValueError(f"Mapped is not the same {counter_example}")
             else:
