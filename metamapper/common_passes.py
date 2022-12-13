@@ -233,11 +233,9 @@ def make_bbox_formula(bboxes, solver):
     #that if the inputs are equal then the outputs are equal
     bbox_formula = solver.make_term(True)
     for op_bboxes in list(bboxes.values()):
-        for i in range(len(op_bboxes)-1):
-            for j in range(i+1, len(op_bboxes)):
-                in0, out0 = op_bboxes[i]
-                in1, out1 = op_bboxes[j]
-
+        assert len(op_bboxes) == 2
+        for in0, out0 in op_bboxes[0]:
+            for in1, out1 in op_bboxes[1]:
                 in_eq = solver.make_term(True)
                 out_eq = solver.make_term(True)
 
@@ -342,14 +340,14 @@ def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
     i1, o1, bboxes1 = pysmt_to_pono(i1, o1, regs1, solver, convert, cycles, bboxes1)
 
     #TODO ideally here we could just merge the dictionaries bboxes0 and bboxes1
-    bboxes = defaultdict(list)
+    bboxes = defaultdict(lambda: [[],[]])
     i = 0
     for op, op_bboxes in list(bboxes0.items()):
-        bboxes[i] += op_bboxes
+        bboxes[i][0] = op_bboxes
         i+=1
     i = 0
     for op, op_bboxes in list(bboxes1.items()):
-        bboxes[1-i] += op_bboxes
+        bboxes[1-i][1] = op_bboxes
         i+=1
 
     bbox_formula = make_bbox_formula(bboxes, solver)
