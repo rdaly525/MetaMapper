@@ -9,17 +9,17 @@ from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
 from peak import family, black_box
 from peak.black_box import BlackBox
-from peak.family import _RegFamily
+from peak.family import _RegFamily, SMTFamily
 from peak.register import gen_register
 from .node import DagNode
 import hwtypes as ht
 from graphviz import Digraph
-
+from collections import defaultdict
 import pono
 import smt_switch.pysmt_frontend as fe
 from smt_switch.sortkinds import BV
 import smt_switch.primops as switch_ops
-
+from peak.mapper.utils import rebind_type
 
 def is_unbound_const(node):
     return isinstance(node, Constant) and node.value is Unbound
@@ -228,57 +228,31 @@ class VerifyNodes(Visitor):
                     self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
-from peak.mapper.utils import rebind_type, solved_to_bv
-import pysmt.shortcuts as smt
-from pysmt.logics import QF_BV
-
-def prove_formula(formula, solver, i1):
-    with smt.Solver(solver, logic=QF_BV) as solver:
-        solver.add_assertion(formula)
-        verified = not solver.solve()
-        if verified:
-            return None
-        else:
-            return solved_to_bv(i1._value_, solver)
-
-def make_black_box_condition(black_boxes):
+def make_bbox_formula(bboxes, solver):
     #for each type of black box, ensure that for each pairwise instance of that black box
     #that if the inputs are equal then the outputs are equal
-    black_box_conditions = []
-    for op in list(black_boxes.values()):
-        op_conditions = []
-        for i in range(len(op)-1):
-            for j in range(i+1, len(op)):
-                in0, out0 = op[i]
-                in1, out1 = op[j]
-                if not isinstance(in0, tuple):
-                    in0 = (in0,)
-                if not isinstance(in1, tuple):
-                    in1 = (in1,)
-                if not isinstance(out0, tuple):
-                    out0 = (out0,)
-                if not isinstance(out1, tuple):
-                    out1 = (out1,)
+    bbox_formula = solver.make_term(True)
+    for op_bboxes in list(bboxes.values()):
+        for i in range(len(op_bboxes)-1):
+            for j in range(i+1, len(op_bboxes)):
+                in0, out0 = op_bboxes[i]
+                in1, out1 = op_bboxes[j]
 
-                in_equals = []
-                out_equals = []
+                in_eq = solver.make_term(True)
+                out_eq = solver.make_term(True)
 
                 for i0,i1 in zip(in0, in1):
-                    in_equals.append(smt.Equals(i0.value, i1.value))
+                    in_eq = solver.make_term(switch_ops.And, in_eq, solver.make_term(switch_ops.Equal, i0, i1))
                 for o0,o1 in zip(out0, out1):
-                    out_equals.append(smt.Equals(o0.value, o1.value))
+                    out_eq = solver.make_term(switch_ops.And, out_eq, solver.make_term(switch_ops.Equal, o0, o1))
 
-                in_equal = smt.And(in_equals)           
-                out_equal = smt.And(out_equals)           
-                
-                op_conditions.append(smt.Implies(in_equal, out_equal))
-        op_condition = smt.And(op_conditions)
-        black_box_conditions.append(op_condition)
-    black_box_condition = smt.And(black_box_conditions)
-    return black_box_condition
+                bbox_eq =  solver.make_term(switch_ops.Implies, in_eq, out_eq)
+                bbox_formula = solver.make_term(switch_ops.And, bbox_formula, bbox_eq)
+
+    return bbox_formula
 
 
-def _pysmt_to_pono(i, o, regs, solver, convert, cycles):
+def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
     i = convert(i._value_.value) 
     o = convert(o._value_.value) 
     
@@ -292,12 +266,38 @@ def _pysmt_to_pono(i, o, regs, solver, convert, cycles):
         reg = convert(reg.value)
         statevar = fts.make_statevar(f"SVAR_{repr(reg)}", reg.get_sort())
         mapping[reg] = statevar
-   
+  
+    
+    for op_bboxes in list(bboxes.values()):
+        for bbox in op_bboxes:
+            outs = bbox[1]
+            if not isinstance(outs, tuple):
+                outs = (outs,)
+
+            for out in outs:
+                out = convert(out.value)
+                inputvar = fts.make_inputvar(f"IVAR_{repr(out)}", out.get_sort()) 
+                mapping[out] = inputvar
+            
+    for op_bboxes in list(bboxes.values()):
+        for idx in range(len(op_bboxes)):
+            ins, outs = op_bboxes[idx]
+            if not isinstance(ins, tuple):
+                ins = (ins,)
+            if not isinstance(outs, tuple):
+                outs = (outs,)
+
+            ins = tuple([solver.substitute(convert(x.value), mapping) for x in ins])
+            outs = tuple([solver.substitute(convert(x.value), mapping) for x in outs])
+
+            op_bboxes[idx] = (ins, outs)
+
     for reg, reg_next in regs:
         reg = convert(reg.value)
         reg_next = convert(reg_next.value)
         reg_next = solver.substitute(reg_next, mapping)
         fts.assign_next(mapping[reg], reg_next)
+
     
     o = solver.substitute(o, mapping)
     
@@ -306,10 +306,19 @@ def _pysmt_to_pono(i, o, regs, solver, convert, cycles):
     o = ur.at_time(o, cycles)
 
     solver.assert_formula(ur.at_time(fts.init, 0))
+
     for cycle in range(cycles):
         solver.assert_formula(ur.at_time(fts.trans, cycle))
+    
+    bboxes_ur = defaultdict(list)
+    for cycle in range(cycles+1):
+        for op, op_bboxes in list(bboxes.items()):
+            for ins, outs in op_bboxes:
+                ins = tuple([ur.at_time(x, cycle) for x in ins])
+                outs = tuple([ur.at_time(x, cycle) for x in outs])
+                bboxes_ur[op].append((ins, outs))
 
-    return i, o
+    return i, o, bboxes_ur
 
 #Returns None if equal, counter example for one input otherwise
 def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
@@ -319,8 +328,8 @@ def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
     if dag0.output.type != dag1.output.type:
         raise ValueError("Output types are not the same")
 
-    i0, o0, regs0 = SMT().get(dag0)
-    i1, o1, regs1 = SMT().get(dag1)
+    i0, o0, regs0, bboxes0 = SMT().get(dag0)
+    i1, o1, regs1, bboxes1 = SMT().get(dag1)
 
     if regs0:
         raise ValueError(f"Unmapped dag should not have registers: {regs0}")
@@ -329,24 +338,33 @@ def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
     solver = s.solver
     convert = s.converter.convert
 
-    i0, o0 = _pysmt_to_pono(i0, o0, [], solver, convert, 0)
-    i1, o1 = _pysmt_to_pono(i1, o1, regs1, solver, convert, cycles)
+    i0, o0, bboxes0 = pysmt_to_pono(i0, o0, [], solver, convert, 0, bboxes0)
+    i1, o1, bboxes1 = pysmt_to_pono(i1, o1, regs1, solver, convert, cycles, bboxes1)
+
+    #TODO ideally here we could just merge the dictionaries bboxes0 and bboxes1
+    bboxes = defaultdict(list)
+    i = 0
+    for op, op_bboxes in list(bboxes0.items()):
+        bboxes[i] += op_bboxes
+        i+=1
+    i = 0
+    for op, op_bboxes in list(bboxes1.items()):
+        bboxes[1-i] += op_bboxes
+        i+=1
+
+    bbox_formula = make_bbox_formula(bboxes, solver)
 
     solver.assert_formula(solver.make_term(switch_ops.Equal, i0, i1))
     solver.assert_formula(solver.make_term(switch_ops.Not, solver.make_term(switch_ops.Equal, o0, o1)))
+    solver.assert_formula(bbox_formula)
+
+    print(f"Calling {solver_name} solver")
     res = solver.check_sat()
 
     if res.is_unsat():
         return None
     else:
-        raise Exception("Uh oh")
-    #bb_condition = make_black_box_condition(BlackBox.black_boxes)
-    #notequal = o0._value_ != o1._value_
-    #formula = smt.And(bb_condition, notequal.value).substitute({i0._value_.value: i1._value_.value})
-    #same_in_different_out = smt.And(smt.Equals(i0._value_.value, i1._value_.value), smt.NotEquals(o0._value_.value, o1._value_.value))
-    #same_in_different_out = o0._value_.substitute((i0._value_, i1._value_)) != o1._value_
-    #formula = smt.And(black_box_condition, same_in_different_out)
-    return prove_formula(formula, solver_name, i1)
+        return solver.get_value(i0)
 
 def eval_dag(dag, inputs):
     o = PY().get(dag, inputs)
@@ -417,6 +435,7 @@ def _get_aadt(T):
     T = rebind_type(T, fam().SMTFamily())
     return fam().SMTFamily().get_adt_t(T)
 
+#TODO: this would recurse forever if two objects reference eachother
 def _recursive_filter_fc(obj, cond, fc):
     if cond(obj):
         fc(obj)
@@ -433,6 +452,7 @@ class SMT(Visitor):
         self.values = {}
         self.regs = []
         self.regs_next = []
+        self.bboxes = defaultdict(list)
         if len(dag.sources) !=1:
             raise NotImplementedError
         self.run(dag)
@@ -440,7 +460,7 @@ class SMT(Visitor):
             aadt = _get_aadt(dag.input.type)
             val = fam().SMTFamily().BitVector[1]()
             self.values[dag.input] = aadt(val)
-        return self.values[dag.input], self.values[dag.output], list(zip(self.regs, self.regs_next))
+        return self.values[dag.input], self.values[dag.output], list(zip(self.regs, self.regs_next)), self.bboxes
 
     def visit_Input(self, node : Input):
         aadt = _get_aadt(node.type)
@@ -494,13 +514,26 @@ class SMT(Visitor):
             return isinstance(x, _RegFamily.RegBase) or isinstance(x, _RegFamily.AttrRegBase)
         def make_freevar(x):
             x.value = x.value.__class__()
+        def is_bbox(x):
+            return isinstance(x, BlackBox)
+        def set_bbox_outputs(x):
+            output_t = type(x).output_t
+            outputs = tuple([SMTFamily().BitVector[t().num_bits]() for t in output_t])
+            if len(outputs) == 1:
+                outputs = outputs[0]
+            x._set_outputs(outputs)
 
         _recursive_filter_fc(peak_fc_smt, is_reg, make_freevar)
         _recursive_filter_fc(peak_fc_smt, is_reg, lambda x: self.regs.append(x.value))
+        _recursive_filter_fc(peak_fc_smt, is_bbox, set_bbox_outputs)
 
         outputs = peak_fc_smt(**vals)
 
+        def record_bbox_io(x):
+            self.bboxes[type(x)].append((x._get_inputs(), x._output_vals))
+
         _recursive_filter_fc(peak_fc_smt, is_reg, lambda x: self.regs_next.append(x.value))
+        _recursive_filter_fc(peak_fc_smt, is_bbox, record_bbox_io)
         
         if node.node_name == "PipelineRegister":
             self.values[node] = outputs
