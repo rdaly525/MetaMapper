@@ -1,7 +1,7 @@
 from peak.ir import IR
 from hwtypes import BitVector, Bit
 from hwtypes.adt import Product
-from peak import Peak, black_box, name_outputs, family_closure, Const
+from peak import Peak, name_outputs, family_closure, Const
 from peak.black_box import BlackBox
 from peak.family import AbstractFamily, MagmaFamily, SMTFamily
 from ...node import Nodes, Constant, DagNode, Select
@@ -516,7 +516,7 @@ def gen_custom_ops_peak_CoreIR(width):
         def fp_is_neg(val : Data):
             return Bit(val[-1])
 
-        @family.assemble(locals(), globals(), op_name = "fp_add")
+        @family.assemble(locals(), globals())
         class fp_add(Peak, BlackBox):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
@@ -751,7 +751,7 @@ def gen_custom_ops_peak_CoreIR(width):
         def fp_is_neg(val : Data):
             return Bit(val[-1])
 
-        @family.assemble(locals(), globals(), op_name = "fp_mul")
+        @family.assemble(locals(), globals())
         class fp_mul(Peak, BlackBox):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:

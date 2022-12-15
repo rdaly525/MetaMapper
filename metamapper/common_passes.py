@@ -7,7 +7,7 @@ from .family import fam
 from peak.assembler import Assembler, AssembledADT
 from hwtypes.modifiers import strip_modifiers
 from peak.mapper.utils import Unbound
-from peak import family, black_box
+from peak import family
 from peak.black_box import BlackBox
 from peak.family import _RegFamily, SMTFamily
 from peak.register import gen_register
@@ -17,7 +17,6 @@ from graphviz import Digraph
 from collections import defaultdict
 import pono
 import smt_switch.pysmt_frontend as fe
-from smt_switch.sortkinds import BV
 import smt_switch.primops as switch_ops
 from peak.mapper.utils import rebind_type
 
