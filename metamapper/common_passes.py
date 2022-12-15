@@ -228,10 +228,11 @@ class VerifyNodes(Visitor):
                     self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
-def make_bbox_formula(bboxes, solver):
+def make_bipartite_bbox_formulas(bboxes, solver):
     #for each type of black box, ensure that for each pairwise instance of that black box
+    #where one instance is from the premapped dag and the other is from the mapped dag
     #that if the inputs are equal then the outputs are equal
-    bbox_formula = solver.make_term(True)
+    bbox_formulas = []
     for op_bboxes in list(bboxes.values()):
         assert len(op_bboxes) == 2
         for in0, out0 in op_bboxes[0]:
@@ -245,10 +246,32 @@ def make_bbox_formula(bboxes, solver):
                     out_eq = solver.make_term(switch_ops.And, out_eq, solver.make_term(switch_ops.Equal, o0, o1))
 
                 bbox_eq =  solver.make_term(switch_ops.Implies, in_eq, out_eq)
-                bbox_formula = solver.make_term(switch_ops.And, bbox_formula, bbox_eq)
+                bbox_formulas.append(bbox_eq)
 
-    return bbox_formula
+    return bbox_formulas
 
+def make_fully_connected_bbox_formulas(bboxes, solver):
+    #for each type of black box, ensure that for each pairwise instance of that black box
+    #that if the inputs are equal then the outputs are equal
+    bbox_formulas = []
+    for op_bboxes in list(bboxes.values()):
+        for i in range(len(op_bboxes)-1):
+            for j in range(i+1,len(op_bboxes)):
+                in0, out0 = op_bboxes[i]
+                in1, out1 = op_bboxes[j]
+
+                in_eq = solver.make_term(True)
+                out_eq = solver.make_term(True)
+
+                for i0,i1 in zip(in0, in1):
+                    in_eq = solver.make_term(switch_ops.And, in_eq, solver.make_term(switch_ops.Equal, i0, i1))
+                for o0,o1 in zip(out0, out1):
+                    out_eq = solver.make_term(switch_ops.And, out_eq, solver.make_term(switch_ops.Equal, o0, o1))
+
+                bbox_eq =  solver.make_term(switch_ops.Implies, in_eq, out_eq)
+                bbox_formulas.append(bbox_eq)
+
+    return bbox_formulas
 
 def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
     i = convert(i._value_.value) 
@@ -339,30 +362,55 @@ def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
     i0, o0, bboxes0 = pysmt_to_pono(i0, o0, [], solver, convert, 0, bboxes0)
     i1, o1, bboxes1 = pysmt_to_pono(i1, o1, regs1, solver, convert, cycles, bboxes1)
 
-    #TODO ideally here we could just merge the dictionaries bboxes0 and bboxes1
+    solver.assert_formula(solver.make_term(switch_ops.Equal, i0, i1))
+    solver.assert_formula(solver.make_term(switch_ops.Not, solver.make_term(switch_ops.Equal, o0, o1)))
+
+    print("Comparing premapped and mapped dags without black box constraints")
+
+    res = solver.check_sat()
+    if res.is_unsat():
+        return None
+
+    print("Comparing premapped and mapped dags with bipartite black box constraints")
+    import time
+    start = time.time()
     bboxes = defaultdict(lambda: [[],[]])
     i = 0
     for op, op_bboxes in list(bboxes0.items()):
+        #bboxes[op][0] = op_bboxes
         bboxes[i][0] = op_bboxes
         i+=1
     i = 0
     for op, op_bboxes in list(bboxes1.items()):
+        #bboxes[op][1] = op_bboxes
         bboxes[1-i][1] = op_bboxes
         i+=1
 
-    bbox_formula = make_bbox_formula(bboxes, solver)
-
-    solver.assert_formula(solver.make_term(switch_ops.Equal, i0, i1))
-    solver.assert_formula(solver.make_term(switch_ops.Not, solver.make_term(switch_ops.Equal, o0, o1)))
-    solver.assert_formula(bbox_formula)
-
-    print(f"Calling {solver_name} solver")
-    res = solver.check_sat()
-
+    res = solver.check_sat_assuming(make_bipartite_bbox_formulas(bboxes, solver))
+    end = time.time()
+    print(end - start)
     if res.is_unsat():
         return None
-    else:
-        return solver.get_value(i0)
+
+    print("Comparing premapped and mapped dags with fully connected black box constraints, this could take a while")
+
+    bboxes = defaultdict(list)
+    i = 0
+    for op, op_bboxes in list(bboxes0.items()):
+        #bboxes[op] += op_bboxes
+        bboxes[i] += op_bboxes
+        i+=1
+    i = 0
+    for op, op_bboxes in list(bboxes1.items()):
+        #bboxes[op] += op_bboxes
+        bboxes[1-i] += op_bboxes
+        i+=1
+
+    res = solver.check_sat_assuming(make_fully_connected_bbox_formulas(bboxes, solver))
+    if res.is_unsat():
+        return None
+
+    return solver.get_value(i0)
 
 def eval_dag(dag, inputs):
     o = PY().get(dag, inputs)
