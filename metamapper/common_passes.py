@@ -228,6 +228,7 @@ class VerifyNodes(Visitor):
                     self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
+
 def make_bipartite_bbox_formulas(bboxes, solver):
     #for each type of black box, ensure that for each pairwise instance of that black box
     #where one instance is from the premapped dag and the other is from the mapped dag
@@ -249,6 +250,7 @@ def make_bipartite_bbox_formulas(bboxes, solver):
                 bbox_formulas.append(bbox_eq)
 
     return bbox_formulas
+
 
 def make_fully_connected_bbox_formulas(bboxes, solver):
     #for each type of black box, ensure that for each pairwise instance of that black box
@@ -273,22 +275,24 @@ def make_fully_connected_bbox_formulas(bboxes, solver):
 
     return bbox_formulas
 
+
 def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
     i = convert(i._value_.value) 
     o = convert(o._value_.value) 
     
     fts = pono.FunctionalTransitionSystem(solver)
-    mapping = {} #input/register mapping from pysmt to pono
+    mapping = {} #mapping from converted pysmt inputs/registers to pono inputvars/statevars
 
     mapping[i] = fts.make_inputvar(f"IVAR_{repr(i)}", i.get_sort()) 
     i = mapping[i]
 
+    #make pono statevars for all registers
     for reg, _ in regs:
         reg = convert(reg.value)
         statevar = fts.make_statevar(f"SVAR_{repr(reg)}", reg.get_sort())
         mapping[reg] = statevar
   
-    
+    #make pono inputvars for all black box outputs
     for op_bboxes in list(bboxes.values()):
         for bbox in op_bboxes:
             outs = bbox[1]
@@ -299,7 +303,8 @@ def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
                 out = convert(out.value)
                 inputvar = fts.make_inputvar(f"IVAR_{repr(out)}", out.get_sort()) 
                 mapping[out] = inputvar
-            
+    
+    #convert black box inputs/outputs to corresponding pono/smt-switch terms 
     for op_bboxes in list(bboxes.values()):
         for idx in range(len(op_bboxes)):
             ins, outs = op_bboxes[idx]
@@ -313,6 +318,7 @@ def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
 
             op_bboxes[idx] = (ins, outs)
 
+    #set pono register next values
     for reg, reg_next in regs:
         reg = convert(reg.value)
         reg_next = convert(reg_next.value)
@@ -328,9 +334,11 @@ def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
 
     solver.assert_formula(ur.at_time(fts.init, 0))
 
+    #assert state transitions for each cycle of delay 
     for cycle in range(cycles):
         solver.assert_formula(ur.at_time(fts.trans, cycle))
     
+    #create new black box dict with entries for each black box at each cycle
     bboxes_ur = defaultdict(list)
     for cycle in range(cycles+1):
         for op, op_bboxes in list(bboxes.items()):
@@ -341,9 +349,57 @@ def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
 
     return i, o, bboxes_ur
 
+def check_sat(solver, bboxes0, bboxes1, i0):
+
+    print("Comparing premapped and mapped dags without black box constraints")
+
+    res = solver.check_sat()
+    if res.is_unsat():
+        return None
+
+    print("Comparing premapped and mapped dags with bipartite black box constraints")
+    bboxes = defaultdict(lambda: [[],[]])
+    i = 0
+    for op, op_bboxes in list(bboxes0.items()):
+        #bboxes[op][0] = op_bboxes
+        #TODO temporary hack for now 
+        bboxes[i][0] = op_bboxes
+        i+=1
+    i = 0
+    for op, op_bboxes in list(bboxes1.items()):
+        #bboxes[op][1] = op_bboxes
+        #TODO temporary hack for now 
+        bboxes[1-i][1] = op_bboxes
+        i+=1
+
+    res = solver.check_sat_assuming(make_bipartite_bbox_formulas(bboxes, solver))
+    if res.is_unsat():
+        return None
+
+    print("Comparing premapped and mapped dags with fully connected black box constraints, this could take a while")
+
+    bboxes = defaultdict(list)
+    i = 0
+    for op, op_bboxes in list(bboxes0.items()):
+        #bboxes[op] += op_bboxes
+        #TODO temporary hack for now 
+        bboxes[i] += op_bboxes
+        i+=1
+    i = 0
+    for op, op_bboxes in list(bboxes1.items()):
+        #bboxes[op] += op_bboxes
+        #TODO temporary hack for now 
+        bboxes[1-i] += op_bboxes
+        i+=1
+
+    res = solver.check_sat_assuming(make_fully_connected_bbox_formulas(bboxes, solver))
+    if res.is_unsat():
+        return None
+
+    return solver.get_value(i0)
+
 #Returns None if equal, counter example for one input otherwise
 def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
-    #BlackBox.rst_black_boxes()
     if dag0.input.type != dag1.input.type:
         raise ValueError("Input types are not the same")
     if dag0.output.type != dag1.output.type:
@@ -364,119 +420,9 @@ def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
 
     solver.assert_formula(solver.make_term(switch_ops.Equal, i0, i1))
     solver.assert_formula(solver.make_term(switch_ops.Not, solver.make_term(switch_ops.Equal, o0, o1)))
+    
+    return check_sat(solver, bboxes0, bboxes1, i0)
 
-    print("Comparing premapped and mapped dags without black box constraints")
-
-    res = solver.check_sat()
-    if res.is_unsat():
-        return None
-
-    print("Comparing premapped and mapped dags with bipartite black box constraints")
-    import time
-    start = time.time()
-    bboxes = defaultdict(lambda: [[],[]])
-    i = 0
-    for op, op_bboxes in list(bboxes0.items()):
-        #bboxes[op][0] = op_bboxes
-        bboxes[i][0] = op_bboxes
-        i+=1
-    i = 0
-    for op, op_bboxes in list(bboxes1.items()):
-        #bboxes[op][1] = op_bboxes
-        bboxes[1-i][1] = op_bboxes
-        i+=1
-
-    res = solver.check_sat_assuming(make_bipartite_bbox_formulas(bboxes, solver))
-    end = time.time()
-    print(end - start)
-    if res.is_unsat():
-        return None
-
-    print("Comparing premapped and mapped dags with fully connected black box constraints, this could take a while")
-
-    bboxes = defaultdict(list)
-    i = 0
-    for op, op_bboxes in list(bboxes0.items()):
-        #bboxes[op] += op_bboxes
-        bboxes[i] += op_bboxes
-        i+=1
-    i = 0
-    for op, op_bboxes in list(bboxes1.items()):
-        #bboxes[op] += op_bboxes
-        bboxes[1-i] += op_bboxes
-        i+=1
-
-    res = solver.check_sat_assuming(make_fully_connected_bbox_formulas(bboxes, solver))
-    if res.is_unsat():
-        return None
-
-    return solver.get_value(i0)
-
-def eval_dag(dag, inputs):
-    o = PY().get(dag, inputs)
-    return o
-
-class PY(Visitor):
-    def __init__(self):
-        pass
-
-    def get(self, dag: Dag, inputs):
-        self.values = {}
-        if not isinstance(inputs, tuple):
-            inputs = (inputs,)
-        self.inputs = inputs
-
-        #ensure inputs type is correct
-        aadt = _get_aadt_py(dag.input.type)
-        for exp, act in zip(aadt._fields_, inputs):
-            assert exp == type(act)
-
-        if len(dag.sources) !=1:
-            raise NotImplementedError
-        self.run(dag)
-        return self.values[dag.output]
-
-    def visit_Input(self, node : Input):
-        aadt = _get_aadt_py(node.type)
-        self.values[node] = aadt(*self.inputs)
-
-    def visit_Constant(self, node: Constant):
-        val = node.assemble(fam().PyFamily())
-        self.values[node] = val
-
-    def visit_Select(self, node: Select):
-        Visitor.generic_visit(self, node)
-        val =self.values[node.children()[0]]
-        self.values[node] = val.value_dict[node.field]
-
-    def visit_Combine(self, node: Combine):
-        Visitor.generic_visit(self, node)
-        vals = {field: self.values[child] for field, child in zip(node.type.field_dict.keys(), node.children())}
-        aadt = _get_aadt_py(node.type)
-        self.values[node] = aadt.from_fields(**vals)
-
-    def visit_Output(self, node: Output):
-        Visitor.generic_visit(self, node)
-        vals = {field: self.values[child] for field, child in zip(node.type.field_dict.keys(), node.children())}
-        aadt = _get_aadt_py(node.type)
-        assert len(vals) == 1
-        self.values[node] = aadt(*vals.values())
-
-    def generic_visit(self, node: DagNode):
-        Visitor.generic_visit(self, node)
-        peak_fc = node.nodes.peak_nodes[node.node_name]
-        vals = {field: self.values[child] for field, child in zip(peak_fc.Py.input_t.field_dict.keys(), node.children())}
-        outputs = peak_fc.Py()(**vals)
-        if not isinstance(outputs, tuple):
-            outputs = (outputs,)
-
-        aadt = _get_aadt_py(peak_fc.Py.output_t)
-        output_val = aadt(*outputs)
-        self.values[node] = output_val
-
-def _get_aadt_py(T):
-    T = rebind_type(T, fam().PyFamily())
-    return fam().PyFamily().get_adt_t(T)
 def _get_aadt(T):
     T = rebind_type(T, fam().SMTFamily())
     return fam().SMTFamily().get_adt_t(T)
@@ -564,6 +510,7 @@ class SMT(Visitor):
             return isinstance(x, BlackBox)
         def set_bbox_outputs(x):
             output_t = type(x).output_t
+            #TODO should make this generalize for types other than bitvector
             outputs = tuple([SMTFamily().BitVector[t().num_bits]() for t in output_t])
             if len(outputs) == 1:
                 outputs = outputs[0]
