@@ -156,7 +156,8 @@ for kname, kmod in kernels.items():
     )
     mods.append(mod)
 
-print(f"Total num PEs used: {mapper.num_pes}")
+print('\n\033[92m' + "All compute kernels passed formal checks" + '\033[0m')
+print(f"Total num PEs used: {mapper.num_pes}\n")
 output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)

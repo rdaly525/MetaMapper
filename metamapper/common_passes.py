@@ -264,7 +264,9 @@ def make_fully_connected_bbox_formulas(bboxes, solver):
     for op_bboxes in list(bboxes.values()):
         for i, bbox0 in enumerate(op_bboxes[:-1]):
             for bbox1 in op_bboxes[i+1:]:
+                print("make bbox")
                 bbox_formula = make_bbox_formula(solver, bbox0, bbox1)
+                print("make term")
                 bbox_formulas = solver.make_term(switch_ops.And, bbox_formulas, bbox_formula)
 
     return bbox_formulas
@@ -344,14 +346,15 @@ def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
     return i, o, bboxes_ur
 
 def check_sat(solver, bboxes0, bboxes1, i0):
-
-    print("Comparing premapped and mapped dags without black box constraints")
+    import time
+    print("\t\tFormally verifying premapped and mapped dags")
 
     res = solver.check_sat()
     if res.is_unsat():
         return None
 
-    print("Comparing premapped and mapped dags with bipartite black box constraints")
+    start = time.time()
+    print("\t\tFormally verifying premapped and mapped dags with bipartite black box constraints")
     bboxes = defaultdict(lambda: [[],[]])
     i = 0
     for op, op_bboxes in list(bboxes0.items()):
@@ -367,15 +370,23 @@ def check_sat(solver, bboxes0, bboxes1, i0):
         i+=1
 
     solver.assert_formula(make_bipartite_bbox_formulas(bboxes, solver))
+    print("Construct bipartite smt", time.time() - start)
+
+    start = time.time()
     res = solver.check_sat()
-    if res.is_unsat():
-        return None
+    # if res.is_unsat():
+    #     return None
+    print("Solved bipartite smt", time.time() - start)
 
-    print("Comparing premapped and mapped dags with fully connected black box constraints")
-
+    print("\t\tFormally verifying premapped and mapped dags with fully connected black box constraints")
+    start = time.time()
     solver.assert_formula(make_fully_connected_bbox_formulas(bboxes0, solver))
+    print("Construct fc smt bboxes0", time.time() - start)
     solver.assert_formula(make_fully_connected_bbox_formulas(bboxes1, solver))
+    print("Construct fc smt bboxes1", time.time() - start)
+    start = time.time()
     res = solver.check_sat()
+    print("Solved fc smt", time.time() - start)
     if res.is_unsat():
         return None
 
@@ -430,7 +441,18 @@ class SMT(Visitor):
         self.bboxes = defaultdict(list)
         if len(dag.sources) !=1:
             raise NotImplementedError
+
+        # import cProfile, pstats
+
+        # profiler = cProfile.Profile()
+        # profiler.enable()
+
         self.run(dag)
+        
+        # profiler.disable()
+        # stats = pstats.Stats(profiler).sort_stats('cumtime')
+        # stats.print_stats()
+
         if dag.input not in self.values:
             aadt = _get_aadt(dag.input.type)
             val = fam().SMTFamily().BitVector[1]()

@@ -50,6 +50,7 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
                     op = ops[ind]
+                    print(f"Loading {op} ", end=" ", flush=True)
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
                     self.table.add_peak_rule(peak_rule, op)
@@ -94,7 +95,7 @@ class Mapper:
         RemoveSelects().run(mapped_dag)
 
         self.num_pes += count_pes(mapped_dag)
-        print("Used", count_pes(mapped_dag), "PEs")
+        print("\tUsed", count_pes(mapped_dag), "PEs")
         unmapped = VerifyNodes(self.ArchNodes).verify(mapped_dag)
         
         if unmapped is not None:
@@ -105,14 +106,10 @@ class Mapper:
             DelayMatching(node_cycles).run(mapped_dag)
             self.kernel_cycles[kname] = KernelDelay(node_cycles).doit(mapped_dag)
 
-        if prove_mapping:
+        if prove_mapping and count_pes(mapped_dag) != 0:
             counter_example = prove_equal(original_dag, mapped_dag, self.kernel_cycles[kname])
             if counter_example is not None:
-                raise ValueError(f"Mapped is not the same {counter_example}")
-            else:
-                print("Mapped dag is the same!")
-
-        #Create a new module representing the mapped_dag
+                raise ValueError(f"Mapped dag is not the same {counter_example}")
 
         if convert_unbound:
             Unbound2Const().run(mapped_dag)

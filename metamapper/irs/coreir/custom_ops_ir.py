@@ -967,10 +967,9 @@ def gen_custom_ops_peak_CoreIR(width):
         Data32 = family.BitVector[32]
         class mult_middle(Peak):
             @name_outputs(out=Data)
-            def __call__(self, in0: Data, in1: Data) -> Data:
-                mul = Data32(in0) * Data32(in1)
-                res = mul >> 8
-                return Data(res[0:16])
+            def __call__(self, in1: Data, in0: Data) -> Data:
+                mul = Data32(in0.sext(16)) * Data32(in1.sext(16))
+                return Data(mul[8:24])
         return mult_middle
 
     CoreIR.add_instruction("commonlib.mult_middle", mult_middle_fc)
