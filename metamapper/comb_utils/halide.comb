@@ -1,0 +1,20 @@
+Comb halide.add
+Param N: Int
+In i0: BV[N]
+In i1: BV[N]
+Out o: BV[N]
+o = bv.add[N](i0, i1)
+
+Comb halide.sub
+Param N: Int
+In i0: BV[N]
+In i1: BV[N]
+Out o: BV[N]
+o = bv.sub[N](i0, i1)
+
+Comb halide.mul
+Param N: Int
+In i0: BV[N]
+In i1: BV[N]
+Out o: BV[N]
+o = bv.mul[N](i0, i1)
