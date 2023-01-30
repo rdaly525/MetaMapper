@@ -227,47 +227,37 @@ class VerifyNodes(Visitor):
                     self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
-def make_bbox_formula(solver, bbox0, bbox1):
-    #if the black box inputs are equal, that implies the black box outputs must be equal
-    in0, out0 = bbox0
-    in1, out1 = bbox1
-
+def make_bbox_formula(solver, op_bboxes):
+ 
     in_eq = solver.make_term(True)
-    out_eq = solver.make_term(True)
 
-    for i0,i1 in zip(in0, in1):
-        in_eq = solver.make_term(switch_ops.And, in_eq, solver.make_term(switch_ops.Equal, i0, i1))
-    for o0,o1 in zip(out0, out1):
-        out_eq = solver.make_term(switch_ops.And, out_eq, solver.make_term(switch_ops.Equal, o0, o1))
+    op_box_in_reorg = []
+    num_ins = len(op_bboxes[0][0])
+    for idx in range(num_ins):
+        op_box_in_reorg.append([])
+
+    for ins,outs in op_bboxes:
+        for idx in range(num_ins):
+            op_box_in_reorg[idx].append(ins[idx])
+
+    for op_box_in in op_box_in_reorg:
+        for idx, in0 in enumerate(op_box_in[:-1]):
+            in1 = op_box_in[idx + 1]
+            in_eq = solver.make_term(switch_ops.And, in_eq, solver.make_term(switch_ops.Equal, in0, in1))      
+
+    out_eq = solver.make_term(True)
+    for idx, (in0, out0) in enumerate(op_bboxes[:-1]):
+        in1, out1 = op_bboxes[idx + 1]
+        out_eq = solver.make_term(switch_ops.And, out_eq, solver.make_term(switch_ops.Equal, out0[0], out1[0]))
 
     return solver.make_term(switch_ops.Implies, in_eq, out_eq)
 
-def make_bipartite_bbox_formulas(bboxes, solver):
-    #for each type of black box, ensure that for each pairwise instance of that black box
-    #where one instance is from the premapped dag and the other is from the mapped dag
-    #that if the inputs are equal then the outputs are equal
+
+def make_fully_connected_bbox_formulas(bbox_types_to_ins_outs, solver):
     bbox_formulas = solver.make_term(True)
-    for op_bboxes in list(bboxes.values()):
-        assert len(op_bboxes) == 2
-        for bbox0 in op_bboxes[0]:
-            for bbox1 in op_bboxes[1]:
-                bbox_formula = make_bbox_formula(solver, bbox0, bbox1)
-                bbox_formulas = solver.make_term(switch_ops.And, bbox_formulas, bbox_formula)
 
-    return bbox_formulas
-
-
-def make_fully_connected_bbox_formulas(bboxes, solver):
-    #for each type of black box, ensure that for each pairwise instance of that black box
-    #that if the inputs are equal then the outputs are equal
-    bbox_formulas = solver.make_term(True)
-    for op_bboxes in list(bboxes.values()):
-        for i, bbox0 in enumerate(op_bboxes[:-1]):
-            for bbox1 in op_bboxes[i+1:]:
-                print("make bbox")
-                bbox_formula = make_bbox_formula(solver, bbox0, bbox1)
-                print("make term")
-                bbox_formulas = solver.make_term(switch_ops.And, bbox_formulas, bbox_formula)
+    for op_bboxes in list(bbox_types_to_ins_outs.values()):
+        bbox_formulas = solver.make_term(switch_ops.And, bbox_formulas, make_bbox_formula(solver, op_bboxes))
 
     return bbox_formulas
 
@@ -345,48 +335,20 @@ def pysmt_to_pono(i, o, regs, solver, convert, cycles, bboxes):
 
     return i, o, bboxes_ur
 
-def check_sat(solver, bboxes0, bboxes1, i0):
-    import time
+def check_sat(solver, bbox_types_to_ins_outs, i0):
     print("\t\tFormally verifying premapped and mapped dags")
-
     res = solver.check_sat()
     if res.is_unsat():
         return None
 
-    start = time.time()
-    print("\t\tFormally verifying premapped and mapped dags with bipartite black box constraints")
-    bboxes = defaultdict(lambda: [[],[]])
-    i = 0
-    for op, op_bboxes in list(bboxes0.items()):
-        #bboxes[op][0] = op_bboxes
-        #TODO temporary hack for now 
-        bboxes[i][0] = op_bboxes
-        i+=1
-    i = 0
-    for op, op_bboxes in list(bboxes1.items()):
-        #bboxes[op][1] = op_bboxes
-        #TODO temporary hack for now 
-        bboxes[1-i][1] = op_bboxes
-        i+=1
-
-    solver.assert_formula(make_bipartite_bbox_formulas(bboxes, solver))
-    print("Construct bipartite smt", time.time() - start)
-
-    start = time.time()
-    res = solver.check_sat()
-    # if res.is_unsat():
-    #     return None
-    print("Solved bipartite smt", time.time() - start)
-
+    solver.dump_smt2("/aha/before")
     print("\t\tFormally verifying premapped and mapped dags with fully connected black box constraints")
-    start = time.time()
-    solver.assert_formula(make_fully_connected_bbox_formulas(bboxes0, solver))
-    print("Construct fc smt bboxes0", time.time() - start)
-    solver.assert_formula(make_fully_connected_bbox_formulas(bboxes1, solver))
-    print("Construct fc smt bboxes1", time.time() - start)
-    start = time.time()
+    solver.assert_formula(make_fully_connected_bbox_formulas(bbox_types_to_ins_outs, solver))
+    solver.dump_smt2("/aha/after")
+
+    print("\t\tCheck sat")
     res = solver.check_sat()
-    print("Solved fc smt", time.time() - start)
+
     if res.is_unsat():
         return None
 
@@ -409,13 +371,22 @@ def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
     solver = s.solver
     convert = s.converter.convert
 
+
     i0, o0, bboxes0 = pysmt_to_pono(i0, o0, [], solver, convert, 0, bboxes0)
     i1, o1, bboxes1 = pysmt_to_pono(i1, o1, regs1, solver, convert, cycles, bboxes1)
+
+
+    bbox_types_to_ins_outs = bboxes0
+    for k,v in bboxes1.items():
+        if k in bbox_types_to_ins_outs:
+            bbox_types_to_ins_outs[k] += v
+        else:
+            bbox_types_to_ins_outs[k] = v
 
     solver.assert_formula(solver.make_term(switch_ops.Equal, i0, i1))
     solver.assert_formula(solver.make_term(switch_ops.Not, solver.make_term(switch_ops.Equal, o0, o1)))
     
-    return check_sat(solver, bboxes0, bboxes1, i0)
+    return check_sat(solver, bbox_types_to_ins_outs, i0)
 
 def _get_aadt(T):
     T = rebind_type(T, fam().SMTFamily())
@@ -439,19 +410,11 @@ class SMT(Visitor):
         self.regs = []
         self.regs_next = []
         self.bboxes = defaultdict(list)
+
         if len(dag.sources) !=1:
             raise NotImplementedError
 
-        # import cProfile, pstats
-
-        # profiler = cProfile.Profile()
-        # profiler.enable()
-
         self.run(dag)
-        
-        # profiler.disable()
-        # stats = pstats.Stats(profiler).sort_stats('cumtime')
-        # stats.print_stats()
 
         if dag.input not in self.values:
             aadt = _get_aadt(dag.input.type)
