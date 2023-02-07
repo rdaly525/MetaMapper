@@ -6,10 +6,11 @@ import coreir
 import typing as tp
 from collections import OrderedDict, deque
 import hwtypes as ht
-from comb.ast import QSym, InDecl, OutDecl, Type, Sym, BoolType, BVType, IntType, TypeCall, IntValue
-from comb.ir import CombProgram, CallExpr, AssignStmt
+from comb.ast import QSym, InDecl, OutDecl, Type, Sym, BoolType, BVType, IntType, TypeCall, IntValue, Comb
+from comb.ir import CombProgram, CallExpr, AssignStmt, Obj
 #returns input objects and output objects
 #removes clk and reset
+from comb.stdlib import GlobalModules
 
 
 def ctype_to_hwtype(ctype: coreir.Type) -> tp.Union[ht.Bit, ht.BitVector]:
@@ -58,21 +59,22 @@ def ht_to_comb_type(ht_type):
     # returns a list of either (driver_inst, driver_ports) OR (selected_wireable)
 
 coreir_gen_translate = {
+    "coreir.const": "halide.const",
     "coreir.add": "halide.add",
     "coreir.sub": "halide.sub",
     "coreir.mul": "halide.mul",
+    "coreir.lshr": "halide.lshr",
 }
 
-def get_comb(cmod: coreir.Module) -> CallExpr:
+def get_comb(cmod: coreir.Module) -> Comb:
     cname = cmod.ref_name
     hname = coreir_gen_translate.get(cname, None)
     if hname is not None:
         assert cmod.generated
         vals = cmod.generator_args
         N = vals['width'].value
-        assert isinstance(N,int)
+        assert isinstance(N, int)
         comb = halide_obj.comb_dict[hname][N]
-        print(comb)
     else:
         raise NotImplementedError(f"Missing translation for {cname}")
     return comb
@@ -102,12 +104,15 @@ def coreir_to_comb(cmod: coreir.Module):
     cinst_to_comb = {}
     cinst_to_io = {'self': (outputs, inputs)}
 
+    cinst_to_const_val = {}
     for cinst in cdef.instances:
         cinst: coreir.Instance = cinst
         inst_name = cinst.name
         inst_cmod: coreir.Module = cinst.module
         cinst_to_comb[inst_name] = get_comb(inst_cmod)
         cinst_to_io[inst_name] = get_coreir_io(inst_cmod.type)
+        if inst_cmod.ref_name == "coreir.const":
+            cinst_to_const_val[inst_name] = [IntValue(int(cinst.config['value'].value))]
 
     ordered_insts = OrderedDict()
     #Tasks: Get a depth-first ordered list of instances.
@@ -161,16 +166,28 @@ def coreir_to_comb(cmod: coreir.Module):
             selpath_to_sym[k] = sym
             lhss.append(sym)
         iargs = []
+        if iname in cinst_to_const_val:
+            iargs = cinst_to_const_val[iname]
         for iport in inst_inputs.keys():
             assert iport in inst_info
             driver = inst_info[iport]
             assert driver in selpath_to_sym
             iargs.append(selpath_to_sym[driver])
-        call = CallExpr(cinst_to_comb[iname], [], iargs)
+        call = cinst_to_comb[iname].call_expr([], iargs)
         stmt = AssignStmt(lhss, [call])
         stmts.append(stmt)
     comb_name = QSym(cmod.namespace.name, cmod.name)
     cp = CombProgram(comb_name, stmts)
     return cp
 
+from ..coreir_util import load_from_json
+from ..coreir_util import CoreIRContext
 def coreir_to_obj(file):
+    c = CoreIRContext()
+    load_from_json(file)  # libraries=["lakelib"])
+    kernels = dict(c.global_namespace.modules)
+    cmods = []
+    for k, cmod in kernels.items():
+        cmods.append(coreir_to_comb(cmod))
+    return Obj(cmods)
+

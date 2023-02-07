@@ -1,3 +1,9 @@
+Comb halide.const
+Param N: Int
+In i0: Int
+Out o: BV[N]
+o = bv.const[N](i0)
+
 Comb halide.add
 Param N: Int
 In i0: BV[N]
@@ -18,3 +24,10 @@ In i0: BV[N]
 In i1: BV[N]
 Out o: BV[N]
 o = bv.mul[N](i0, i1)
+
+Comb halide.lshr
+Param N: Int
+In i0: BV[N]
+In i1: BV[N]
+Out o: BV[N]
+o = bv.lshr[N](i0, i1)
