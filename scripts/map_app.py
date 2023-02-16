@@ -20,7 +20,7 @@ from peak.mapper import read_serialized_bindings
 class _ArchCycles:
     def get(self, node):
         kind = node.kind()[0]
-        if kind == "Rom" or kind == "FPRom" or kind == "reg":
+        if kind == "Rom" or kind == "FPRom" or kind == "PipelineRegister":
             return 1
         elif kind == "global.PE":
             return pe_cycles
@@ -154,6 +154,7 @@ for kname, kmod in kernels.items():
     mod = cutil.dag_to_coreir(
         ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog
     )
+    gen_dag_img(mapped_dag, "aha/"+kname)
     mods.append(mod)
 
 print(f"Total num PEs used: {mapper.num_pes}")

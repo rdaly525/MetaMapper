@@ -3,7 +3,7 @@ from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomIn
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
-from metamapper.delay_matching import DelayMatching, branch_delay_match
+from metamapper.delay_matching import DelayMatching, branch_delay_match, KernelDelay
 from metamapper.instruction_selection import GreedyCovering
 from peak.mapper import RewriteRule as PeakRule, read_serialized_bindings
 import typing as tp
@@ -104,6 +104,8 @@ class Mapper:
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
         if node_cycles is not None:
+            DelayMatching(node_cycles).run(mapped_dag)
+            KernelDelay(node_cycles).doit(mapped_dag)
             sinks = GetSinks().doit(mapped_dag)
             self.kernel_cycles[kname], added_regs = branch_delay_match(mapped_dag, node_cycles, sinks)
             print("\tAdded", added_regs, "during branch delay matching")
