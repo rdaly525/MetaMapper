@@ -154,7 +154,6 @@ for kname, kmod in kernels.items():
     mod = cutil.dag_to_coreir(
         ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog
     )
-    gen_dag_img(mapped_dag, "aha/"+kname)
     mods.append(mod)
 
 print(f"Total num PEs used: {mapper.num_pes}")

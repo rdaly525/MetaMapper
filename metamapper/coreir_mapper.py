@@ -104,8 +104,6 @@ class Mapper:
         assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
         if node_cycles is not None:
-            DelayMatching(node_cycles).run(mapped_dag)
-            KernelDelay(node_cycles).doit(mapped_dag)
             sinks = GetSinks().doit(mapped_dag)
             self.kernel_cycles[kname], added_regs = branch_delay_match(mapped_dag, node_cycles, sinks)
             print("\tAdded", added_regs, "during branch delay matching")
