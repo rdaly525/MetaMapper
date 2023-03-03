@@ -148,7 +148,7 @@ for kname, kmod in kernels.items():
         kname=kname,
         node_cycles=_ArchCycles(),
         convert_unbound=False,
-        prove_mapping=False,
+        prove_mapping=True,
         pe_reg_info=pe_reg_info,
     )
     mod = cutil.dag_to_coreir(
@@ -156,8 +156,10 @@ for kname, kmod in kernels.items():
     )
     mods.append(mod)
 
-print(f"Total num PEs used: {mapper.num_pes}")
+print('\n\033[92m' + "All compute kernels passed formal checks" + '\033[0m')
+print(f"Total num PEs used: {mapper.num_pes}\n")
 print(f"Total num regs inserted: {mapper.num_regs}")
+
 output_file = f"{output_dir}/{app}_mapped.json"
 print(f"saving to {output_file}")
 c.serialize_definitions(output_file, mods)

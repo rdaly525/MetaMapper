@@ -35,7 +35,6 @@ class DelayMatching(Transformer):
                 pipeline_type = child.type
                 for reg_index in range(diff):  # diff = number of pipeline reg
                     new_child = PipelineRegister(new_child, type=pipeline_type)
-                    print("adding reg")
                 new_children[i] = new_child
             node.set_children(*new_children)
             this_latency = self.node_latencies.get(node)
@@ -109,16 +108,16 @@ def is_input_sel(node):
         assert len(curr_node.children()) == 1
         curr_node = curr_node.child
 
-def get_connected_pe_name(node, sinks):  
+def get_connected_pe_name(source, node, sinks):  
     if len(sinks[node]) == 0:
         return ""
     elif node.node_name == "global.PE":
-        return node.iname
+        return (node.iname, node._metadata_[node.children().index(source)][0])
     elif node.node_name == "PipelineRegister":
         return "reg"
     else:
         for sink in sinks[node]:
-            ret = get_connected_pe_name(sink, sinks)
+            ret = get_connected_pe_name(node, sink, sinks)
             if ret != "reg":
                 return ret
 
@@ -181,7 +180,7 @@ def branch_delay_match(dag, node_latencies, sinks):
                     input_latencies[node.child.field] = {}
                 input_latencies[node.child.field][str(node.field)] = {}
                 input_latencies[node.child.field][str(node.field)]["latency"] = node_cycles[node]
-                input_latencies[node.child.field][str(node.field)]["pe_port"] = get_connected_pe_name(node, sinks)
+                input_latencies[node.child.field][str(node.field)]["pe_port"] = get_connected_pe_name(node, node, sinks)
             node_cycles[node] = None
 
     return input_latencies, added_regs

@@ -10,7 +10,6 @@ import typing as tp
 import coreir
 import json
 
-
 class DefaultLatency:
 
     @staticmethod
@@ -52,6 +51,7 @@ class Mapper:
             for ind, peak_rule in enumerate(rrules):
                 if ops != None:
                     op = ops[ind]
+                    print(f"Loading {op} ", end=" ", flush=True)
                     if "fp" in op and "pipelined" in op:
                         op = op.split("_pipelined")[0]
                     self.table.add_peak_rule(peak_rule, op)
@@ -109,11 +109,12 @@ class Mapper:
             print("\tAdded", added_regs, "during branch delay matching")
             self.num_regs += added_regs
 
-        if prove_mapping:
-            counter_example = prove_equal(original_dag, mapped_dag)
+        if prove_mapping and count_pes(mapped_dag) != 0:
+            verify_dag = Clone().clone(mapped_dag, iname_prefix=f"verification_")
+            DelayMatching(node_cycles).run(verify_dag)
+            counter_example = prove_equal(original_dag, verify_dag, KernelDelay(node_cycles).doit(verify_dag))
             if counter_example is not None:
-                raise ValueError(f"Mapped is not the same {counter_example}")
-        #Create a new module representing the mapped_dag
+                raise ValueError(f"Mapped dag is not the same {counter_example}")
 
         if convert_unbound:
             Unbound2Const().run(mapped_dag)
