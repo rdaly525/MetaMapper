@@ -343,7 +343,7 @@ def check_sat(solver, bbox_types_to_ins_outs, i0):
     return solver.get_value(i0)
 
 
-def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="btor"):
+def prove_equal(dag0: Dag, dag1: Dag, cycles, solver_name="bitwuzla"):
     if dag0.input.type != dag1.input.type:
         raise ValueError("Input types are not the same")
     if dag0.output.type != dag1.output.type:
