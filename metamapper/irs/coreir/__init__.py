@@ -143,6 +143,11 @@ def gen_CoreIRNodes(width):
     cmod = None
     name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.mult_middle", modparams=())
 
+    name = f"commonlib.abs"
+    peak_fc = peak_ir.instructions[name]
+    cmod = None
+    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.abs", modparams=())
+
     if cgralib:
         name = f"cgralib.Mem"
         peak_fc = peak_ir.instructions[name]
@@ -155,7 +160,7 @@ def gen_CoreIRNodes(width):
         name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, stateful=True, name="cgralib.Pond", modparams=())
 
 
-    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
+    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.absd", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
     class Mem_amber(DagNode):
         def __init__(self, clk_en, data_in_0, data_in_1, wen_in_0, wen_in_1, *, iname):
