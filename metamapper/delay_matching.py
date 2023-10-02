@@ -108,18 +108,18 @@ def is_input_sel(node):
         assert len(curr_node.children()) == 1
         curr_node = curr_node.child
 
-def get_connected_pe_name(source, node, sinks):  
+def get_connected_pe_name(ret_list, source, node, sinks):  
     if len(sinks[node]) == 0:
-        return ""
+        return 
     elif node.node_name == "global.PE":
-        return (node.iname, node._metadata_[node.children().index(source)][0])
-    elif node.node_name == "PipelineRegister":
-        return "reg"
+        ret_list.append((node.iname, node._metadata_[node.children().index(source)][0]))
+        return 
+    #elif node.node_name == "PipelineRegister":
+    #    return 
     else:
         for sink in sinks[node]:
-            ret = get_connected_pe_name(node, sink, sinks)
-            if ret != "reg":
-                return ret
+            get_connected_pe_name(ret_list, node, sink, sinks)
+        
 
 def branch_delay_match(dag, node_latencies, sinks):
 
@@ -180,7 +180,9 @@ def branch_delay_match(dag, node_latencies, sinks):
                     input_latencies[node.child.field] = {}
                 input_latencies[node.child.field][str(node.field)] = {}
                 input_latencies[node.child.field][str(node.field)]["latency"] = node_cycles[node]
-                input_latencies[node.child.field][str(node.field)]["pe_port"] = get_connected_pe_name(node, node, sinks)
+                connected_pes = []
+                get_connected_pe_name(connected_pes, node, node, sinks)
+                input_latencies[node.child.field][str(node.field)]["pe_port"] = connected_pes
             node_cycles[node] = None
 
     return input_latencies, added_regs
