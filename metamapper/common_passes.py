@@ -37,8 +37,9 @@ class DagToPdf(Visitor):
         AddID().run(dag)
         self.graph = Digraph()
         self.run(dag)
-        for sink in dag.non_output_sinks:
-            self.graph.edge(n2s(sink), n2s(sink.source))
+        if hasattr(dag, "non_output_sinks"):
+            for sink in dag.non_output_sinks:
+                self.graph.edge(n2s(sink), n2s(sink.source))
         return self.graph
 
     def generic_visit(self, node):

@@ -140,8 +140,8 @@ class RewriteTable:
         RemoveSelects().run(to_dag)
         #print("After rmSelects")
         #print_dag(to_dag)
-        #print("to_dag")
-        #print_dag(to_dag)
+        # print("to_dag")
+
 
         #Verify that the io matches
         #TODO verify outputs match
