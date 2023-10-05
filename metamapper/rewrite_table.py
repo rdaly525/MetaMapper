@@ -63,13 +63,12 @@ class RewriteTable:
         from_dag = peak_to_dag(self.from_, rule.ir_fc, name=name)
         from_bv = rule.ir_fc(fam().PyFamily())
         from_node_name = self.from_.name_from_peak(rule.ir_fc)
-        # print("from_dag", name)
-        # print_dag(from_dag)
         # Create to_dag by Wrapping _to_dag within ibinding and obinding
         # Get input/output names from peak_cls
 
         to_fc = rule.arch_fc
         to_node_name = self.to.name_from_peak(to_fc, name)
+
         to_node_t = self.to.dag_nodes[to_node_name]
         assert issubclass(to_node_t, DagNode)
         to_bv = to_fc(fam().PyFamily())

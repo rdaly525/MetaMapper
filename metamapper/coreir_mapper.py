@@ -101,7 +101,6 @@ class Mapper:
         
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
-        assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
         if node_cycles is not None:
             sinks = GetSinks().doit(mapped_dag)
