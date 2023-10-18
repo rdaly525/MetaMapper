@@ -477,7 +477,34 @@ def gen_custom_ops_peak_CoreIR(width):
     CoreIR.add_instruction("float.mux", fp_mux_fc)
 
 
+    @family_closure
+    def fp_max_fc(family: AbstractFamily):
+        BitVector = family.BitVector
+        BFloat = BFloat16_fc(family)
+        Data = family.BitVector[16]
+        Bit = family.Bit
+        SInt = family.Signed
+        SData = SInt[16]
+        UInt = family.Unsigned
+        UData = UInt[16]
+        UData32 = UInt[32]
 
+        FPExpBV = family.BitVector[8]
+        FPFracBV = family.BitVector[7]
+
+        @family.assemble(locals(), globals())
+        class fp_max(Peak, BlackBox):
+            @name_outputs(out=Data)
+            def __call__(self, in0 : Data, in1 : Data) -> Bit:
+                
+                a_fpadd = BFloat(in0)
+                b_fpadd = BFloat(in1)
+                gt = Bit(a_fpadd > b_fpadd)
+                return Data(gt.ite(in0, in1))
+        
+        return fp_max
+
+    CoreIR.add_instruction("fp_max", fp_max_fc)
 
 
     @family_closure
