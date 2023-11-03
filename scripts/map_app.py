@@ -55,7 +55,9 @@ def gen_rrules(pipelined=False):
 
     custom_rule_names = {
         "mult_middle": "commonlib.mult_middle",
+        "abs": "commonlib.abs",
         "fp_exp": "float.exp",
+        "fp_max": "float.max",
         "fp_div": "float.div",
         "fp_mux": "float.mux",
         "fp_mul": "float_DW.fp_mul",
@@ -151,6 +153,7 @@ for kname, kmod in kernels.items():
         prove_mapping=True,
         pe_reg_info=pe_reg_info,
     )
+
     mod = cutil.dag_to_coreir(
         ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog
     )

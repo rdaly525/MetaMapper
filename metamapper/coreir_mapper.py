@@ -61,7 +61,6 @@ class Mapper:
 
     def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None) -> coreir.Module:
         self.compile_time_rule_gen(dag)
-        
         use_constant_packing = pe_reg_info != None
         
         if use_constant_packing:
