@@ -66,6 +66,7 @@ def gen_rrules(pipelined=False):
         "fp_mul": "float_DW.fp_mul",
         "fp_add": "float_DW.fp_add",
         "fp_sub": "float.sub",
+        "fp_max": "float.max",
     }
 
     for idx, rrule in enumerate(rrule_files):
