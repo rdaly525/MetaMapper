@@ -114,8 +114,9 @@ def get_connected_pe_name(ret_list, source, node, sinks):
     elif node.node_name == "global.PE":
         ret_list.append((node.iname, node._metadata_[node.children().index(source)][0]))
         return 
-    #elif node.node_name == "PipelineRegister":
-    #    return 
+    elif node.node_name == "PipelineRegister":
+       ret_list.append((node.iname, "reg"))
+       return 
     else:
         for sink in sinks[node]:
             get_connected_pe_name(ret_list, node, sink, sinks)
