@@ -120,7 +120,7 @@ def map_design_top(app_name, nodes, dag):
 
     rrules, ops = gen_rrules(pipelined = pe_cycles != 0)
 
-    mapper = Mapper(CoreIRNodes, nodes, lazy=False, ops=ops, rrules=rrules)
+    mapper = Mapper(CoreIRNodes, nodes, lazy=False, ops=ops, rrules=rrules, kernel_name_prefix=True)
  
     mapped_dag = mapper.do_mapping(dag, kname=app_name, node_cycles=None, convert_unbound=False, prove_mapping=False, pe_reg_info=pe_reg_info)
 
