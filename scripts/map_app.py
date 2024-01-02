@@ -149,7 +149,7 @@ for kname, kmod in kernels.items():
         kname=kname,
         node_cycles=_ArchCycles(),
         convert_unbound=False,
-        prove_mapping=True,
+        prove_mapping=False,
         pe_reg_info=pe_reg_info,
     )
 

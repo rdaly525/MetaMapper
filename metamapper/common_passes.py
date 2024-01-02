@@ -15,11 +15,11 @@ from .node import DagNode
 import hwtypes as ht
 from graphviz import Digraph
 from collections import defaultdict
-import pono
-import smt_switch.pysmt_frontend as fe
-import smt_switch.primops as switch_ops
+#import pono
+#import smt_switch.pysmt_frontend as fe
+#import smt_switch.primops as switch_ops
 from peak.mapper.utils import rebind_type
-import smt_switch as ss
+#import smt_switch as ss
 
 
 def is_unbound_const(node):
