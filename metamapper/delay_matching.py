@@ -100,11 +100,17 @@ def topological_sort(dag):
     return stack[::-1]
 
 def is_input_sel(node):
+    fields = []
     curr_node = node
 
     while True:
-        if curr_node.node_name != "Select":
-            return curr_node.node_name == "Input"
+        if curr_node.node_name == "Select":
+            fields.append(str(curr_node.field))
+        else:
+            if curr_node.node_name == "Input":
+                return fields
+            else:
+                return None
         assert len(curr_node.children()) == 1
         curr_node = curr_node.child
 
@@ -174,13 +180,24 @@ def branch_delay_match(dag, node_latencies, sinks):
         
         sinks = GetSinks().doit(dag)
 
-        if is_input_sel(node):
+        fields = is_input_sel(node)
+        if fields is not None:
             if len(cycles) > 0:
-                if node.child.field not in input_latencies:
-                    input_latencies[node.child.field] = {}
-                input_latencies[node.child.field][str(node.field)] = {}
-                input_latencies[node.child.field][str(node.field)]["latency"] = node_cycles[node]
-                input_latencies[node.child.field][str(node.field)]["pe_port"] = get_connected_pe_name(node, node, sinks)
+                fields.reverse()
+
+                latenciy_dict_key = "_".join(fields)
+
+                input_latencies[latenciy_dict_key] = {"latency": node_cycles[node], "pe_port": get_connected_pe_name(node, node, sinks)}
+
+                # input_lat_dict = input_latencies
+                # for field in fields:
+                #     if field not in input_lat_dict:
+                #         input_lat_dict[field] = {}
+                #     input_lat_dict = input_lat_dict[field]
+
+                # input_lat_dict["latency"] = node_cycles[node]
+                # input_lat_dict["pe_port"] = get_connected_pe_name(node, node, sinks)
+
             node_cycles[node] = None
 
     return input_latencies, added_regs
