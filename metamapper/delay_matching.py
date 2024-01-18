@@ -114,18 +114,19 @@ def is_input_sel(node):
         assert len(curr_node.children()) == 1
         curr_node = curr_node.child
 
-def get_connected_pe_name(source, node, sinks):  
+def get_connected_pe_name(ret_list, source, node, sinks):  
     if len(sinks[node]) == 0:
-        return ""
+        return 
     elif node.node_name == "global.PE":
-        return (node.iname, node._metadata_[node.children().index(source)][0])
+        ret_list.append((node.iname, node._metadata_[node.children().index(source)][0]))
+        return 
     elif node.node_name == "PipelineRegister":
-        return "reg"
+       ret_list.append((node.iname, "reg"))
+       return 
     else:
         for sink in sinks[node]:
-            ret = get_connected_pe_name(node, sink, sinks)
-            if ret != "reg":
-                return ret
+            get_connected_pe_name(ret_list, node, sink, sinks)
+        
 
 def branch_delay_match(dag, node_latencies, sinks):
 
@@ -188,16 +189,6 @@ def branch_delay_match(dag, node_latencies, sinks):
                 latenciy_dict_key = "_".join(fields)
 
                 input_latencies[latenciy_dict_key] = {"latency": node_cycles[node], "pe_port": get_connected_pe_name(node, node, sinks)}
-
-                # input_lat_dict = input_latencies
-                # for field in fields:
-                #     if field not in input_lat_dict:
-                #         input_lat_dict[field] = {}
-                #     input_lat_dict = input_lat_dict[field]
-
-                # input_lat_dict["latency"] = node_cycles[node]
-                # input_lat_dict["pe_port"] = get_connected_pe_name(node, node, sinks)
-
             node_cycles[node] = None
 
     return input_latencies, added_regs

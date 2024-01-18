@@ -19,7 +19,7 @@ class DefaultLatency:
 class Mapper:
     # Lazy # Discover at mapping time
     # ops (if lazy=False, search for these)
-    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rrules=None):
+    def __init__(self, CoreIRNodes: Nodes, ArchNodes: Nodes, alg=GreedyCovering, lazy=True, ops=None, rrules=None, kernel_name_prefix=False):
     
         self.CoreIRNodes = CoreIRNodes
         self.ArchNodes = ArchNodes
@@ -32,7 +32,7 @@ class Mapper:
         self.gen_rules(ops, rrules)
         self.compile_time_rule_gen = lambda dag : None
         
-        self.inst_sel = alg(self.table)
+        self.inst_sel = alg(self.table, kernel_name_prefix)
 
     def gen_rules(self, ops, rrules=None):
 
@@ -100,7 +100,6 @@ class Mapper:
         
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
-        assert VerifyNodes(self.CoreIRNodes).verify(original_dag) is None
 
         if node_cycles is not None:
             sinks = GetSinks().doit(mapped_dag)

@@ -181,7 +181,8 @@ class Loader:
 
             node_name = self.nodes.name_from_coreir(inst.module)
             if node_name is None:
-                print(self.nodes.coreir_modules[f'coreir.{inst.module.name}'].print_())
+                breakpoint()
+                print(self.nodes.coreir_modules[f'{inst.module.namespace.name}.{inst.module.name}'].print_())
                 print(inst.module.print_())
                 raise ValueError(f"Unknown module {inst.module.name}")
 
