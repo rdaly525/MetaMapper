@@ -188,7 +188,9 @@ def branch_delay_match(dag, node_latencies, sinks):
 
                 latenciy_dict_key = "_".join(fields)
 
-                input_latencies[latenciy_dict_key] = {"latency": node_cycles[node], "pe_port": get_connected_pe_name(node, node, sinks)}
+                connected_pes = []
+                get_connected_pe_name(connected_pes, node, node, sinks)
+                input_latencies[latenciy_dict_key] = {"latency": node_cycles[node], "pe_port": connected_pes}
             node_cycles[node] = None
 
     return input_latencies, added_regs
