@@ -23,6 +23,10 @@ class _ArchCycles:
         if kind == "Rom" or kind == "FPRom" or kind == "PipelineRegister":
             return 1
         elif kind == "global.PE":
+            if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
+                pe_cycles = int(os.environ["PIPELINED"])
+            else:
+                pe_cycles = 1
             return pe_cycles
         return 0
 
@@ -35,9 +39,9 @@ lassen_header = os.path.join(
 
 def gen_rrules(pipelined=False):
 
-    c = CoreIRContext()
-    cmod = putil.peak_to_coreir(lassen_fc)
-    c.serialize_header(lassen_header, [cmod])
+    # c = CoreIRContext()
+    # cmod = putil.peak_to_coreir(lassen_fc)
+    # c.serialize_header(lassen_header, [cmod])
     # c.serialize_definitions(pe_def, [cmod])
     mapping_funcs = []
     rrules = []
@@ -57,12 +61,12 @@ def gen_rrules(pipelined=False):
         "mult_middle": "commonlib.mult_middle",
         "abs": "commonlib.abs",
         "fp_exp": "float.exp",
-        "fp_max": "float.max",
         "fp_div": "float.div",
         "fp_mux": "float.mux",
         "fp_mul": "float_DW.fp_mul",
         "fp_add": "float_DW.fp_add",
         "fp_sub": "float.sub",
+        "fp_max": "float.max",
     }
 
     for idx, rrule in enumerate(rrule_files):
@@ -91,83 +95,33 @@ def gen_rrules(pipelined=False):
     return rrules, ops
 
 
-pe_reg_instrs = {}
-pe_reg_instrs["const"] = 0
-pe_reg_instrs["bypass"] = 2
-pe_reg_instrs["reg"] = 3
+def map_design_top(app_name, nodes, dag):
+    pe_reg_instrs = {}
+    pe_reg_instrs["const"] = 0
+    pe_reg_instrs["bypass"] = 2
+    pe_reg_instrs["reg"] = 3
 
-pe_port_to_reg = {}
-pe_port_to_reg["data0"] = "rega"
-pe_port_to_reg["data1"] = "regb"
-pe_port_to_reg["data2"] = "regc"
+    pe_port_to_reg = {}
+    pe_port_to_reg["data0"] = "rega"
+    pe_port_to_reg["data1"] = "regb"
+    pe_port_to_reg["data2"] = "regc"
 
-pe_reg_info = {}
-pe_reg_info["instrs"] = pe_reg_instrs
-pe_reg_info["port_to_reg"] = pe_port_to_reg
+    pe_reg_info = {}
+    pe_reg_info['instrs'] = pe_reg_instrs
+    pe_reg_info['port_to_reg'] = pe_port_to_reg
 
-file_name = str(sys.argv[1])
-if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
-    pe_cycles = int(os.environ["PIPELINED"])
-else:
-    pe_cycles = 1
-
-rrules, ops = gen_rrules(pipelined=pe_cycles != 0)
-verilog = False
-app = os.path.basename(file_name).split(".json")[0]
-output_dir = os.path.dirname(file_name)
-
-c = CoreIRContext(reset=True)
-cutil.load_libs(["commonlib", "float_DW"])
-CoreIRNodes = gen_CoreIRNodes(16)
-cutil.load_from_json(file_name)  # libraries=["lakelib"])
-kernels = dict(c.global_namespace.modules)
-
-arch_fc = lassen_fc
-ArchNodes = Nodes("Arch")
-
-putil.load_and_link_peak(ArchNodes, lassen_header, {"global.PE": arch_fc})
-
-mr = "memory.fprom2"
-ArchNodes.add(
-    mr,
-    CoreIRNodes.peak_nodes[mr],
-    CoreIRNodes.coreir_modules[mr],
-    CoreIRNodes.dag_nodes[mr],
-)
-
-mapper = Mapper(CoreIRNodes, ArchNodes, lazy=False, ops=ops, rrules=rrules)
-
-c.run_passes(["rungenerators", "deletedeadinstances"])
-mods = []
-
-for kname, kmod in kernels.items():
-    print(f"Mapping kernel {kname}")
-    dag = cutil.coreir_to_dag(CoreIRNodes, kmod, archnodes=ArchNodes)
-    Constant2CoreIRConstant(CoreIRNodes).run(dag)
-
-    mapped_dag = mapper.do_mapping(
-        dag,
-        kname=kname,
-        node_cycles=_ArchCycles(),
-        convert_unbound=False,
-        prove_mapping=True,
-        pe_reg_info=pe_reg_info,
-    )
-
-    mod = cutil.dag_to_coreir(
-        ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog
-    )
-    mods.append(mod)
-
-print('\n\033[92m' + "All compute kernels passed formal checks" + '\033[0m')
-print(f"Total num PEs used: {mapper.num_pes}\n")
-print(f"Total num regs inserted: {mapper.num_regs}")
-
-output_file = f"{output_dir}/{app}_mapped.json"
-print(f"saving to {output_file}")
-c.serialize_definitions(output_file, mods)
-
-with open(f'{output_dir}/{app}_kernel_latencies.json', 'w') as outfile:
-    json.dump(mapper.kernel_cycles, outfile, indent=4)
+    if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
+        pe_cycles = int(os.environ["PIPELINED"])
+    else:
+        pe_cycles = 1
 
 
+    CoreIRNodes = gen_CoreIRNodes(16)
+
+    rrules, ops = gen_rrules(pipelined = pe_cycles != 0)
+
+    mapper = Mapper(CoreIRNodes, nodes, lazy=False, ops=ops, rrules=rrules, kernel_name_prefix=True)
+ 
+    mapped_dag = mapper.do_mapping(dag, kname=app_name, node_cycles=None, convert_unbound=False, prove_mapping=False, pe_reg_info=pe_reg_info)
+
+    return mapped_dag

@@ -1,6 +1,6 @@
 from DagVisitor import Transformer, Visitor
 from metamapper.node import Constant, PipelineRegister
-
+from metamapper.common_passes import print_dag, GetSinks
 
 class DelayMatching(Transformer):
     def __init__(self, node_latencies):
@@ -41,7 +41,6 @@ class DelayMatching(Transformer):
             self.aggregate_latencies[node] = max_latency + this_latency
             return node
 
-#Verifies that a kernel is branch-delay matched
 class KernelDelay(Visitor):
     def __init__(self, node_latencies):
         self.node_latencies = node_latencies
@@ -85,3 +84,114 @@ class KernelDelay(Visitor):
             raise ValueError("Child of pipe register is constant")
         self.aggregate_latencies[node] = self.aggregate_latencies[child] + 1
 
+def topological_sort_helper(dag, node, stack, visited):
+    visited.add(node)
+    for ns in node.children():
+        if ns not in visited:
+            topological_sort_helper(dag, ns, stack, visited)
+    stack.append(node)
+
+def topological_sort(dag):
+    visited = set()
+    stack = []
+    for n in dag.roots():
+        if n not in visited:
+            topological_sort_helper(dag, n, stack, visited)
+    return stack[::-1]
+
+def is_input_sel(node):
+    fields = []
+    curr_node = node
+
+    while True:
+        if curr_node.node_name == "Select":
+            fields.append(str(curr_node.field))
+        else:
+            if curr_node.node_name == "Input":
+                return fields
+            else:
+                return None
+        assert len(curr_node.children()) == 1
+        curr_node = curr_node.child
+
+def get_connected_pe_name(ret_list, source, node, sinks):  
+    if len(sinks[node]) == 0:
+        return 
+    elif node.node_name == "global.PE":
+        ret_list.append((node.iname, node._metadata_[node.children().index(source)][0]))
+        return 
+    elif node.node_name == "PipelineRegister":
+       ret_list.append((node.iname, "reg"))
+       return 
+    else:
+        for sink in sinks[node]:
+            get_connected_pe_name(ret_list, node, sink, sinks)
+        
+
+def branch_delay_match(dag, node_latencies, sinks):
+
+    sorted_nodes = topological_sort(dag)
+
+    added_regs = 0
+    node_cycles = {}
+    input_latencies = {}
+
+    for node in sorted_nodes:
+        cycles = set()
+
+        if len(sinks[node]) == 0:
+            cycles = {0}
+
+        for sink in sinks[node]:
+            if sink not in node_cycles:
+                c = 0
+            else:
+                c = node_cycles[sink]
+
+            if c != None:
+                c += node_latencies.get(node)
+
+            cycles.add(c)
+
+        if None in cycles:
+            cycles.remove(None)
+
+        if len(cycles) > 1:
+            print(f"\t\tIncorrect node delay: {node} {cycles}")
+
+            max_cycles = max(cycles)
+            for sink in sinks[node]:
+                new_child = node
+                pipeline_type = node.type
+                new_children = [child for child in sink.children()]
+                for idx, c in enumerate(new_children):
+                    if c == new_child:
+                        for _ in range(max_cycles - node_cycles[sink]):
+                            print("\t\tbreak", node, sink)
+                            new_child = PipelineRegister(new_child, type=pipeline_type)
+                            added_regs += 1
+
+                        new_children[idx] = new_child
+                sink.set_children(*new_children)
+            node_cycles[node] = max_cycles
+        elif len(cycles) == 1:
+            node_cycles[node] = max(cycles)
+        else:
+            node_cycles[node] = None
+        
+        sinks = GetSinks().doit(dag)
+
+        fields = is_input_sel(node)
+        if fields is not None:
+            if len(cycles) > 0:
+                fields.reverse()
+
+                latenciy_dict_key = "_".join(fields)
+
+                connected_pes = []
+                get_connected_pe_name(connected_pes, node, node, sinks)
+                input_latencies[latenciy_dict_key] = {"latency": node_cycles[node], "pe_port": connected_pes}
+            node_cycles[node] = None
+
+    return input_latencies, added_regs
+        
