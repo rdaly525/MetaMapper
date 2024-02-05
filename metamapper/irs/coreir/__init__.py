@@ -303,23 +303,6 @@ def gen_CoreIRNodes(width):
 
 
 
-
-
-    input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
-    output_t = Product.from_fields("Output", {"out": BitVector[16]})
-
-    source_node2 = Input(iname="self", type=input_t)
-    in0 = source_node2.select("in0")
-    in1 = source_node2.select("in1")
-
-    gt = CoreIRNodes.dag_nodes["fp_gt"](in0, in1)
-
-    max_ = CoreIRNodes.dag_nodes["coreir.mux"](in0, in1, gt.select("out"))
-
-    sink_node = Output(max_.select("out"), type=output_t)
-
-    CoreIRNodes.custom_inline["float.max"] = (Dag(sources=[source_node2], sinks=[sink_node]), [gt, max_])
-
     input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
     output_t = Product.from_fields("Output", {"out": BitVector[16]})
 
