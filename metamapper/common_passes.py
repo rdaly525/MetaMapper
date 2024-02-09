@@ -526,6 +526,7 @@ class SMT(Visitor):
 
         aadt = _get_aadt(peak_fc.Py.output_t)
         output_val = aadt.from_fields(*outputs)
+
         self.values[node] = output_val
 
 
@@ -969,4 +970,48 @@ class ConstantPacking(Transformer):
                                     type=ht.BitVector[16], value=Unbound
                                 )
             node.set_children(*new_children)
+        return node
+
+
+
+class PipelinePEs(Transformer):
+    def __init__(self, pe_reg_info):
+        self.pe_reg_info = pe_reg_info
+
+    def turn_on_pipeline_reg(self, inst_node, port):
+        if not hasattr(inst_node, "assemble"):
+            return 
+
+        instr = inst_node.assemble(family.PyFamily())
+        aadt = AssembledADT[
+            strip_modifiers(inst_node.type), Assembler, family.PyFamily().BitVector
+        ]
+        reg = self.pe_reg_info["port_to_reg"][port]
+        reg_instr = getattr(instr, reg)
+
+        if (
+            reg_instr._value_.value == self.pe_reg_info["instrs"]["bypass"]
+        ):
+            # Change register mode to delay
+            instr_size = reg_instr._to_bitvector_().size
+            new_reg_instr = reg_instr.from_fields(
+                ht.BitVector[instr_size](self.pe_reg_info["instrs"]["reg"])
+            )
+            setattr(instr, reg, new_reg_instr)
+
+            const_dict = OrderedDict()
+            for field in inst_node.type.field_dict.keys():
+                const_dict[field] = getattr(instr, field)
+
+            inst_node.value = aadt(**const_dict)._value_
+
+
+    def generic_visit(self, node):
+        Transformer.generic_visit(self, node)
+        if node.node_name == "global.PE" and hasattr(node, "_metadata_"):
+            ports = node._metadata_
+            for port_idx, child in enumerate(node.children()):
+                if child.node_name == "Select":
+                    self.turn_on_pipeline_reg(node.children()[0], ports[port_idx][0])
+
         return node

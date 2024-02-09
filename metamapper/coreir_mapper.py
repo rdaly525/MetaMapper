@@ -1,5 +1,5 @@
 from metamapper.common_passes import VerifyNodes, print_dag, count_pes, CustomInline, SimplifyCombines, RemoveSelects, prove_equal, \
-    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking, GetSinks
+    Clone, ExtractNames, Unbound2Const, gen_dag_img, ConstantPacking, GetSinks, PipelinePEs
 import metamapper.coreir_util as cutil
 from metamapper.rewrite_table import RewriteTable
 from metamapper.node import Nodes, Dag
@@ -59,40 +59,37 @@ class Mapper:
                     self.table.add_peak_rule(peak_rule, None)
             self.table.sort_rules()
 
-    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None, pipelined=True) -> coreir.Module:
         self.compile_time_rule_gen(dag)
         use_constant_packing = pe_reg_info != None
         
         if use_constant_packing:
             rule_names = [rule.name for rule in self.table.rules]
-            if "const" in rule_names:
-                const_rule = self.table.rules.pop(rule_names.index("const"))
-            elif "const_pipelined" in rule_names:
-                const_rule = self.table.rules.pop(rule_names.index("const_pipelined"))
-
+            assert "const" in rule_names
+            const_rule = self.table.rules.pop(rule_names.index("const"))
+           
             rule_names = [rule.name for rule in self.table.rules]
-            if "bit_const" in rule_names:
-                bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
-            elif "bit_const_pipelined" in rule_names:
-                bit_const_rule = self.table.rules.pop(rule_names.index("bit_const_pipelined"))
 
-        original_dag = Clone().clone(dag, iname_prefix=f"original_")
+            assert "bit_const" in rule_names
+            bit_const_rule = self.table.rules.pop(rule_names.index("bit_const"))
+          
         CustomInline(self.CoreIRNodes.custom_inline).run(dag)
+        original_dag = Clone().clone(dag, iname_prefix=f"original_")
         pre_packing = self.inst_sel(dag)
 
         if use_constant_packing:
             ConstantPacking(pe_reg_info).run(pre_packing)
         
-            if const_rule is not None:
-                self.table.rules.append(const_rule)
-
-            if bit_const_rule is not None:
-                self.table.rules.append(bit_const_rule)
+            self.table.rules.append(const_rule)
+            self.table.rules.append(bit_const_rule)
 
         mapped_dag = self.inst_sel(pre_packing)
 
         SimplifyCombines().run(mapped_dag)
         RemoveSelects().run(mapped_dag)
+
+        if pipelined:
+            PipelinePEs(pe_reg_info).run(mapped_dag)
 
         self.num_pes += count_pes(mapped_dag)
         print("\tUsed", count_pes(mapped_dag), "PEs")

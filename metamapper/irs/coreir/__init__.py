@@ -31,7 +31,6 @@ def gen_CoreIRNodes(width):
     for namespace, ops, is_module in (
         ("corebit", bit_ops, True),
         ("coreir", basic + other, False)
-        #("commonlib", commonlib_ops, False)
     ):
         for op in ops:
             assert c.get_namespace(namespace) is c.get_namespace(namespace)
@@ -50,103 +49,14 @@ def gen_CoreIRNodes(width):
             assert name_ == name
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
-    name = f"float_DW.fp_add"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float_DW.fp_add", modparams=())
 
-    name = f"float.sub"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.sub", modparams=())
+    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.absd", "commonlib.mult_middle", "float.eq", "float.gt", "float.le", "float.ge", "float.lt", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "float.exp", "float.mux"]
 
-    name = f"float.exp"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.exp", modparams=())
-
-    name = f"float_DW.fp_mul"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float_DW.fp_mul", modparams=())
-
-    name = f"float.div"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.div", modparams=())
-
-
-    name = f"float.mux"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.mux", modparams=())
-
-
-    name = f"float.max"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.max", modparams=())
-
-    name = f"float.min"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="float.min", modparams=())
-
-
-    name = f"fp_gt"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_gt", modparams=())
-
-    name = f"fp_lt"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_lt", modparams=())
-
-    name = f"fp_getmant"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_getmant", modparams=())
-
-    name = f"fp_addiexp"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_addiexp", modparams=())
-
-    name = f"fp_subexp"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_subexp", modparams=())
-
-    name = f"fp_cnvexp2f"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_cnvexp2f", modparams=())
-
-    name = f"fp_getfint"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_getfint", modparams=())
-
-    name = f"fp_getffrac"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_getffrac", modparams=())
-
-    name = f"fp_cnvint2f"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="fp_cnvint2f", modparams=())
-
-    name = f"commonlib.mult_middle"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.mult_middle", modparams=())
-
-    name = f"commonlib.abs"
-    peak_fc = peak_ir.instructions[name]
-    cmod = None
-    name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name="commonlib.abs", modparams=())
+    for name in CoreIRNodes.custom_nodes:
+        if name not in CoreIRNodes.coreir_modules:
+            peak_fc = peak_ir.instructions[name]
+            cmod = None
+            name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name, modparams=())
 
     if cgralib:
         name = f"cgralib.Mem"
@@ -160,7 +70,6 @@ def gen_CoreIRNodes(width):
         name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, stateful=True, name="cgralib.Pond", modparams=())
 
 
-    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.absd", "commonlib.mult_middle", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "fp_gt", "fp_lt", "float.exp", "float.mux"]
 
     class Mem_amber(DagNode):
         def __init__(self, clk_en, data_in_0, data_in_1, wen_in_0, wen_in_1, *, iname):
@@ -169,11 +78,6 @@ def gen_CoreIRNodes(width):
         @property
         def attributes(self):
             return ("iname")
-
-        #Hack to get correct port name
-        #def select(self, field, original=None):
-        #    self._selects.add("data_out_0")
-        #    return Select(self, field="rdata",type=BitVector[16])
 
         nodes = CoreIRNodes
         static_attributes = {}
@@ -302,41 +206,6 @@ def gen_CoreIRNodes(width):
     CoreIRNodes.custom_inline["float.exp"] = (Dag(sources=[source_node1], sinks=[sink_node]), [ln2_mult])
 
 
-
-
-
-    input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
-    output_t = Product.from_fields("Output", {"out": BitVector[16]})
-
-    source_node2 = Input(iname="self", type=input_t)
-    in0 = source_node2.select("in0")
-    in1 = source_node2.select("in1")
-
-    gt = CoreIRNodes.dag_nodes["fp_gt"](in0, in1)
-
-    max_ = CoreIRNodes.dag_nodes["coreir.mux"](in0, in1, gt.select("out"))
-
-    sink_node = Output(max_.select("out"), type=output_t)
-
-    CoreIRNodes.custom_inline["float.max"] = (Dag(sources=[source_node2], sinks=[sink_node]), [gt, max_])
-
-    input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
-    output_t = Product.from_fields("Output", {"out": BitVector[16]})
-
-    source_node3 = Input(iname="self", type=input_t)
-    in0 = source_node3.select("in0")
-    in1 = source_node3.select("in1")
-
-    lt = CoreIRNodes.dag_nodes["fp_lt"](in0, in1)
-
-    min_ = CoreIRNodes.dag_nodes["coreir.mux"](in0, in1, lt.select("out"))
-
-    sink_node = Output(min_.select("out"), type=output_t)
-
-    CoreIRNodes.custom_inline["float.min"] = (Dag(sources=[source_node3], sinks=[sink_node]), [lt, min_])
- 
-
-
     input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
     output_t = Product.from_fields("Output", {"out": Bit})
 
@@ -352,7 +221,6 @@ def gen_CoreIRNodes(width):
 
     CoreIRNodes.custom_inline["coreir.neq"] = (Dag(sources=[source_node4], sinks=[sink_node]), [eq])
  
-
 
     return CoreIRNodes
 
