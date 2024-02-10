@@ -50,7 +50,7 @@ def gen_CoreIRNodes(width):
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
 
-    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.absd", "commonlib.mult_middle", "float.eq", "float.gt", "float.le", "float.ge", "float.lt", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "float.exp", "float.mux"]
+    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.mult_middle", "float.eq", "float.gt", "float.le", "float.ge", "float.lt", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "float.exp", "float.mux"]
 
     for name in CoreIRNodes.custom_nodes:
         if name not in CoreIRNodes.coreir_modules:
