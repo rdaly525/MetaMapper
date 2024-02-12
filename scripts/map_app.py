@@ -105,6 +105,20 @@ pe_reg_info["port_to_reg"] = pe_port_to_reg
 
 file_name = str(sys.argv[1])
 
+if "PROVE" in os.environ and os.environ["PROVE"] in ["0", "1"]:
+    prove_mapping = bool(int(os.environ["PROVE"]))
+else:
+    prove_mapping = True
+
+if "MATCH_BRANCH_DELAY" in os.environ and os.environ["MATCH_BRANCH_DELAY"] in ["0", "1"]:
+    match_branch_delay = bool(int(os.environ["MATCH_BRANCH_DELAY"]))
+    if match_branch_delay:
+        node_cycles = _ArchCycles()
+    else:
+        node_cycles = None
+else:
+    node_cycles = _ArchCycles()
+
 pipelined = not ("PIPELINED" in os.environ and os.environ["PIPELINED"] == '0')
 
 rrules, ops = gen_rrules()
@@ -143,9 +157,9 @@ for kname, kmod in kernels.items():
     mapped_dag = mapper.do_mapping(
         dag,
         kname=kname,
-        node_cycles=_ArchCycles(),
+        node_cycles=node_cycles,
         convert_unbound=False,
-        prove_mapping=True,
+        prove_mapping=prove_mapping,
         pe_reg_info=pe_reg_info,
         pipelined=pipelined
     )
