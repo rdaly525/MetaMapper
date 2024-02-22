@@ -23,7 +23,7 @@ class _ArchCycles:
         if kind == "Rom" or kind == "FPRom" or kind == "PipelineRegister":
             return 1
         elif kind == "global.PE":
-            return pe_cycles
+            return 1 if pipelined else 0
         return 0
 
 
@@ -43,16 +43,9 @@ def gen_rrules(pipelined=False):
     rrules = []
     ops = []
 
-    if pipelined:
-        rrule_files = glob.glob(
-            f"{lassen_location}/lassen/rewrite_rules/*_pipelined.json"
-        )
-    else:
-        rrule_files = glob.glob(f"{lassen_location}/lassen/rewrite_rules/*.json")
-        rrule_files = [
-            rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file
-        ]
+    rrule_files = glob.glob(f"{lassen_location}/lassen/rewrite_rules/*.json")
 
+    # Can't have a '.' in the name of the rule since they are files
     custom_rule_names = {
         "mult_middle": "commonlib.mult_middle",
         "abs": "commonlib.abs",
@@ -63,14 +56,15 @@ def gen_rrules(pipelined=False):
         "fp_mul": "float_DW.fp_mul",
         "fp_add": "float_DW.fp_add",
         "fp_sub": "float.sub",
+        "fp_gt": "float.gt",
+        "fp_lt": "float.lt",
+        "fp_ge": "float.ge",
+        "fp_le": "float.le",
+        "fp_eq": "float.eq"
     }
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        if ("fp" in rule_name and "pipelined" in rule_name) or rule_name.split(
-            "_pipelined"
-        )[0] in custom_rule_names:
-            rule_name = rule_name.split("_pipelined")[0]
         if rule_name in custom_rule_names:
             ops.append(custom_rule_names[rule_name])
         else:
@@ -83,9 +77,9 @@ def gen_rrules(pipelined=False):
             rewrite_rule_in = json.load(json_file)
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
-        if False:
-            counter_example = rewrite_rule.verify()
-            assert counter_example == None, f"{rule_name} failed"
+
+        counter_example = rewrite_rule.verify()
+        assert counter_example == None, f"{rule_name} failed"
         rrules.append(rewrite_rule)
 
     return rrules, ops
@@ -101,25 +95,35 @@ pe_port_to_reg["data0"] = "rega"
 pe_port_to_reg["data1"] = "regb"
 pe_port_to_reg["data2"] = "regc"
 
+pe_port_to_reg["bit0"] = "regd"
+pe_port_to_reg["bit1"] = "rege"
+pe_port_to_reg["bit2"] = "regf"
+
 pe_reg_info = {}
 pe_reg_info["instrs"] = pe_reg_instrs
 pe_reg_info["port_to_reg"] = pe_port_to_reg
 
 file_name = str(sys.argv[1])
-if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
-    pe_cycles = int(os.environ["PIPELINED"])
-else:
-    pe_cycles = 1
 
-rrules, ops = gen_rrules(pipelined=pe_cycles != 0)
-verilog = False
+if "MATCH_BRANCH_DELAY" in os.environ and os.environ["MATCH_BRANCH_DELAY"] in ["0", "1"]:
+    match_branch_delay = bool(int(os.environ["MATCH_BRANCH_DELAY"]))
+    if match_branch_delay:
+        node_cycles = _ArchCycles()
+    else:
+        node_cycles = None
+else:
+    node_cycles = _ArchCycles()
+
+pipelined = not ("PIPELINED" in os.environ and os.environ["PIPELINED"] == '0')
+
+rrules, ops = gen_rrules()
 app = os.path.basename(file_name).split(".json")[0]
 output_dir = os.path.dirname(file_name)
 
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib", "float_DW"])
 CoreIRNodes = gen_CoreIRNodes(16)
-cutil.load_from_json(file_name)  # libraries=["lakelib"])
+cutil.load_from_json(file_name) 
 kernels = dict(c.global_namespace.modules)
 
 arch_fc = lassen_fc
@@ -148,14 +152,15 @@ for kname, kmod in kernels.items():
     mapped_dag = mapper.do_mapping(
         dag,
         kname=kname,
-        node_cycles=_ArchCycles(),
+        node_cycles=node_cycles,
         convert_unbound=False,
         prove_mapping=True,
         pe_reg_info=pe_reg_info,
+        pipelined=pipelined
     )
 
     mod = cutil.dag_to_coreir(
-        ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=verilog
+        ArchNodes, mapped_dag, f"{kname}_mapped", convert_unbounds=False
     )
     mods.append(mod)
 

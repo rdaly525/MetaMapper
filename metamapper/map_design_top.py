@@ -47,34 +47,28 @@ def gen_rrules(pipelined=False):
     rrules = []
     ops = []
 
-    if pipelined:
-        rrule_files = glob.glob(
-            f"{lassen_location}/lassen/rewrite_rules/*_pipelined.json"
-        )
-    else:
-        rrule_files = glob.glob(f"{lassen_location}/lassen/rewrite_rules/*.json")
-        rrule_files = [
-            rrule_file for rrule_file in rrule_files if "pipelined" not in rrule_file
-        ]
+    rrule_files = glob.glob(f"{lassen_location}/lassen/rewrite_rules/*.json")
 
+    # Can't have a '.' in the name of the rule since they are files
     custom_rule_names = {
         "mult_middle": "commonlib.mult_middle",
         "abs": "commonlib.abs",
         "fp_exp": "float.exp",
+        "fp_max": "float.max",
         "fp_div": "float.div",
         "fp_mux": "float.mux",
         "fp_mul": "float_DW.fp_mul",
         "fp_add": "float_DW.fp_add",
         "fp_sub": "float.sub",
-        "fp_max": "float.max",
+        "fp_gt": "float.gt",
+        "fp_lt": "float.lt",
+        "fp_ge": "float.ge",
+        "fp_le": "float.le",
+        "fp_eq": "float.eq"
     }
 
     for idx, rrule in enumerate(rrule_files):
         rule_name = Path(rrule).stem
-        if ("fp" in rule_name and "pipelined" in rule_name) or rule_name.split(
-            "_pipelined"
-        )[0] in custom_rule_names:
-            rule_name = rule_name.split("_pipelined")[0]
         if rule_name in custom_rule_names:
             ops.append(custom_rule_names[rule_name])
         else:
@@ -87,6 +81,7 @@ def gen_rrules(pipelined=False):
             rewrite_rule_in = json.load(json_file)
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
+
         if False:
             counter_example = rewrite_rule.verify()
             assert counter_example == None, f"{rule_name} failed"
@@ -106,19 +101,19 @@ def map_design_top(app_name, nodes, dag):
     pe_port_to_reg["data1"] = "regb"
     pe_port_to_reg["data2"] = "regc"
 
+    pe_port_to_reg["bit0"] = "regd"
+    pe_port_to_reg["bit1"] = "rege"
+    pe_port_to_reg["bit2"] = "regf"
+
     pe_reg_info = {}
     pe_reg_info['instrs'] = pe_reg_instrs
     pe_reg_info['port_to_reg'] = pe_port_to_reg
 
-    if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
-        pe_cycles = int(os.environ["PIPELINED"])
-    else:
-        pe_cycles = 1
-
+    pipelined = not ("PIPELINED" in os.environ and os.environ["PIPELINED"] == '0')
 
     CoreIRNodes = gen_CoreIRNodes(16)
 
-    rrules, ops = gen_rrules(pipelined = pe_cycles != 0)
+    rrules, ops = gen_rrules()
 
     mapper = Mapper(CoreIRNodes, nodes, lazy=False, ops=ops, rrules=rrules, kernel_name_prefix=True)
  

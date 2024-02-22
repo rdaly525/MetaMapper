@@ -32,36 +32,21 @@ def gen_custom_ops_peak_CoreIR(width):
 
     @family_closure
     def fp_add_fc(family: AbstractFamily):
+
         FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
-
-        BitVector = family.BitVector
         Data = family.BitVector[16]
-        Bit = family.Bit
-        SInt = family.Signed
-        SData = SInt[16]
-        UInt = family.Unsigned
-        UData = UInt[16]
-        UData32 = UInt[32]
-
-        FPExpBV = family.BitVector[8]
-        FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_add(Peak, BlackBox):
+        class fp_add(Peak):
             def __init__(self):
                 self.Add: FPAdd = FPAdd()
 
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
                 return Data(self.Add(in0, in1))
-
-                # a_fpadd = reinterpret_from_bv(in0)
-                # b_fpadd = reinterpret_from_bv(in1)
-                # return Data((a_fpadd + b_fpadd))
         
         return fp_add
-
+    
     CoreIR.add_instruction("float_DW.fp_add", fp_add_fc)
 
     @family_closure
@@ -71,10 +56,10 @@ def gen_custom_ops_peak_CoreIR(width):
         SInt = family.Signed[16]
         UInt = family.Unsigned[16]
         Bit = family.Bit
-
+        FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
 
         @family.assemble(locals(), globals())
-        class fp_sub(Peak, BlackBox):
+        class fp_sub(Peak):
             def __init__(self):
                 self.Add: FPAdd = FPAdd()
 
@@ -93,25 +78,16 @@ def gen_custom_ops_peak_CoreIR(width):
     def fp_mul_fc(family: AbstractFamily):
 
         FPMul = float_lib.const_rm(RoundingMode.RNE).Mul_fc(family)
-
         Data = family.BitVector[16]
-        Data32 = family.Unsigned[32]
-        SInt = family.Signed[16]
-        UInt = family.Unsigned[16]
-        Bit = family.Bit
-
 
         @family.assemble(locals(), globals())
-        class fp_mul(Peak, BlackBox):
+        class fp_mul(Peak):
             def __init__(self):
                 self.Mul: FPMul = FPMul()
 
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 return Data(self.Mul(in0, in1))
-                # a_fpadd = reinterpret_from_bv(in0)
-                # b_fpadd = reinterpret_from_bv(in1)
-                # return Data((a_fpadd - b_fpadd))
         
         return fp_mul
     
@@ -134,7 +110,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_getffrac(Peak, BlackBox):
+        class fp_getffrac(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 signa = BitVector[16]((in0 & 0x8000))
@@ -157,7 +133,7 @@ def gen_custom_ops_peak_CoreIR(width):
 
                 # We are not checking for overflow when converting to int
                 res = signed_res
-                return res
+                return Data(res)
         return fp_getffrac
     CoreIR.add_instruction("fp_getffrac", fp_getffrac_fc)
 
@@ -178,7 +154,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_getfint(Peak, BlackBox):
+        class fp_getfint(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 signa = BitVector[16]((in0 & 0x8000))
@@ -199,7 +175,7 @@ def gen_custom_ops_peak_CoreIR(width):
                     signed_res = SInt[16](unsigned_res)
                 # We are not checking for overflow when converting to int
                 res = signed_res
-                return res
+                return Data(res)
         return fp_getfint
     
     CoreIR.add_instruction("fp_getfint", fp_getfint_fc)
@@ -220,7 +196,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_cnvint2f(Peak, BlackBox):
+        class fp_cnvint2f(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 
@@ -283,7 +259,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 to_float_DW_result = (sign | ((BitVector[16](biased_scale) << 7) & (
                         0xFF << 7)) | normmant)
 
-                return to_float_DW_result
+                return Data(to_float_DW_result)
         return fp_cnvint2f
     CoreIR.add_instruction("fp_cnvint2f", fp_cnvint2f_fc)
 
@@ -303,7 +279,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_cnvexp2f(Peak, BlackBox):
+        class fp_cnvexp2f(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 expa0 = BitVector[8](in0[7:15])
@@ -349,7 +325,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 biased_scale = scale + 127
                 to_float_DW_result = (sign | ((BitVector[16](biased_scale) << 7) & (
                         0xFF << 7)) | normmant)
-                return to_float_DW_result
+                return Data(to_float_DW_result)
         return fp_cnvexp2f
 
     CoreIR.add_instruction("fp_cnvexp2f", fp_cnvexp2f_fc)
@@ -370,7 +346,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_subexp(Peak, BlackBox):
+        class fp_subexp(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 signa = BitVector[16]((in0 & 0x8000))
@@ -382,7 +358,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 exp_shift = exp_shift << 7
                 manta = BitVector[16]((in0 & 0x7F))
                 res = ((signa | signb) | exp_shift | manta)
-                return res
+                return Data(res)
         return fp_subexp
 
     CoreIR.add_instruction("fp_subexp", fp_subexp_fc)
@@ -404,7 +380,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_addiexp(Peak, BlackBox):
+        class fp_addiexp(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 
@@ -420,7 +396,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 exp_shift = exp_shift << 7
                 mant = BitVector[16]((in0 & 0x7F))
                 res = (sign | exp_shift | mant)
-                return res
+                return Data(res)
         
         return fp_addiexp
     
@@ -443,7 +419,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_getmant(Peak, BlackBox):
+        class fp_getmant(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 return Data(in0 & 0x7F)
@@ -468,7 +444,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_mux(Peak, BlackBox):
+        class fp_mux(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data, sel:Bit) -> Data:
                 return sel.ite(in0, in1)
@@ -478,34 +454,57 @@ def gen_custom_ops_peak_CoreIR(width):
 
 
     @family_closure
-    def fp_max_fc(family: AbstractFamily):
+    def fp_ge_fc(family: AbstractFamily):
         BitVector = family.BitVector
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-        SInt = family.Signed
-        SData = SInt[16]
-        UInt = family.Unsigned
-        UData = UInt[16]
-        UData32 = UInt[32]
+       
+        def fp_get_exp(val: Data):
+            return val[7:15]
 
-        FPExpBV = family.BitVector[8]
-        FPFracBV = family.BitVector[7]
+        def fp_get_frac(val: Data):
+            return val[:7]
+
+        def fp_is_zero(val: Data):
+            return (fp_get_exp(val) == 0) & (fp_get_frac(val) == 0)
+
+        def fp_is_inf(val: Data):
+            return (fp_get_exp(val) == -1) & (fp_get_frac(val) == 0)
+
+        def fp_is_neg(val: Data):
+            return family.Bit(val[-1])
+        FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
+
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
 
         @family.assemble(locals(), globals())
-        class fp_max(Peak, BlackBox):
-            @name_outputs(out=Data)
+        class fp_ge(Peak):
+            def __init__(self):
+                self.Add: FPAdd = FPAdd()
+
+            @name_outputs(out=Bit)
             def __call__(self, in0 : Data, in1 : Data) -> Bit:
-                
-                a_fpadd = BFloat(in0)
-                b_fpadd = BFloat(in1)
-                gt = Bit(a_fpadd > b_fpadd)
-                return Data(gt.ite(in0, in1))
+                a_inf = fp_is_inf(in0)
+                b_inf = fp_is_inf(in1)
+                a_neg = fp_is_neg(in0)
+                b_neg = fp_is_neg(in1)
+
+                in1 = in1 ^ (2 ** (16 - 1))
+                res = Data(self.Add(in0, in1))
+
+                Z = fp_is_zero(res)
+                if (a_inf & b_inf) & (a_neg == b_neg):
+                    Z = family.Bit(1)
+
+                N = res[-1]
+
+                return Bit(~N | Z)
         
-        return fp_max
+        return fp_ge
 
-    CoreIR.add_instruction("fp_max", fp_max_fc)
-
+    CoreIR.add_instruction("float.ge", fp_ge_fc)
 
     @family_closure
     def fp_gt_fc(family: AbstractFamily):
@@ -513,27 +512,105 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-        SInt = family.Signed
-        SData = SInt[16]
-        UInt = family.Unsigned
-        UData = UInt[16]
-        UData32 = UInt[32]
+       
+        def fp_get_exp(val: Data):
+            return val[7:15]
 
-        FPExpBV = family.BitVector[8]
-        FPFracBV = family.BitVector[7]
+        def fp_get_frac(val: Data):
+            return val[:7]
+
+        def fp_is_zero(val: Data):
+            return (fp_get_exp(val) == 0) & (fp_get_frac(val) == 0)
+
+        def fp_is_inf(val: Data):
+            return (fp_get_exp(val) == -1) & (fp_get_frac(val) == 0)
+
+        def fp_is_neg(val: Data):
+            return family.Bit(val[-1])
+        FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
+
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
 
         @family.assemble(locals(), globals())
-        class fp_gt(Peak, BlackBox):
-            @name_outputs(out=Data)
+        class fp_gt(Peak):
+            def __init__(self):
+                self.Add: FPAdd = FPAdd()
+
+            @name_outputs(out=Bit)
             def __call__(self, in0 : Data, in1 : Data) -> Bit:
-                
-                a_fpadd = BFloat(in0)
-                b_fpadd = BFloat(in1)
-                return Bit(a_fpadd > b_fpadd)
+                a_inf = fp_is_inf(in0)
+                b_inf = fp_is_inf(in1)
+                a_neg = fp_is_neg(in0)
+                b_neg = fp_is_neg(in1)
+
+                in1 = in1 ^ (2 ** (16 - 1))
+                res = Data(self.Add(in0, in1))
+
+                Z = fp_is_zero(res)
+                if (a_inf & b_inf) & (a_neg == b_neg):
+                    Z = family.Bit(1)
+
+                N = res[-1]
+
+                return Bit(~N & ~Z)
         
         return fp_gt
 
-    CoreIR.add_instruction("fp_gt", fp_gt_fc)
+    CoreIR.add_instruction("float.gt", fp_gt_fc)
+
+    @family_closure
+    def fp_le_fc(family: AbstractFamily):
+        BitVector = family.BitVector
+        BFloat = BFloat16_fc(family)
+        Data = family.BitVector[16]
+        Bit = family.Bit
+       
+        def fp_get_exp(val: Data):
+            return val[7:15]
+
+        def fp_get_frac(val: Data):
+            return val[:7]
+
+        def fp_is_zero(val: Data):
+            return (fp_get_exp(val) == 0) & (fp_get_frac(val) == 0)
+
+        def fp_is_inf(val: Data):
+            return (fp_get_exp(val) == -1) & (fp_get_frac(val) == 0)
+
+        def fp_is_neg(val: Data):
+            return family.Bit(val[-1])
+        FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
+
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
+        @family.assemble(locals(), globals())
+        class fp_le(Peak):
+            def __init__(self):
+                self.Add: FPAdd = FPAdd()
+
+            @name_outputs(out=Bit)
+            def __call__(self, in0 : Data, in1 : Data) -> Bit:
+                a_inf = fp_is_inf(in0)
+                b_inf = fp_is_inf(in1)
+                a_neg = fp_is_neg(in0)
+                b_neg = fp_is_neg(in1)
+
+                in1 = in1 ^ (2 ** (16 - 1))
+                res = Data(self.Add(in0, in1))
+
+                Z = fp_is_zero(res)
+                if (a_inf & b_inf) & (a_neg == b_neg):
+                    Z = family.Bit(1)
+
+                N = res[-1]
+
+                return Bit(N | Z)
+        
+        return fp_le
+
+    CoreIR.add_instruction("float.le", fp_le_fc)
 
 
     @family_closure
@@ -542,28 +619,103 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-        SInt = family.Signed
-        SData = SInt[16]
-        UInt = family.Unsigned
-        UData = UInt[16]
-        UData32 = UInt[32]
+       
+        def fp_get_exp(val: Data):
+            return val[7:15]
 
-        FPExpBV = family.BitVector[8]
-        FPFracBV = family.BitVector[7]
+        def fp_get_frac(val: Data):
+            return val[:7]
+
+        def fp_is_zero(val: Data):
+            return (fp_get_exp(val) == 0) & (fp_get_frac(val) == 0)
+
+        def fp_is_inf(val: Data):
+            return (fp_get_exp(val) == -1) & (fp_get_frac(val) == 0)
+
+        def fp_is_neg(val: Data):
+            return family.Bit(val[-1])
+        FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
+
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
 
         @family.assemble(locals(), globals())
-        class fp_lt(Peak, BlackBox):
-            @name_outputs(out=Data)
+        class fp_lt(Peak):
+            def __init__(self):
+                self.Add: FPAdd = FPAdd()
+
+            @name_outputs(out=Bit)
             def __call__(self, in0 : Data, in1 : Data) -> Bit:
-                
-                a_fpadd = BFloat(in0)
-                b_fpadd = BFloat(in1)
-                return Bit(a_fpadd < b_fpadd)
+                a_inf = fp_is_inf(in0)
+                b_inf = fp_is_inf(in1)
+                a_neg = fp_is_neg(in0)
+                b_neg = fp_is_neg(in1)
+
+                in1 = in1 ^ (2 ** (16 - 1))
+                res = Data(self.Add(in0, in1))
+
+                Z = fp_is_zero(res)
+                if (a_inf & b_inf) & (a_neg == b_neg):
+                    Z = family.Bit(1)
+
+                N = res[-1]
+
+                return Bit(N & ~Z)
         
         return fp_lt
 
-    CoreIR.add_instruction("fp_lt", fp_lt_fc)
+    CoreIR.add_instruction("float.lt", fp_lt_fc)
 
+    @family_closure
+    def fp_eq_fc(family: AbstractFamily):
+        BitVector = family.BitVector
+        BFloat = BFloat16_fc(family)
+        Data = family.BitVector[16]
+        Bit = family.Bit
+       
+        def fp_get_exp(val: Data):
+            return val[7:15]
+
+        def fp_get_frac(val: Data):
+            return val[:7]
+
+        def fp_is_zero(val: Data):
+            return (fp_get_exp(val) == 0) & (fp_get_frac(val) == 0)
+
+        def fp_is_inf(val: Data):
+            return (fp_get_exp(val) == -1) & (fp_get_frac(val) == 0)
+
+        def fp_is_neg(val: Data):
+            return family.Bit(val[-1])
+        FPAdd = float_lib.const_rm(RoundingMode.RNE).Add_fc(family)
+
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
+        @family.assemble(locals(), globals())
+        class fp_eq(Peak):
+            def __init__(self):
+                self.Add: FPAdd = FPAdd()
+
+            @name_outputs(out=Bit)
+            def __call__(self, in0 : Data, in1 : Data) -> Bit:
+                a_inf = fp_is_inf(in0)
+                b_inf = fp_is_inf(in1)
+                a_neg = fp_is_neg(in0)
+                b_neg = fp_is_neg(in1)
+
+                in1 = in1 ^ (2 ** (16 - 1))
+                res = Data(self.Add(in0, in1))
+
+                Z = fp_is_zero(res)
+                if (a_inf & b_inf) & (a_neg == b_neg):
+                    Z = family.Bit(1)
+
+                return Z
+        
+        return fp_eq
+
+    CoreIR.add_instruction("float.eq", fp_eq_fc)
 
     @family_closure
     def fp_exp_fc(family: AbstractFamily):
@@ -580,20 +732,20 @@ def gen_custom_ops_peak_CoreIR(width):
         FPExpBV = family.BitVector[8]
         FPFracBV = family.BitVector[7]
 
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
         @family.assemble(locals(), globals())
-        class fp_exp(Peak, BlackBox):
+        class fp_exp(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data) -> Data:
-                
-                a_fpadd = BFloat(in0)
-                return a_fpadd
+                a_fpadd = in0
+               
+                return Data(a_fpadd)
         
         return fp_exp
 
     CoreIR.add_instruction("float.exp", fp_exp_fc)
-
-
-
 
     @family_closure
     def fp_div_fc(family: AbstractFamily):
@@ -610,14 +762,17 @@ def gen_custom_ops_peak_CoreIR(width):
         FPExpBV = family.BitVector[8]
         FPFracBV = family.BitVector[7]
 
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
         @family.assemble(locals(), globals())
-        class fp_div(Peak, BlackBox):
+        class fp_div(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
-                a_fpadd = BFloat(in0)
-                b_fpadd = BFloat(in1)
-                return Data((a_fpadd - b_fpadd))
+                a_fpadd = bv2float(in0)
+                b_fpadd = bv2float(in1)
+                gt = Bit(a_fpadd < b_fpadd)
+                return Data(gt.ite(in0, in1))
         
         return fp_div
     
@@ -638,17 +793,19 @@ def gen_custom_ops_peak_CoreIR(width):
         FPExpBV = family.BitVector[8]
         FPFracBV = family.BitVector[7]
 
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
         @family.assemble(locals(), globals())
-        class fp_max(Peak, BlackBox):
+        class fp_max(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
-                a_fpadd = BFloat(in0)
-                b_fpadd = BFloat(in1)
-                return Data((a_fpadd - b_fpadd))
-        
+                a_fpadd = bv2float(in0)
+                b_fpadd = bv2float(in1)
+                gt = Bit(a_fpadd > b_fpadd)
+                return Data(gt.ite(in0, in1))
+     
         return fp_max
-    
     CoreIR.add_instruction("float.max", fp_max_fc)
 
     @family_closure
@@ -666,14 +823,17 @@ def gen_custom_ops_peak_CoreIR(width):
         FPExpBV = family.BitVector[8]
         FPFracBV = family.BitVector[7]
 
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
         @family.assemble(locals(), globals())
-        class fp_min(Peak, BlackBox):
+        class fp_min(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
-                a_fpadd = BFloat(in0)
-                b_fpadd = BFloat(in1)
-                return Data(a_fpadd - b_fpadd)
+                a_fpadd = bv2float(in0)
+                b_fpadd = bv2float(in1)
+                gt = Bit(a_fpadd < b_fpadd)
+                return Data(gt.ite(in0, in1))
         
         return fp_min
     
@@ -703,7 +863,7 @@ def gen_custom_ops_peak_CoreIR(width):
         FPFracBV = family.BitVector[7]
 
         @family.assemble(locals(), globals())
-        class fp_cmp(Peak, BlackBox):
+        class fp_cmp(Peak):
             def __init__(self):
                 self.is_inf: is_inf = is_inf()
                 self.is_neg: is_neg = is_neg()
