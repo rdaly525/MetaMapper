@@ -59,7 +59,7 @@ class Mapper:
                     self.table.add_peak_rule(peak_rule, None)
             self.table.sort_rules()
 
-    def do_mapping(self, dag, kname="", convert_unbound=True, prove_mapping=True, node_cycles=None, pe_reg_info=None, pipelined=True) -> coreir.Module:
+    def do_mapping(self, dag, kname="", convert_unbound=True, match_branch_delay=True, prove_mapping=True, node_cycles=None, pe_reg_info=None, pipelined=True) -> coreir.Module:
         self.compile_time_rule_gen(dag)
         use_constant_packing = pe_reg_info != None
         
@@ -98,7 +98,7 @@ class Mapper:
         if unmapped is not None:
             raise ValueError(f"Following nodes were unmapped: {unmapped}")
 
-        if node_cycles is not None:
+        if node_cycles is not None and match_branch_delay:
             sinks = GetSinks().doit(mapped_dag)
             self.kernel_cycles[kname], added_regs = branch_delay_match(mapped_dag, node_cycles, sinks)
             print("\tAdded", added_regs, "during branch delay matching")

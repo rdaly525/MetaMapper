@@ -107,12 +107,8 @@ file_name = str(sys.argv[1])
 
 if "MATCH_BRANCH_DELAY" in os.environ and os.environ["MATCH_BRANCH_DELAY"] in ["0", "1"]:
     match_branch_delay = bool(int(os.environ["MATCH_BRANCH_DELAY"]))
-    if match_branch_delay:
-        node_cycles = _ArchCycles()
-    else:
-        node_cycles = None
 else:
-    node_cycles = _ArchCycles()
+    match_branch_delay = True 
 
 pipelined = not ("PIPELINED" in os.environ and os.environ["PIPELINED"] == '0')
 
@@ -152,7 +148,8 @@ for kname, kmod in kernels.items():
     mapped_dag = mapper.do_mapping(
         dag,
         kname=kname,
-        node_cycles=node_cycles,
+        node_cycles=_ArchCycles(),
+        match_branch_delay = match_branch_delay,
         convert_unbound=False,
         prove_mapping=True,
         pe_reg_info=pe_reg_info,
