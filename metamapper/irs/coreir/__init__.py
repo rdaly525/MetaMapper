@@ -56,7 +56,6 @@ def gen_CoreIRNodes(width):
         if name not in CoreIRNodes.coreir_modules:
             peak_fc = peak_ir.instructions[name]
             cmod = None
-            print(name)
             name_ = load_from_peak(CoreIRNodes, peak_fc, cmod=cmod, name=name, modparams=())
 
     if cgralib:
