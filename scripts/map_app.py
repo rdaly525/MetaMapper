@@ -150,7 +150,7 @@ for kname, kmod in kernels.items():
         node_cycles=_ArchCycles(),
         convert_unbound=False,
         prove_mapping=False,
-        pe_reg_info=pe_reg_info,
+        pe_reg_info=None,
     )
 
     mod = cutil.dag_to_coreir(

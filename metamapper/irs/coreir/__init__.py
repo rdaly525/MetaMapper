@@ -314,7 +314,7 @@ def gen_CoreIRNodes(width):
 
     gt = CoreIRNodes.dag_nodes["fp_gt"](in0, in1)
 
-    max_ = CoreIRNodes.dag_nodes["coreir.mux"](in0, in1, gt.select("out"))
+    max_ = CoreIRNodes.dag_nodes["coreir.mux"](in1, in0, gt.select("out"))
 
     sink_node = Output(max_.select("out"), type=output_t)
 
@@ -329,7 +329,7 @@ def gen_CoreIRNodes(width):
 
     lt = CoreIRNodes.dag_nodes["fp_lt"](in0, in1)
 
-    min_ = CoreIRNodes.dag_nodes["coreir.mux"](in0, in1, lt.select("out"))
+    min_ = CoreIRNodes.dag_nodes["coreir.mux"](in1, in0, lt.select("out"))
 
     sink_node = Output(min_.select("out"), type=output_t)
 
