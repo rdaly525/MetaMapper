@@ -25,22 +25,25 @@ from peak.mapper.utils import rebind_type
 def is_unbound_const(node):
     return isinstance(node, Constant) and node.value is Unbound
 
+def n2s(node):
+    return f"{str(node)}_{node._id_}"
 
 class DagToPdf(Visitor):
     def __init__(self, no_unbound):
         self.no_unbound = no_unbound
+        
 
     def doit(self, dag: Dag):
         AddID().run(dag)
         self.graph = Digraph()
         self.run(dag)
+        if hasattr(dag, "non_output_sinks"):
+            for sink in dag.non_output_sinks:
+                self.graph.edge(n2s(sink), n2s(sink.source))
         return self.graph
 
     def generic_visit(self, node):
         Visitor.generic_visit(self, node)
-
-        def n2s(node):
-            return f"{str(node)}_{node._id_}"
 
         if self.no_unbound and not is_unbound_const(node):
             self.graph.node(n2s(node))
@@ -254,7 +257,7 @@ class VerifyNodes(Visitor):
                 and node.node_name != "memory.fprom2"
             ):
                 nodes = type(node).nodes
-                if nodes != self.nodes and nodes != Common:
+                if nodes != Common and node.node_name not in self.nodes._node_names:
                     self.wrong_nodes.add(node)
         Visitor.generic_visit(self, node)
 
@@ -952,7 +955,7 @@ class ConstantPacking(Transformer):
 
     def generic_visit(self, node):
         Transformer.generic_visit(self, node)
-        if node.node_name == "global.PE":
+        if node.node_name == "global.PE" and hasattr(node, "_metadata_"):
             ports = node._metadata_
             new_children = [child for child in node.children()]
             for port_idx, child in enumerate(node.children()):

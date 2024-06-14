@@ -39,7 +39,7 @@ class GreedyReplace(Transformer):
             return {tile_node.field: dag_node}, {tile_node: dag_node}
 
         # Verify node types are identical
-        if type(tile_node) != type(dag_node):
+        if type(tile_node).node_name != type(dag_node).node_name:
             return None
 
         matched_inputs = {}
@@ -56,6 +56,8 @@ class GreedyReplace(Transformer):
     def visit_Select(self, node):
         #visit all children first
         Transformer.generic_visit(self, node)
+
+
         matched = self.match_node(self.output_selects[0], node, {})
         if matched is None:
             return None
