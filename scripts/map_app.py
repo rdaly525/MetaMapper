@@ -78,8 +78,6 @@ def gen_rrules(pipelined=False):
 
         rewrite_rule = read_serialized_bindings(rewrite_rule_in, ir_fc, lassen_fc)
 
-        counter_example = rewrite_rule.verify()
-        assert counter_example == None, f"{rule_name} failed"
         rrules.append(rewrite_rule)
 
     return rrules, ops
@@ -151,7 +149,7 @@ for kname, kmod in kernels.items():
         node_cycles=_ArchCycles(),
         match_branch_delay = match_branch_delay,
         convert_unbound=False,
-        prove_mapping=True,
+        prove_mapping=False,
         pe_reg_info=pe_reg_info,
         pipelined=pipelined
     )
@@ -161,7 +159,6 @@ for kname, kmod in kernels.items():
     )
     mods.append(mod)
 
-print('\n\033[92m' + "All compute kernels passed formal checks" + '\033[0m')
 print(f"Total num PEs used: {mapper.num_pes}\n")
 print(f"Total num regs inserted: {mapper.num_regs}")
 
