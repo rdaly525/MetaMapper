@@ -130,6 +130,7 @@ def gen_custom_ops_peak_CoreIR(width):
                     signed_res = -SInt[16](unsigned_res)
                 else:
                     signed_res = SInt[16](unsigned_res)
+                signed_res = BitVector[16]((signed_res & 0xFF))
 
                 # We are not checking for overflow when converting to int
                 res = signed_res

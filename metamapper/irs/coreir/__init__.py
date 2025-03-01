@@ -188,17 +188,18 @@ def gen_CoreIRNodes(width):
     get_frac = CoreIRNodes.dag_nodes["fp_getffrac"](ln2_mult.select("out"), Constant(value=BitVector[16](0), type=BitVector[16]))
 
 
-    and_const = Constant(value=BitVector[16](255), type=BitVector[16])
-    and_const_dag = CoreIRNodes.dag_nodes["coreir.const"](and_const)
-
-
-    rom_idx = CoreIRNodes.dag_nodes["coreir.and_"](get_frac.select("out"), and_const_dag.select("out"))
 
     en_const = Constant(value=Bit(1), type=Bit)
     en_const_dag = CoreIRNodes.dag_nodes["corebit.const"](en_const)
 
+    # We added the masking to PE to reduce utilization
+    # and_const = Constant(value=BitVector[16](255), type=BitVector[16])
+    # and_const_dag = CoreIRNodes.dag_nodes["coreir.const"](and_const)
+    # rom_idx = CoreIRNodes.dag_nodes["coreir.and_"](get_frac.select("out"), and_const_dag.select("out"))
+    # rom = FPRom(rom_idx.select("out"), en_const_dag.select("out"), init=exp_rom_init, iname="fpexprom")
 
-    rom = FPRom(rom_idx.select("out"), en_const_dag.select("out"), init=exp_rom_init, iname="fpexprom")
+    rom = FPRom(get_frac.select("out"), en_const_dag.select("out"), init=exp_rom_init, iname="fpexprom")
+
     add_exp = CoreIRNodes.dag_nodes["fp_addiexp"](rom.select("rdata"), get_int.select("out"))
 
     sink_node = Output(add_exp.select("out"), type=output_t)
