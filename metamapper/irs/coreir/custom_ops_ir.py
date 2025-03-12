@@ -12,7 +12,7 @@ import magma
 
 def gen_custom_ops_peak_CoreIR(width):
 
-    
+
     float_lib = float_lib_gen(8, 7)
 
     CoreIR = IR()
@@ -44,9 +44,9 @@ def gen_custom_ops_peak_CoreIR(width):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 return Data(self.Add(in0, in1))
-        
+
         return fp_add
-    
+
     CoreIR.add_instruction("float_DW.fp_add", fp_add_fc)
 
     @family_closure
@@ -65,12 +65,12 @@ def gen_custom_ops_peak_CoreIR(width):
 
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
+
                 in1 = in1 ^ (2 ** (16 - 1))
                 return Data(self.Add(in0, in1))
-        
+
         return fp_sub
-    
+
     CoreIR.add_instruction("float.sub", fp_sub_fc)
 
 
@@ -88,9 +88,9 @@ def gen_custom_ops_peak_CoreIR(width):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
                 return Data(self.Mul(in0, in1))
-        
+
         return fp_mul
-    
+
     CoreIR.add_instruction("float_DW.fp_mul", fp_mul_fc)
 
 
@@ -178,7 +178,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 res = signed_res
                 return Data(res)
         return fp_getfint
-    
+
     CoreIR.add_instruction("fp_getfint", fp_getfint_fc)
 
     @family_closure
@@ -200,7 +200,7 @@ def gen_custom_ops_peak_CoreIR(width):
         class fp_cnvint2f(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
+
                 sign = BitVector[16](0)
                 if (sign[15] == Bit(1)):
                     abs_input = BitVector[16](-SInt[16](in0))
@@ -253,7 +253,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 else:
                     normmant = BitVector[16](0)
 
-                
+
                 normmant = BitVector[16](normmant) >> 8
 
                 biased_scale = scale + 127
@@ -384,7 +384,7 @@ def gen_custom_ops_peak_CoreIR(width):
         class fp_addiexp(Peak):
             @name_outputs(out=Data)
             def __call__(self, in0 : Data, in1 : Data) -> Data:
-                
+
                 sign = BitVector[16]((in0 & 0x8000))
                 exp = UInt(in0)[7:15]
                 exp_check = exp.zext(1)
@@ -398,9 +398,9 @@ def gen_custom_ops_peak_CoreIR(width):
                 mant = BitVector[16]((in0 & 0x7F))
                 res = (sign | exp_shift | mant)
                 return Data(res)
-        
+
         return fp_addiexp
-    
+
     CoreIR.add_instruction("fp_addiexp", fp_addiexp_fc)
 
 
@@ -460,7 +460,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -502,7 +502,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 N = res[-1]
 
                 return Bit(~N | Z)
-        
+
         return fp_ge
 
     CoreIR.add_instruction("float.ge", fp_ge_fc)
@@ -513,7 +513,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -555,7 +555,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 N = res[-1]
 
                 return Bit(~N & ~Z)
-        
+
         return fp_gt
 
     CoreIR.add_instruction("float.gt", fp_gt_fc)
@@ -566,7 +566,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -608,7 +608,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 N = res[-1]
 
                 return Bit(N | Z)
-        
+
         return fp_le
 
     CoreIR.add_instruction("float.le", fp_le_fc)
@@ -620,7 +620,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -662,7 +662,7 @@ def gen_custom_ops_peak_CoreIR(width):
                 N = res[-1]
 
                 return Bit(N & ~Z)
-        
+
         return fp_lt
 
     CoreIR.add_instruction("float.lt", fp_lt_fc)
@@ -673,7 +673,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -713,7 +713,7 @@ def gen_custom_ops_peak_CoreIR(width):
                     Z = family.Bit(1)
 
                 return Z
-        
+
         return fp_eq
 
     CoreIR.add_instruction("float.eq", fp_eq_fc)
@@ -743,9 +743,9 @@ def gen_custom_ops_peak_CoreIR(width):
 
                 # We replace this
                 a_fpadd = in0
-               
+
                 return Data(a_fpadd)
-        
+
         return fp_exp
 
     CoreIR.add_instruction("float.exp", fp_exp_fc)
@@ -776,9 +776,9 @@ def gen_custom_ops_peak_CoreIR(width):
                 b_fpadd = bv2float(in1)
                 gt = Bit(a_fpadd < b_fpadd)
                 return Data(gt.ite(in0, in1))
-        
+
         return fp_div
-    
+
     CoreIR.add_instruction("float.div", fp_div_fc)
 
     @family_closure
@@ -787,7 +787,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -840,7 +840,7 @@ def gen_custom_ops_peak_CoreIR(width):
         BFloat = BFloat16_fc(family)
         Data = family.BitVector[16]
         Bit = family.Bit
-       
+
         def fp_get_exp(val: Data):
             return val[7:15]
 
@@ -882,7 +882,7 @@ def gen_custom_ops_peak_CoreIR(width):
                     ret = in1
 
                 return ret
-        
+
         return fp_min
 
     CoreIR.add_instruction("float.min", fp_min_fc)
@@ -918,7 +918,7 @@ def gen_custom_ops_peak_CoreIR(width):
 
             @name_outputs(out=Bit)
             def __call__(self, in0 : Data, in1 : Data) -> Bit:
-                
+
                 a_fpadd = BFloat(in0)
                 b_fpadd = BFloat(in1)
                 a_inf = self.is_inf(in0)
@@ -932,9 +932,9 @@ def gen_custom_ops_peak_CoreIR(width):
                     Z = Bit(1)
 
                 return Z
-    
+
         return fp_cmp
-    
+
     CoreIR.add_instruction("float_DW.cmp", fp_cmp_fc)
 
     @family_closure
@@ -1003,5 +1003,37 @@ def gen_custom_ops_peak_CoreIR(width):
         return ashr32
 
     CoreIR.add_instruction("coreir.ashr32", ashr32_fc)
+
+    @family_closure
+    def fp_ln_fc(family: AbstractFamily):
+        BitVector = family.BitVector
+        BFloat = BFloat16_fc(family)
+        Data = family.BitVector[16]
+        Bit = family.Bit
+        SInt = family.Signed
+        SData = SInt[16]
+        UInt = family.Unsigned
+        UData = UInt[16]
+        UData32 = UInt[32]
+
+        FPExpBV = family.BitVector[8]
+        FPFracBV = family.BitVector[7]
+
+        def bv2float(bv):
+            return BFloat.reinterpret_from_bv(bv)
+
+        @family.assemble(locals(), globals())
+        class fp_ln(Peak):
+            @name_outputs(out=Data)
+            def __call__(self, in0 : Data) -> Data:
+
+                # We replace this
+                a_fpadd = in0
+
+                return Data(a_fpadd)
+
+        return fp_ln
+
+    CoreIR.add_instruction("float.ln", fp_ln_fc)
 
     return CoreIR

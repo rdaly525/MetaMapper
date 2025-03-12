@@ -50,7 +50,10 @@ def gen_CoreIRNodes(width):
             assert name in CoreIRNodes.coreir_modules
             assert CoreIRNodes.name_from_coreir(cmod) == name
 
-    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.mult_middle", "float.eq", "float.gt", "float.le", "float.ge", "float.lt", "float.max", "float.min", "float.div", "float_DW.fp_mul", "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f", "fp_getfint", "fp_getffrac", "fp_cnvint2f", "float.exp", "float.mux"]
+    CoreIRNodes.custom_nodes = ["coreir.neq", "commonlib.abs", "commonlib.mult_middle", "float.eq", "float.gt", "float.le",
+                                "float.ge", "float.lt", "float.max", "float.min", "float.div", "float_DW.fp_mul",
+                                "float_DW.fp_add", "float.sub", "fp_getmant", "fp_addiexp", "fp_subexp", "fp_cnvexp2f",
+                                "fp_getfint", "fp_getffrac", "fp_cnvint2f", "float.exp", "float.mux", "float.ln"]
 
     for name in CoreIRNodes.custom_nodes:
         if name not in CoreIRNodes.coreir_modules:
@@ -84,7 +87,7 @@ def gen_CoreIRNodes(width):
         node_name = "cgralib.Mem_amber"
         num_children = 3
         type = Product.from_fields("Output",{"data_out_0":BitVector[16], "data_out_1":BitVector[16], "stencil_valid":BitVector[1]})
- 
+
     class FPRom(DagNode):
         def __init__(self, raddr, ren, *, init, iname):
             super().__init__(raddr, ren, init=init, iname=iname)
@@ -103,7 +106,7 @@ def gen_CoreIRNodes(width):
         node_name = "memory.fprom2"
         num_children = 2
         type = Product.from_fields("Output",{"rdata":BitVector[16]})
-  
+
 
     def float2bfbin(fnum):
        if (fnum=='NaN'):
@@ -133,9 +136,10 @@ def gen_CoreIRNodes(width):
            if (lfrac[1:8]=="1111111"): #roll over mantissa and increase exp if needed
              exp = "{:08b}".format((int(exp,2) + 1)) #exp overflow?
            lfrac = "{:08b}".format((int(lfrac,2) + 1))
-             
+
        return sign + exp + lfrac[1:8]
 
+    ######### Definition of float.div #########
     def div_lut(index):
         x = (1.0 + float(int(index))/128.0)
         x_inv = 1.0/x
@@ -165,13 +169,14 @@ def gen_CoreIRNodes(width):
     CoreIRNodes.custom_inline["float.div"] = (Dag(sources=[source_node], sinks=[sink_node]), [get_mant, sub_exp, mult])
 
 
+    ######### Definition of float.exp #########
     def exp_lut(index):
         x = (0.0 + float(int(index))/128.0)
         return int(float2bfbin((2**x)),2)
 
 
     exp_rom_init = [exp_lut(i) for i in range(0, 128)]+[exp_lut(i) for i in range(-128, 0)]+[0x0000]*(depth - 256)
-    
+
     input_t = Product.from_fields("Input", {"in0": BitVector[16]})
     output_t = Product.from_fields("Output", {"out": BitVector[16]})
 
@@ -206,7 +211,43 @@ def gen_CoreIRNodes(width):
 
     CoreIRNodes.custom_inline["float.exp"] = (Dag(sources=[source_node1], sinks=[sink_node]), [ln2_mult])
 
+    ######### Definition of float.ln #########
+    def ln_lut(index):
+        # index goes from 0..127, representing the fractional part in [1.0 .. 1.996...]
+        fraction = 1.0 + float(index)/128.0
+        return int(float2bfbin(math.log(fraction)), 2)
+    depth = 1024
+    ln_rom_init = [ln_lut(i) for i in range(128)] + [0x0000]*(depth - 128)
 
+    rom_ln = CoreIRContext().get_namespace("memory").generators["rom2"](depth=256, width=width)
+    CoreIRNodes.add("memory.fprom_ln", peak_ir.instructions["memory.rom2"], rom_ln, FPRom)
+
+    input_t = Product.from_fields("Input", {"in0": BitVector[16]})
+    output_t = Product.from_fields("Output", {"out": BitVector[16]})
+
+    source_node = Input(iname="self", type=input_t)
+    in0 = source_node.select("in0")
+
+    get_mant = CoreIRNodes.dag_nodes["fp_getmant"](in0, Constant(value=BitVector[16](0), type=BitVector[16]))
+    exp2float = CoreIRNodes.dag_nodes["fp_cnvexp2f"](in0, Constant(value=BitVector[16](0), type=BitVector[16]))
+
+    ln2 = math.log(2)
+    ln2_bf = int(float2bfbin(ln2), 2)
+    ln2_const = Constant(value=BitVector[16](ln2_bf), type=BitVector[16])
+    ln2_dag = CoreIRNodes.dag_nodes["coreir.const"](ln2_const)
+
+    mul_ln2 = CoreIRNodes.dag_nodes["float_DW.fp_mul"](exp2float.select("out"), ln2_dag.select("out"))
+    en_const = Constant(value=Bit(1), type=Bit)
+    en_const_dag = CoreIRNodes.dag_nodes["corebit.const"](en_const)
+
+    ln_rom = FPRom(get_mant.select("out"), en_const_dag.select("out"), init=ln_rom_init, iname="fplnrom")
+    ln_add = CoreIRNodes.dag_nodes["float_DW.fp_add"](mul_ln2.select("out"), ln_rom.select("rdata"))
+
+    sink_node = Output(ln_add.select("out"), type=output_t)
+
+    CoreIRNodes.custom_inline["float.ln"] = (Dag(sources=[source_node], sinks=[sink_node]), [get_mant, exp2float, mul_ln2, ln_add])
+
+    ######### Definition of float.min #########
     input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
     output_t = Product.from_fields("Output", {"out": BitVector[16]})
 
@@ -221,8 +262,8 @@ def gen_CoreIRNodes(width):
     sink_node = Output(min_.select("out"), type=output_t)
 
     CoreIRNodes.custom_inline["float.min"] = (Dag(sources=[source_node3], sinks=[sink_node]), [lt, min_])
- 
 
+    ######### Definition of coreir.neq #########
     input_t = Product.from_fields("Input", {f"in{i}": BitVector[16] for i in range(2)})
     output_t = Product.from_fields("Output", {"out": Bit})
 
@@ -237,7 +278,7 @@ def gen_CoreIRNodes(width):
     sink_node = Output(not_.select("out"), type=output_t)
 
     CoreIRNodes.custom_inline["coreir.neq"] = (Dag(sources=[source_node4], sinks=[sink_node]), [eq])
- 
+
 
     return CoreIRNodes
 
