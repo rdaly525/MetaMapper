@@ -60,7 +60,8 @@ def gen_rrules(pipelined=False):
         "fp_lt": "float.lt",
         "fp_ge": "float.ge",
         "fp_le": "float.le",
-        "fp_eq": "float.eq"
+        "fp_eq": "float.eq",
+        "fp_ln": "float.ln"
     }
 
     for idx, rrule in enumerate(rrule_files):
@@ -108,7 +109,7 @@ file_name = str(sys.argv[1])
 if "MATCH_BRANCH_DELAY" in os.environ and os.environ["MATCH_BRANCH_DELAY"] in ["0", "1"]:
     match_branch_delay = bool(int(os.environ["MATCH_BRANCH_DELAY"]))
 else:
-    match_branch_delay = True 
+    match_branch_delay = True
 
 pipelined = not ("PIPELINED" in os.environ and os.environ["PIPELINED"] == '0')
 
@@ -119,7 +120,7 @@ output_dir = os.path.dirname(file_name)
 c = CoreIRContext(reset=True)
 cutil.load_libs(["commonlib", "float_DW"])
 CoreIRNodes = gen_CoreIRNodes(16)
-cutil.load_from_json(file_name) 
+cutil.load_from_json(file_name)
 kernels = dict(c.global_namespace.modules)
 
 arch_fc = lassen_fc

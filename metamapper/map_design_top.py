@@ -23,7 +23,7 @@ class _ArchCycles:
         if kind == "Rom" or kind == "FPRom" or kind == "PipelineRegister":
             return 1
         elif kind == "global.PE":
-            if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():    
+            if "PIPELINED" in os.environ and os.environ["PIPELINED"].isnumeric():
                 pe_cycles = int(os.environ["PIPELINED"])
             else:
                 pe_cycles = 1
@@ -64,7 +64,8 @@ def gen_rrules(pipelined=False):
         "fp_lt": "float.lt",
         "fp_ge": "float.ge",
         "fp_le": "float.le",
-        "fp_eq": "float.eq"
+        "fp_eq": "float.eq",
+        "fp_ln": "float.ln"
     }
 
     for idx, rrule in enumerate(rrule_files):
@@ -116,7 +117,7 @@ def map_design_top(app_name, nodes, dag):
     rrules, ops = gen_rrules()
 
     mapper = Mapper(CoreIRNodes, nodes, lazy=False, ops=ops, rrules=rrules, kernel_name_prefix=True)
- 
+
     mapped_dag = mapper.do_mapping(dag, kname=app_name, node_cycles=None, convert_unbound=False, prove_mapping=False, pe_reg_info=pe_reg_info)
 
     return mapped_dag
